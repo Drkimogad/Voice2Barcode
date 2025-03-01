@@ -1,5 +1,6 @@
 // Updated script.js
 const MAX_RECORD_SECONDS = 10;
+const SUPPORTED_AUDIO_TYPES = ['audio/ogg', 'audio/mp3', 'audio/wav']; // Add supported audio types
 let currentMode = 'voice';
 
 // Mode switching
@@ -45,7 +46,9 @@ document.getElementById('textConvertBtn').addEventListener('click', () => {
 // Audio upload handling
 document.getElementById('audioUpload').addEventListener('change', async (e) => {
     const file = e.target.files[0];
-    if(!file) return;
+    if(!file) return updateStatus('No file selected!', 'error');
+    if(!SUPPORTED_AUDIO_TYPES.includes(file.type)) return updateStatus('Unsupported audio type!', 'error');
+    if(file.size > 10 * 1024 * 1024) return updateStatus('File too large! Max 10MB', 'error'); // Example size limit
 
     try {
         const audioBuffer = await validateAndProcessAudio(file);
@@ -96,23 +99,58 @@ scanner.addListener('scan', (content) => {
         if(content.startsWith('text:')) {
             const text = content.slice(5);
             synthesizeSpeech(text);
-        } else {
+        } else if(content.startsWith('audio:')) {
             const audio = new Audio(`data:audio/ogg;base64,${content}`);
             audio.controls = true;
             document.getElementById('scannedAudio').innerHTML = '';
             document.getElementById('scannedAudio').appendChild(audio);
+        } else {
+            throw new Error('Unsupported QR data format');
         }
         updateStatus('Content decoded successfully!', 'success');
     } catch (err) {
-        updateStatus('Decoding failed', 'error');
+        updateStatus(err.message, 'error');
     }
 });
 
 function synthesizeSpeech(text) {
     if('speechSynthesis' in window) {
+        const maleVoiceSelect = document.getElementById('maleVoiceSelect');
+        const femaleVoiceSelect = document.getElementById('femaleVoiceSelect');
+
+        const selectedVoiceName = maleVoiceSelect.value || femaleVoiceSelect.value;
         const utterance = new SpeechSynthesisUtterance(text);
+
+        const voices = speechSynthesis.getVoices();
+        utterance.voice = voices.find((voice) => voice.name === selectedVoiceName);
+
         speechSynthesis.speak(utterance);
     } else {
         updateStatus('Text-to-speech not supported in this browser', 'error');
     }
+}
+
+// Populate voice list on page load
+window.onload = populateVoiceList;
+
+function populateVoiceList() {
+    if (typeof speechSynthesis === 'undefined') {
+        return;
+    }
+
+    const voices = speechSynthesis.getVoices();
+    const maleVoiceSelect = document.getElementById('maleVoiceSelect');
+    const femaleVoiceSelect = document.getElementById('femaleVoiceSelect');
+
+    voices.forEach((voice) => {
+        const option = document.createElement('option');
+        option.textContent = `${voice.name} (${voice.lang})`;
+        option.setAttribute('data-name', voice.name);
+
+        if (voice.name.includes('Male')) {
+            maleVoiceSelect.appendChild(option);
+        } else if (voice.name.includes('Female')) {
+            femaleVoiceSelect.appendChild(option);
+        }
+    });
 }
