@@ -245,3 +245,54 @@ textarea {
     border: 2px solid #ddd;
     background: #000;
 }
+
+/* Face Recognition Styling */
+#loginSection {
+    text-align: center;
+    margin-bottom: 30px;
+}
+
+#loginBtn {
+    background-color: #007bff;
+    padding: 10px 20px;
+    color: white;
+    font-size: 1.1rem;
+    border: none;
+    cursor: pointer;
+}
+
+#faceLoginMessage {
+    margin-top: 20px;
+    font-size: 1rem;
+    color: #ff0000;
+}
+
+#cameraPreview {
+    display: none;
+    margin-top: 20px;
+    text-align: center;
+}
+
+#cameraFeed {
+    width: 100%;
+    max-width: 400px;
+    border-radius: 10px;
+    border: 2px solid #ddd;
+    background: #000;
+}
+
+/* Face Recognition Loading and Status */
+#loginSection .loading {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: rgba(0, 0, 0, 0.8);
+    color: white;
+    padding: 20px;
+    border-radius: 5px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    z-index: 1000;
+}
