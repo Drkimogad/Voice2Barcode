@@ -1,0 +1,56 @@
+/* styles.css */
+body {
+    font-family: Arial, sans-serif;
+    margin: 0;
+    padding: 20px;
+    background-color: #f0f2f5;
+}
+
+.container {
+    max-width: 800px;
+    margin: 0 auto;
+}
+
+.section {
+    background: white;
+    padding: 20px;
+    margin: 20px 0;
+    border-radius: 10px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.btn {
+    padding: 10px 20px;
+    margin: 5px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 16px;
+    transition: opacity 0.3s;
+}
+
+.record { background: #ff4444; color: white; }
+.stop { background: #666; color: white; }
+.download { background: #4CAF50; color: white; }
+.scan { background: #2196F3; color: white; }
+
+#qrcode {
+    margin: 20px 0;
+    text-align: center;
+}
+
+#status {
+    margin-top: 20px;
+    padding: 10px;
+    border-radius: 5px;
+}
+
+.error {
+    background: #ffebee;
+    color: #c62828;
+}
+
+.success {
+    background: #e8f5e9;
+    color: #2e7d32;
+}
