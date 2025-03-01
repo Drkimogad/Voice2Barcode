@@ -8,6 +8,8 @@
     <!-- Add Opus and Crypto CDNs -->
     <script src="https://cdn.jsdelivr.net/npm/libopus@0.3.0/libopus.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
+    <!-- Face Recognition Library (Face-api.js) -->
+    <script src="https://cdn.jsdelivr.net/npm/face-api.js"></script>
 </head>
 <body>
     <!-- Loading Indicator -->
@@ -18,7 +20,13 @@
 
     <div class="container">
         <h1>Voice to Barcode Converter</h1>
-        
+
+        <!-- Login Section -->
+        <div id="loginSection" class="section">
+            <button id="loginBtn" class="btn">Login with Face Recognition</button>
+            <div id="faceLoginMessage" style="display: none;"></div>
+        </div>
+
         <!-- Mode Switching Section -->
         <div class="input-switch">
             <button class="btn mode-btn active" data-mode="voice">Voice</button>
@@ -96,8 +104,15 @@
     <!-- Libraries -->
     <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
     <script src="https://cdn.rawgit.com/schmich/instascan-builds/master/instascan.min.js"></script>
-    <!-- Add to the Libraries Section -->
     <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
-    <script src="script.js"></script>
+
+    <!-- Your Custom JS Files -->
+    <script src="js/audioRecordingCompressionQR.js"></script>
+    <script src="js/uploadQRCodeGeneration.js"></script>
+    <script src="js/modeSwitch.js"></script>
+    <script src="js/securityHandler.js"></script>
+    <script src="js/tts.js"></script>
+    <script src="js/qrScanning.js"></script>
+    <script src="js/login.js"></script>
 </body>
 </html>
