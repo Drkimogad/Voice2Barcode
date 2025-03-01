@@ -5,8 +5,17 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Voice2Barcode</title>
     <link rel="stylesheet" href="styles.css">
+    <!-- Add Opus and Crypto CDNs -->
+    <script src="https://cdn.jsdelivr.net/npm/libopus@0.3.0/libopus.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
 </head>
 <body>
+    <!-- Loading Indicator -->
+    <div id="loading" class="loading" style="display: none;">
+        <div class="spinner"></div>
+        <span class="loading-text">Processing...</span>
+    </div>
+
     <div class="container">
         <h1>Voice to Barcode Converter</h1>
         
@@ -28,12 +37,16 @@
         <div id="textInput" class="section" style="display: none;">
             <textarea id="textToConvert" placeholder="Enter text (max 200 characters)"></textarea>
             <button id="textConvertBtn" class="btn">Generate from Text</button>
-            <select id="maleVoiceSelect">
-                <option value="">Select a Male Voice</option>
-            </select>
-            <select id="femaleVoiceSelect">
-                <option value="">Select a Female Voice</option>
-            </select>
+            
+            <!-- Voice Selection -->
+            <div class="voice-selection">
+                <select id="maleVoiceSelect" class="voice-select">
+                    <option value="">Select a Male Voice</option>
+                </select>
+                <select id="femaleVoiceSelect" class="voice-select">
+                    <option value="">Select a Female Voice</option>
+                </select>
+            </div>
         </div>
 
         <!-- Audio Upload Section -->
