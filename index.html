@@ -1,4 +1,3 @@
-<!-- index.html -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -11,31 +10,39 @@
     <div class="container">
         <h1>Voice to Barcode Converter</h1>
         
+        <!-- Mode Switching Section -->
+        <div class="input-switch">
+            <button class="btn mode-btn active" data-mode="voice">Voice</button>
+            <button class="btn mode-btn" data-mode="text">Text</button>
+            <button class="btn mode-btn" data-mode="upload">Upload</button>
+        </div>
+
         <!-- Recording Section -->
-        <div class="section">
+        <div id="voiceInput" class="section" style="display: block;">
             <button id="recordBtn" class="btn record">🎤 Record</button>
             <button id="stopBtn" class="btn stop" disabled>⏹ Stop</button>
             <div id="audioContainer"></div>
         </div>
-        <!-- Add to index.html -->
-<div class="input-switch">
-    <button class="btn mode-btn active" data-mode="voice">Voice</button>
-    <button class="mode-btn" data-mode="text">Text</button>
-    <button class="mode-btn" data-mode="upload">Upload</button>
-</div>
 
-<!-- Add to recording section -->
-<div id="textInput" class="section" style="display: none;">
-    <textarea id="textToConvert" placeholder="Enter text (max 200 characters)"></textarea>
-    <button id="textConvertBtn" class="btn">Generate from Text</button>
-</div>
+        <!-- Text Input Section -->
+        <div id="textInput" class="section" style="display: none;">
+            <textarea id="textToConvert" placeholder="Enter text (max 200 characters)"></textarea>
+            <button id="textConvertBtn" class="btn">Generate from Text</button>
+            <select id="maleVoiceSelect">
+                <option value="">Select a Male Voice</option>
+            </select>
+            <select id="femaleVoiceSelect">
+                <option value="">Select a Female Voice</option>
+            </select>
+        </div>
 
-<div id="uploadSection" class="section" style="display: none;">
-    <input type="file" id="audioUpload" accept="audio/*">
-    <label for="audioUpload" class="btn">Choose Audio File</label>
-</div>
+        <!-- Audio Upload Section -->
+        <div id="uploadSection" class="section" style="display: none;">
+            <input type="file" id="audioUpload" accept="audio/*">
+            <label for="audioUpload" class="btn">Choose Audio File</label>
+        </div>
 
-        <!-- QR Code Display -->
+        <!-- QR Code Display Section -->
         <div class="section">
             <div id="qrcode"></div>
             <button id="downloadBtn" class="btn download" disabled>⬇ Download QR</button>
@@ -49,17 +56,18 @@
 
         <div id="status"></div>
     </div>
-    <!-- Add this just before the closing </body> tag in index.html -->
-<footer class="footer">
-    <div class="container">
-        <p>© 2023 Voice2Barcode. Demo project for educational purposes.</p>
-        <div class="footer-links">
-            <a href="#" class="footer-link">Privacy Policy</a>
-            <a href="#" class="footer-link">Terms of Service</a>
-            <a href="#" class="footer-link">GitHub Repo</a>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <p>© 2023 Voice2Barcode. Demo project for educational purposes.</p>
+            <div class="footer-links">
+                <a href="#" class="footer-link">Privacy Policy</a>
+                <a href="#" class="footer-link">Terms of Service</a>
+                <a href="#" class="footer-link">GitHub Repo</a>
+            </div>
         </div>
-    </div>
-</footer>
+    </footer>
 
     <!-- Libraries -->
     <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
