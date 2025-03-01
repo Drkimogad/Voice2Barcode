@@ -1,0 +1,41 @@
+<!-- index.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Voice2Barcode</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <h1>Voice to Barcode Converter</h1>
+        
+        <!-- Recording Section -->
+        <div class="section">
+            <button id="recordBtn" class="btn record">🎤 Record</button>
+            <button id="stopBtn" class="btn stop" disabled>⏹ Stop</button>
+            <div id="audioContainer"></div>
+        </div>
+
+        <!-- QR Code Display -->
+        <div class="section">
+            <div id="qrcode"></div>
+            <button id="downloadBtn" class="btn download" disabled>⬇ Download QR</button>
+        </div>
+
+        <!-- Scanning Section -->
+        <div class="section">
+            <button id="scanBtn" class="btn scan">🔍 Scan QR to Play</button>
+            <div id="scannedAudio"></div>
+        </div>
+
+        <div id="status"></div>
+    </div>
+
+    <!-- Libraries -->
+    <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
+    <script src="https://cdn.rawgit.com/schmich/instascan-builds/master/instascan.min.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>
