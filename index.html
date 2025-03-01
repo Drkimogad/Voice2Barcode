@@ -17,6 +17,23 @@
             <button id="stopBtn" class="btn stop" disabled>⏹ Stop</button>
             <div id="audioContainer"></div>
         </div>
+        <!-- Add to index.html -->
+<div class="input-switch">
+    <button class="btn mode-btn active" data-mode="voice">Voice</button>
+    <button class="mode-btn" data-mode="text">Text</button>
+    <button class="mode-btn" data-mode="upload">Upload</button>
+</div>
+
+<!-- Add to recording section -->
+<div id="textInput" class="section" style="display: none;">
+    <textarea id="textToConvert" placeholder="Enter text (max 200 characters)"></textarea>
+    <button id="textConvertBtn" class="btn">Generate from Text</button>
+</div>
+
+<div id="uploadSection" class="section" style="display: none;">
+    <input type="file" id="audioUpload" accept="audio/*">
+    <label for="audioUpload" class="btn">Choose Audio File</label>
+</div>
 
         <!-- QR Code Display -->
         <div class="section">
