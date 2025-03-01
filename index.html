@@ -48,11 +48,17 @@
                 </select>
             </div>
         </div>
+        <!-- Add to index.html -->
+        <div id="scannedMessage" class="section" style="display: none;">
+             <p>Scanned Message: <span id="messageText"></span></p>
+        </div>
 
         <!-- Audio Upload Section -->
         <div id="uploadSection" class="section" style="display: none;">
             <input type="file" id="audioUpload" accept="audio/*">
             <label for="audioUpload" class="btn">Choose Audio File</label>
+            <input type="file" id="qrUpload" accept="image/png, image/jpeg" style="display: none;">
+            <label for="qrUpload" class="btn">Upload QR Code</label>
         </div>
 
         <!-- QR Code Display Section -->
