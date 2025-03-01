@@ -1,7 +1,11 @@
 // Updated script.js
 const MAX_RECORD_SECONDS = 10;
-const SUPPORTED_AUDIO_TYPES = ['audio/ogg', 'audio/mp3', 'audio/wav']; // Add supported audio types
+const SUPPORTED_AUDIO_TYPES = ['audio/ogg', 'audio/mp3', 'audio/wav'];
+const ENCRYPTION_KEY = 'user-secure-key-123'; // Replace with dynamic key in production
 let currentMode = 'voice';
+let mediaRecorder;
+let audioChunks = [];
+let audioData = null;
 
 // Mode switching
 document.querySelectorAll('.mode-btn').forEach(btn => {
@@ -10,79 +14,78 @@ document.querySelectorAll('.mode-btn').forEach(btn => {
         btn.classList.add('active');
         currentMode = btn.dataset.mode;
         
-        document.querySelectorAll('#textInput, #uploadSection').forEach(el => {
+        document.querySelectorAll('#voiceInput, #textInput, #uploadSection').forEach(el => {
             el.style.display = 'none';
         });
         
-        if(currentMode === 'text') document.getElementById('textInput').style.display = 'block';
-        if(currentMode === 'upload') document.getElementById('uploadSection').style.display = 'block';
+        if (currentMode === 'voice') document.getElementById('voiceInput').style.display = 'block';
+        if (currentMode === 'text') document.getElementById('textInput').style.display = 'block';
+        if (currentMode === 'upload') document.getElementById('uploadSection').style.display = 'block';
     });
 });
 
-// Auto-stop recording
-let recordingTimer;
-mediaRecorder.onstart = () => {
-    recordingTimer = setTimeout(() => {
-        mediaRecorder.stop();
-        updateStatus(`Auto-stopped after ${MAX_RECORD_SECONDS} seconds`, 'success');
-    }, MAX_RECORD_SECONDS * 1000);
-};
+// Audio Recording
+document.getElementById('recordBtn').addEventListener('click', async () => {
+    try {
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        mediaRecorder = new MediaRecorder(stream);
+        
+        mediaRecorder.ondataavailable = (e) => {
+            audioChunks.push(e.data);
+        };
 
-mediaRecorder.onstop = () => {
-    clearTimeout(recordingTimer);
-    // ... existing onstop logic ...
-};
+        mediaRecorder.onstop = async () => {
+            audioData = new Blob(audioChunks, { type: 'audio/webm' });
+            const compressedAudio = await compressAudio(audioData);
+            const encryptedData = SecurityHandler.encrypt(`audio:${compressedAudio}`);
+            generateQRFromData(encryptedData);
+            updateStatus('Recording stopped. QR generated!', 'success');
+        };
+
+        mediaRecorder.start();
+        document.getElementById('recordBtn').disabled = true;
+        document.getElementById('stopBtn').disabled = false;
+        updateStatus('Recording...', 'success');
+    } catch (err) {
+        updateStatus('Microphone access denied!', 'error');
+    }
+});
+
+document.getElementById('stopBtn').addEventListener('click', () => {
+    mediaRecorder.stop();
+    document.getElementById('recordBtn').disabled = false;
+    document.getElementById('stopBtn').disabled = true;
+});
 
 // Text to QR
 document.getElementById('textConvertBtn').addEventListener('click', () => {
     const text = document.getElementById('textToConvert').value.slice(0, 200);
-    if(text.length < 1) return updateStatus('Enter some text first!', 'error');
+    if (text.length < 1) return updateStatus('Enter some text first!', 'error');
     
-    const qrData = `text:${text}`;
-    generateQRFromData(qrData);
+    const encryptedData = SecurityHandler.encrypt(`text:${text}`);
+    generateQRFromData(encryptedData);
     updateStatus('Text QR generated!', 'success');
 });
 
-// Audio upload handling
+// Audio Upload Handling
 document.getElementById('audioUpload').addEventListener('change', async (e) => {
     const file = e.target.files[0];
-    if(!file) return updateStatus('No file selected!', 'error');
-    if(!SUPPORTED_AUDIO_TYPES.includes(file.type)) return updateStatus('Unsupported audio type!', 'error');
-    if(file.size > 10 * 1024 * 1024) return updateStatus('File too large! Max 10MB', 'error'); // Example size limit
+    if (!file) return updateStatus('No file selected!', 'error');
+    if (!SUPPORTED_AUDIO_TYPES.includes(file.type)) return updateStatus('Unsupported audio type!', 'error');
+    if (file.size > 10 * 1024 * 1024) return updateStatus('File too large! Max 10MB', 'error');
 
     try {
         const audioBuffer = await validateAndProcessAudio(file);
-        const qrData = await compressAudio(audioBuffer);
-        generateQRFromData(qrData);
+        const compressedAudio = await compressAudio(audioBuffer);
+        const encryptedData = SecurityHandler.encrypt(`audio:${compressedAudio}`);
+        generateQRFromData(encryptedData);
         updateStatus('Audio processed and QR generated!', 'success');
     } catch (err) {
         updateStatus(err.message, 'error');
     }
 });
 
-async function validateAndProcessAudio(file) {
-    // Check duration
-    const audioContext = new AudioContext();
-    const arrayBuffer = await file.arrayBuffer();
-    const audioBuffer = await audioContext.decodeAudioData(arrayBuffer);
-    
-    if(audioBuffer.duration > MAX_RECORD_SECONDS) {
-        throw new Error(`Audio too long! Max ${MAX_RECORD_SECONDS} seconds`);
-    }
-    
-    return audioBuffer;
-}
-
-async function compressAudio(audioBuffer) {
-    // Convert to compressed format (simplified example)
-    const audioBlob = new Blob([audioBuffer], {type: 'audio/ogg; codecs=opus'});
-    return new Promise((resolve) => {
-        const reader = new FileReader();
-        reader.onloadend = () => resolve(reader.result.split(',')[1]);
-        reader.readAsDataURL(audioBlob);
-    });
-}
-
+// QR Code Generation
 function generateQRFromData(data) {
     document.getElementById('qrcode').innerHTML = '';
     new QRCode(document.getElementById('qrcode'), {
@@ -90,17 +93,19 @@ function generateQRFromData(data) {
         width: 200,
         height: 200
     });
-    downloadBtn.disabled = false;
+    document.getElementById('downloadBtn').disabled = false;
 }
 
-// Updated QR scanning
+// QR Scanning
+const scanner = new Instascan.Scanner({ video: document.createElement('video') });
 scanner.addListener('scan', (content) => {
     try {
-        if(content.startsWith('text:')) {
-            const text = content.slice(5);
+        const decrypted = SecurityHandler.decrypt(content);
+        if (decrypted.startsWith('text:')) {
+            const text = decrypted.slice(5);
             synthesizeSpeech(text);
-        } else if(content.startsWith('audio:')) {
-            const audio = new Audio(`data:audio/ogg;base64,${content}`);
+        } else if (decrypted.startsWith('audio:')) {
+            const audio = new Audio(`data:audio/ogg;base64,${decrypted.slice(6)}`);
             audio.controls = true;
             document.getElementById('scannedAudio').innerHTML = '';
             document.getElementById('scannedAudio').appendChild(audio);
@@ -109,20 +114,69 @@ scanner.addListener('scan', (content) => {
         }
         updateStatus('Content decoded successfully!', 'success');
     } catch (err) {
-        updateStatus(err.message, 'error');
+        updateStatus('Decoding failed: ' + err.message, 'error');
     }
 });
 
+document.getElementById('scanBtn').addEventListener('click', () => {
+    Instascan.Camera.getCameras().then(cameras => {
+        if (cameras.length > 0) {
+            scanner.start(cameras[0]);
+            updateStatus('Scanning QR Code...', 'success');
+        } else {
+            updateStatus('No cameras found!', 'error');
+        }
+    });
+});
+
+// Utility Functions
+async function validateAndProcessAudio(file) {
+    const audioContext = new AudioContext();
+    const arrayBuffer = await file.arrayBuffer();
+    const audioBuffer = await audioContext.decodeAudioData(arrayBuffer);
+    
+    if (audioBuffer.duration > MAX_RECORD_SECONDS) {
+        throw new Error(`Audio too long! Max ${MAX_RECORD_SECONDS} seconds`);
+    }
+    
+    return audioBuffer;
+}
+
+async function compressAudio(audioBlob) {
+    const encoder = new OpusEncoder();
+    const arrayBuffer = await audioBlob.arrayBuffer();
+    const compressed = await encoder.encode(arrayBuffer);
+    return btoa(String.fromCharCode(...new Uint8Array(compressed)));
+}
+
+function updateStatus(message, type) {
+    const statusDiv = document.getElementById('status');
+    statusDiv.textContent = message;
+    statusDiv.className = type;
+}
+
+// Security Handler
+class SecurityHandler {
+    static encrypt(data) {
+        return CryptoJS.AES.encrypt(data, ENCRYPTION_KEY).toString();
+    }
+
+    static decrypt(ciphertext) {
+        const bytes = CryptoJS.AES.decrypt(ciphertext, ENCRYPTION_KEY);
+        return bytes.toString(CryptoJS.enc.Utf8);
+    }
+}
+
+// TTS Functionality
 function synthesizeSpeech(text) {
-    if('speechSynthesis' in window) {
+    if ('speechSynthesis' in window) {
         const maleVoiceSelect = document.getElementById('maleVoiceSelect');
         const femaleVoiceSelect = document.getElementById('femaleVoiceSelect');
-
         const selectedVoiceName = maleVoiceSelect.value || femaleVoiceSelect.value;
-        const utterance = new SpeechSynthesisUtterance(text);
 
+        const utterance = new SpeechSynthesisUtterance(text);
         const voices = speechSynthesis.getVoices();
-        utterance.voice = voices.find((voice) => voice.name === selectedVoiceName);
+        utterance.voice = voices.find(voice => voice.name === selectedVoiceName);
 
         speechSynthesis.speak(utterance);
     } else {
@@ -130,22 +184,17 @@ function synthesizeSpeech(text) {
     }
 }
 
-// Populate voice list on page load
-window.onload = populateVoiceList;
-
+// Populate Voice List
+window.speechSynthesis.onvoiceschanged = populateVoiceList;
 function populateVoiceList() {
-    if (typeof speechSynthesis === 'undefined') {
-        return;
-    }
-
     const voices = speechSynthesis.getVoices();
     const maleVoiceSelect = document.getElementById('maleVoiceSelect');
     const femaleVoiceSelect = document.getElementById('femaleVoiceSelect');
 
-    voices.forEach((voice) => {
+    voices.forEach(voice => {
         const option = document.createElement('option');
+        option.value = voice.name;
         option.textContent = `${voice.name} (${voice.lang})`;
-        option.setAttribute('data-name', voice.name);
 
         if (voice.name.includes('Male')) {
             maleVoiceSelect.appendChild(option);
