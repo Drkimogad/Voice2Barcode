@@ -5,6 +5,7 @@ let currentMode = 'voice';
 let mediaRecorder;
 let audioChunks = [];
 let audioData = null;
+let scanner;
 
 // Mode switching
 document.querySelectorAll('.mode-btn').forEach(btn => {
@@ -39,6 +40,7 @@ document.getElementById('recordBtn').addEventListener('click', async () => {
             const encryptedData = SecurityHandler.encrypt(`audio:${compressedAudio}`);
             generateQRFromData(encryptedData);
             updateStatus('Recording stopped. QR generated!', 'success');
+            audioChunks = []; // Reset chunks for next recording
         };
 
         mediaRecorder.start();
@@ -59,51 +61,18 @@ document.getElementById('recordBtn').addEventListener('click', async () => {
 });
 
 document.getElementById('stopBtn').addEventListener('click', () => {
-    mediaRecorder.stop();
-    document.getElementById('recordBtn').disabled = false;
-    document.getElementById('stopBtn').disabled = true;
-});
-
-// Text to QR
-document.getElementById('textConvertBtn').addEventListener('click', () => {
-    const text = document.getElementById('textToConvert').value.slice(0, 200);
-    if (text.length < 1) return updateStatus('Enter some text first!', 'error');
-    
-    const encryptedData = SecurityHandler.encrypt(`text:${text}`);
-    generateQRFromData(encryptedData);
-    updateStatus('Text QR generated!', 'success');
-});
-
-// Upload Handling
-document.getElementById('audioUpload').addEventListener('change', async (e) => {
-    const file = e.target.files[0];
-    if (!file) return updateStatus('No file selected!', 'error');
-
-    try {
-        if (file.type.startsWith('audio/')) {
-            if (!SUPPORTED_AUDIO_TYPES.includes(file.type)) return updateStatus('Unsupported audio type!', 'error');
-            if (file.size > 10 * 1024 * 1024) return updateStatus('File too large! Max 10MB', 'error');
-
-            const audioBuffer = await validateAndProcessAudio(file);
-            const compressedAudio = await compressAudio(audioBuffer);
-            const encryptedData = SecurityHandler.encrypt(`audio:${compressedAudio}`);
-            generateQRFromData(encryptedData);
-            updateStatus('Audio processed and QR generated!', 'success');
-        } else if (file.type === 'image/png' || file.type === 'image/jpeg') {
-            const qrData = await decodeQRFromImage(file);
-            handleScannedQR(qrData);
-        } else {
-            throw new Error('Unsupported file type');
-        }
-    } catch (err) {
-        updateStatus(err.message, 'error');
+    if (mediaRecorder && mediaRecorder.state === 'recording') {
+        mediaRecorder.stop();
+        document.getElementById('recordBtn').disabled = false;
+        document.getElementById('stopBtn').disabled = true;
     }
 });
 
 // QR Code Generation
 function generateQRFromData(data) {
-    document.getElementById('qrcode').innerHTML = '';
-    new QRCode(document.getElementById('qrcode'), {
+    const qrcodeDiv = document.getElementById('qrcode');
+    qrcodeDiv.innerHTML = ''; // Clear previous QR code
+    new QRCode(qrcodeDiv, {
         text: data,
         width: 200,
         height: 200
@@ -111,21 +80,37 @@ function generateQRFromData(data) {
     document.getElementById('downloadBtn').disabled = false;
 }
 
-// QR Scanning
-const scanner = new Instascan.Scanner({ video: document.createElement('video') });
-scanner.addListener('scan', (content) => {
-    handleScannedQR(content);
+// Download QR Code
+document.getElementById('downloadBtn').addEventListener('click', () => {
+    const qrcodeCanvas = document.querySelector('#qrcode canvas');
+    if (qrcodeCanvas) {
+        const link = document.createElement('a');
+        link.href = qrcodeCanvas.toDataURL('image/png');
+        link.download = 'qrcode.png';
+        link.click();
+        updateStatus('QR Code downloaded!', 'success');
+    } else {
+        updateStatus('No QR Code to download!', 'error');
+    }
 });
 
-document.getElementById('scanBtn').addEventListener('click', () => {
-    Instascan.Camera.getCameras().then(cameras => {
+// QR Scanning
+document.getElementById('scanBtn').addEventListener('click', async () => {
+    try {
+        const cameras = await Instascan.Camera.getCameras();
         if (cameras.length > 0) {
+            scanner = new Instascan.Scanner({ video: document.getElementById('cameraPreview') });
+            scanner.addListener('scan', (content) => {
+                handleScannedQR(content);
+            });
             scanner.start(cameras[0]);
             updateStatus('Scanning QR Code...', 'success');
         } else {
             updateStatus('No cameras found!', 'error');
         }
-    });
+    } catch (err) {
+        updateStatus('Camera access denied!', 'error');
+    }
 });
 
 // Handle Scanned QR
@@ -152,45 +137,11 @@ function handleScannedQR(content) {
 }
 
 // Utility Functions
-async function validateAndProcessAudio(file) {
-    const audioContext = new AudioContext();
-    const arrayBuffer = await file.arrayBuffer();
-    const audioBuffer = await audioContext.decodeAudioData(arrayBuffer);
-    
-    if (audioBuffer.duration > MAX_RECORD_SECONDS) {
-        throw new Error(`Audio too long! Max ${MAX_RECORD_SECONDS} seconds`);
-    }
-    
-    return audioBuffer;
-}
-
 async function compressAudio(audioBlob) {
     const encoder = new OpusEncoder();
     const arrayBuffer = await audioBlob.arrayBuffer();
     const compressed = await encoder.encode(arrayBuffer);
     return btoa(String.fromCharCode(...new Uint8Array(compressed)));
-}
-
-async function decodeQRFromImage(file) {
-    return new Promise((resolve, reject) => {
-        const img = new Image();
-        img.src = URL.createObjectURL(file);
-        img.onload = () => {
-            const canvas = document.createElement('canvas');
-            const ctx = canvas.getContext('2d');
-            canvas.width = img.width;
-            canvas.height = img.height;
-            ctx.drawImage(img, 0, 0);
-            const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-            const code = jsQR(imageData.data, imageData.width, imageData.height);
-            if (code) {
-                resolve(code.data);
-            } else {
-                reject(new Error('No QR code found in image'));
-            }
-        };
-        img.onerror = () => reject(new Error('Failed to load image'));
-    });
 }
 
 function updateStatus(message, type) {
@@ -226,24 +177,4 @@ function synthesizeSpeech(text) {
     } else {
         updateStatus('Text-to-speech not supported in this browser', 'error');
     }
-}
-
-// Populate Voice List
-window.speechSynthesis.onvoiceschanged = populateVoiceList;
-function populateVoiceList() {
-    const voices = speechSynthesis.getVoices();
-    const maleVoiceSelect = document.getElementById('maleVoiceSelect');
-    const femaleVoiceSelect = document.getElementById('femaleVoiceSelect');
-
-    voices.forEach(voice => {
-        const option = document.createElement('option');
-        option.value = voice.name;
-        option.textContent = `${voice.name} (${voice.lang})`;
-
-        if (voice.name.includes('Male')) {
-            maleVoiceSelect.appendChild(option);
-        } else if (voice.name.includes('Female')) {
-            femaleVoiceSelect.appendChild(option);
-        }
-    });
 }
