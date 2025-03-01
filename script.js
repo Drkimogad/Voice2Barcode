@@ -68,6 +68,16 @@ document.getElementById('stopBtn').addEventListener('click', () => {
     }
 });
 
+// Text to QR
+document.getElementById('textConvertBtn').addEventListener('click', () => {
+    const text = document.getElementById('textToConvert').value.slice(0, 200);
+    if (text.length < 1) return updateStatus('Enter some text first!', 'error');
+    
+    const encryptedData = SecurityHandler.encrypt(`text:${text}`);
+    generateQRFromData(encryptedData);
+    updateStatus('Text QR generated!', 'success');
+});
+
 // QR Code Generation
 function generateQRFromData(data) {
     const qrcodeDiv = document.getElementById('qrcode');
@@ -99,11 +109,12 @@ document.getElementById('scanBtn').addEventListener('click', async () => {
     try {
         const cameras = await Instascan.Camera.getCameras();
         if (cameras.length > 0) {
-            scanner = new Instascan.Scanner({ video: document.getElementById('cameraPreview') });
+            scanner = new Instascan.Scanner({ video: document.getElementById('cameraFeed') });
             scanner.addListener('scan', (content) => {
                 handleScannedQR(content);
             });
             scanner.start(cameras[0]);
+            document.getElementById('cameraPreview').style.display = 'block';
             updateStatus('Scanning QR Code...', 'success');
         } else {
             updateStatus('No cameras found!', 'error');
@@ -119,14 +130,16 @@ function handleScannedQR(content) {
         const decrypted = SecurityHandler.decrypt(content);
         if (decrypted.startsWith('text:')) {
             const text = decrypted.slice(5);
-            document.getElementById('scannedMessage').textContent = `Message: ${text}`;
+            document.getElementById('scannedMessage').style.display = 'block';
+            document.getElementById('messageText').textContent = text;
             synthesizeSpeech(text);
         } else if (decrypted.startsWith('audio:')) {
             const audio = new Audio(`data:audio/ogg;base64,${decrypted.slice(6)}`);
             audio.controls = true;
             document.getElementById('scannedAudio').innerHTML = '';
             document.getElementById('scannedAudio').appendChild(audio);
-            document.getElementById('scannedMessage').textContent = 'Audio decoded successfully!';
+            document.getElementById('scannedMessage').style.display = 'block';
+            document.getElementById('messageText').textContent = 'Audio decoded successfully!';
         } else {
             throw new Error('Unsupported QR data format');
         }
