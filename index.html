@@ -48,9 +48,10 @@
                 </select>
             </div>
         </div>
-        <!-- Add to index.html -->
+
+        <!-- Scanned Message Section -->
         <div id="scannedMessage" class="section" style="display: none;">
-             <p>Scanned Message: <span id="messageText"></span></p>
+            <p>Scanned Message: <span id="messageText"></span></p>
         </div>
 
         <!-- Audio Upload Section -->
@@ -70,6 +71,9 @@
         <!-- Scanning Section -->
         <div class="section">
             <button id="scanBtn" class="btn scan">🔍 Scan QR to Play</button>
+            <div id="cameraPreview" style="display: none;">
+                <video id="cameraFeed" autoplay playsinline></video>
+            </div>
             <div id="scannedAudio"></div>
         </div>
 
@@ -79,7 +83,7 @@
     <!-- Footer -->
     <footer class="footer">
         <div class="container">
-            <p>© 2023 Voice2Barcode. Demo project for educational purposes.</p>
+            <p>© 2024 Voice2Barcode. All rights reserved.</p>
             <div class="footer-links">
                 <a href="#" class="footer-link">Privacy Policy</a>
                 <a href="#" class="footer-link">Terms of Service</a>
