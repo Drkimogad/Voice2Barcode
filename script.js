@@ -6,6 +6,8 @@ let mediaRecorder;
 let audioChunks = [];
 let audioData = null;
 let scanner;
+let currentCameraIndex = 0;
+let cameras = [];
 
 // Mode switching
 document.querySelectorAll('.mode-btn').forEach(btn => {
@@ -107,14 +109,15 @@ document.getElementById('downloadBtn').addEventListener('click', () => {
 // QR Scanning
 document.getElementById('scanBtn').addEventListener('click', async () => {
     try {
-        const cameras = await Instascan.Camera.getCameras();
+        cameras = await Instascan.Camera.getCameras();
         if (cameras.length > 0) {
             scanner = new Instascan.Scanner({ video: document.getElementById('cameraFeed') });
             scanner.addListener('scan', (content) => {
                 handleScannedQR(content);
             });
-            scanner.start(cameras[0]);
+            scanner.start(cameras[currentCameraIndex]);
             document.getElementById('cameraPreview').style.display = 'block';
+            document.getElementById('switchCameraBtn').style.display = 'inline-block';
             updateStatus('Scanning QR Code...', 'success');
         } else {
             updateStatus('No cameras found!', 'error');
@@ -123,6 +126,54 @@ document.getElementById('scanBtn').addEventListener('click', async () => {
         updateStatus('Camera access denied!', 'error');
     }
 });
+
+// Switch Camera
+document.getElementById('switchCameraBtn').addEventListener('click', () => {
+    if (cameras.length > 1) {
+        currentCameraIndex = (currentCameraIndex + 1) % cameras.length;
+        scanner.start(cameras[currentCameraIndex]);
+        updateStatus(`Switched to ${cameras[currentCameraIndex].name}`, 'success');
+    }
+});
+
+// QR Code Upload Handling
+document.getElementById('qrUpload').addEventListener('change', async (e) => {
+    const file = e.target.files[0];
+    if (!file) return updateStatus('No file selected!', 'error');
+
+    try {
+        const qrData = await decodeQRFromImage(file);
+        handleScannedQR(qrData);
+        updateStatus('QR Code uploaded and decoded!', 'success');
+    } catch (err) {
+        updateStatus('Failed to decode QR code: ' + err.message, 'error');
+    }
+});
+
+// Decode QR Code from Image
+async function decodeQRFromImage(file) {
+    return new Promise((resolve, reject) => {
+        const img = new Image();
+        img.src = URL.createObjectURL(file);
+        img.onload = () => {
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+            canvas.width = img.width;
+            canvas.height = img.height;
+            ctx.drawImage(img, 0, 0);
+
+            const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+            const code = jsQR(imageData.data, imageData.width, imageData.height);
+
+            if (code) {
+                resolve(code.data);
+            } else {
+                reject(new Error('No QR code found in image'));
+            }
+        };
+        img.onerror = () => reject(new Error('Failed to load image'));
+    });
+}
 
 // Handle Scanned QR
 function handleScannedQR(content) {
