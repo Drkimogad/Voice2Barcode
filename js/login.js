@@ -8,9 +8,9 @@ document.getElementById('loginBtn').addEventListener('click', async () => {
     faceLoginMessage.textContent = 'Initializing face recognition...';
 
     try {
-        await faceapi.nets.ssdMobilenetv1.loadFromUri('/models'); // Load model
-        await faceapi.nets.faceLandmark68Net.loadFromUri('/models'); 
-        await faceapi.nets.faceRecognitionNet.loadFromUri('/models');
+        await faceapi.nets.ssdMobilenetv1.loadFromUri('/https://drkimogad.github.io/Voice2Barcode/models'); // Load model
+        await faceapi.nets.faceLandmark68Net.loadFromUri('/https://drkimogad.github.io/Voice2Barcode/models'); 
+        await faceapi.nets.faceRecognitionNet.loadFromUri('/https://drkimogad.github.io/Voice2Barcode/models');
 
         // Access the camera and start the video stream
         navigator.mediaDevices.getUserMedia({ video: {} })
