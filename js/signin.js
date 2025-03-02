@@ -28,7 +28,7 @@ document.getElementById('loginBtn').addEventListener('click', async () => {
                     if (detections.length > 0) {
                         faceLoginMessage.textContent = 'Face recognized! You are logged in.';
                         setTimeout(() => {
-                            window.location.href = 'dashboard.html'; // Redirect to dashboard
+                            window.location.href = 'Voice2BarcodeDashboard.html'; // Redirect to dashboard
                         }, 1000);
                     }
                 }, 100);
