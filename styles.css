@@ -310,3 +310,24 @@ textarea {
 #logoutBtn:hover {
     background-color: #d32f2f;
 }
+
+/* Flashing Red Dot for Recording Indicator */
+.recording-indicator {
+    width: 20px;
+    height: 20px;
+    background-color: red;
+    border-radius: 50%;
+    position: absolute;
+    top: 20px;
+    left: 20px;
+    animation: flash 0.5s infinite;
+}
+
+@keyframes flash {
+    0% { opacity: 0.5; }
+    50% { opacity: 1; }
+    100% { opacity: 0.5; }
+}
+
+
+
