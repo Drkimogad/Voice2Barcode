@@ -1,84 +1,92 @@
-// TTS Functionality - Generate speech and QR code
-document.getElementById('textConvertBtn').addEventListener('click', function () {
-    const text = document.getElementById('textToConvert').value;
-    const maleVoiceSelect = document.getElementById('maleVoiceSelect');
-    const femaleVoiceSelect = document.getElementById('femaleVoiceSelect');
-    const selectedVoiceName = maleVoiceSelect.value || femaleVoiceSelect.value;
+// tts.js - Text-to-Speech with QR Generation
+let synth = window.speechSynthesis;
+let voices = [];
+let audioContext;
+let mediaRecorder;
+let audioChunks = [];
 
-    // Validate input
-    if (!text || !selectedVoiceName) {
-        updateStatus('Please enter text and select a voice.', 'error');
-        return;
-    }
-
-    // Check if TTS is supported
-    if ('speechSynthesis' in window) {
-        const utterance = new SpeechSynthesisUtterance(text);
-        const voices = speechSynthesis.getVoices();
-
-        // Select the voice based on user choice
-        utterance.voice = voices.find(voice => voice.name === selectedVoiceName);
-
-        // Speak the text
-        speechSynthesis.speak(utterance);
-
-        // Generate QR code containing the speech data
-        generateQRCodeFromTextToSpeech(text, utterance.voice);
-    } else {
-        updateStatus('Text-to-speech not supported in this browser', 'error');
-    }
-});
-
-// Function to generate QR code from text-to-speech
-function generateQRCodeFromTextToSpeech(text, voice) {
-    const qrcodeDiv = document.getElementById('qrcode');
-    qrcodeDiv.innerHTML = ''; // Clear any existing QR code
-
-    // Generate audio data URL from text-to-speech
-    const audioURL = generateAudioData(text, voice);
-
-    // Create the QR code with the audio URL
-    new QRCode(qrcodeDiv, {
-        text: audioURL,
-        width: 200,
-        height: 200
+// Initialize voice list
+function populateVoiceList() {
+    voices = synth.getVoices();
+    const maleSelect = document.getElementById('maleVoiceSelect');
+    const femaleSelect = document.getElementById('femaleVoiceSelect');
+    
+    voices.forEach(voice => {
+        const option = document.createElement('option');
+        option.textContent = `${voice.name} (${voice.lang})`;
+        option.value = voice.name;
+        if (voice.gender === 'male') maleSelect.appendChild(option);
+        else if (voice.gender === 'female') femaleSelect.appendChild(option);
     });
-
-    // Enable the download button
-    document.getElementById('downloadQRCodeBtn').disabled = false;
 }
 
-// Function to generate audio data from the text-to-speech
-function generateAudioData(text, voice) {
-    // Create an Audio context to play the speech
-    const utterance = new SpeechSynthesisUtterance(text);
-    utterance.voice = voice;
-
-    // Create an Audio object and set the source to the audio generated from speech
-    const audio = new Audio();
-    audio.src = URL.createObjectURL(utterance);
-
-    // Return the audio URL to be encoded in the QR code
-    return audio.src;
+// Initialize audio context
+function initAudioContext() {
+    audioContext = new (window.AudioContext || window.webkitAudioContext)();
 }
 
-// Download QR Code and Audio
-document.getElementById('downloadQRCodeBtn').addEventListener('click', function () {
-    const qrcodeCanvas = document.querySelector('#qrcode canvas');
-    if (qrcodeCanvas) {
-        const link = document.createElement('a');
-        link.href = qrcodeCanvas.toDataURL('image/png');
-        link.download = 'qrcode.png';
-        link.click();
-        updateStatus('QR Code downloaded!', 'success');
-    } else {
-        updateStatus('No QR Code to download!', 'error');
+// Generate speech and capture audio
+async function generateSpeech(text, voiceName) {
+    return new Promise((resolve, reject) => {
+        try {
+            const utterance = new SpeechSynthesisUtterance(text);
+            utterance.voice = voices.find(v => v.name === voiceName);
+            
+            // Setup audio recording
+            const dest = audioContext.createMediaStreamDestination();
+            const sourceNode = audioContext.createMediaStreamSource(
+                new MediaStream([utterance.audioStream])
+            );
+            sourceNode.connect(dest);
+            
+            mediaRecorder = new MediaRecorder(dest.stream);
+            audioChunks = [];
+            
+            mediaRecorder.ondataavailable = e => audioChunks.push(e.data);
+            mediaRecorder.onstop = () => {
+                const audioBlob = new Blob(audioChunks, { type: 'audio/wav' });
+                resolve(URL.createObjectURL(audioBlob));
+            };
+            
+            mediaRecorder.start();
+            synth.speak(utterance);
+            
+            utterance.onend = () => {
+                mediaRecorder.stop();
+            };
+        } catch (error) {
+            reject(error);
+        }
+    });
+}
+
+// Initialize TTS functionality
+export function initializeTTS() {
+    if (synth.onvoiceschanged !== undefined) {
+        synth.onvoiceschanged = populateVoiceList;
     }
-});
-
-// Update Status
-function updateStatus(message, type) {
-    const statusDiv = document.getElementById('status');
-    statusDiv.textContent = message;
-    statusDiv.className = type;
+    
+    initAudioContext();
+    
+    document.getElementById('textConvertBtn').addEventListener('click', async () => {
+        const text = document.getElementById('textToConvert').value;
+        const voiceName = document.querySelector('.voice-select').value;
+        
+        if (!text || !voiceName) {
+            updateStatus('Please enter text and select a voice', 'error');
+            return;
+        }
+        
+        try {
+            const audioURL = await generateSpeech(text, voiceName);
+            generateQRFromData(JSON.stringify({
+                text,
+                voice: voiceName,
+                audio: audioURL
+            }));
+            updateStatus('QR generated! Click to download', 'success');
+        } catch (error) {
+            updateStatus(`Error: ${error.message}`, 'error');
+        }
+    });
 }
