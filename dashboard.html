@@ -30,20 +30,20 @@
             <div id="recordingIndicator" style="display: none;" class="recording-indicator"></div>
 
             <!-- Text Input Section -->
-            <div id="textInput" class="section" style="display: none;">
-                <textarea id="textToConvert" placeholder="Enter text (max 200 characters)"></textarea>
-                <button id="textConvertBtn" class="btn">Generate from Text</button>
-
-                <!-- Voice Selection -->
-                <div class="voice-selection">
-                    <select id="maleVoiceSelect" class="voice-select">
-                        <option value="">Select a Male Voice</option>
-                    </select>
-                    <select id="femaleVoiceSelect" class="voice-select">
-                        <option value="">Select a Female Voice</option>
-                    </select>
-                </div>
-            </div>
+           <!-- Text Input Section -->
+<div id="textInput" class="section" style="display: none;">
+    <textarea id="textToConvert" placeholder="Enter text (max 200 characters)" maxlength="200"></textarea>
+    <div class="voice-selection">
+        <select id="maleVoiceSelect" class="voice-select">
+            <option value="">Select Male Voice</option>
+        </select>
+        <select id="femaleVoiceSelect" class="voice-select">
+            <option value="">Select Female Voice</option>
+        </select>
+    </div>
+    <button id="textConvertBtn" class="btn">Generate Audio QR</button>
+    <div id="ttsStatus" class="status"></div>
+</div>
 
             <!-- Audio Upload Section -->
             <input type="file" id="audioUpload" accept="audio/*" style="display: none;">
