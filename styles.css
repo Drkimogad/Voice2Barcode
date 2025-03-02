@@ -365,7 +365,25 @@ textarea {
     height: 20px;
     margin: 10px auto;
 }
+.camera-preview {
+    position: relative;
+    width: 100%;
+    max-width: 600px;
+    margin: 20px auto;
+    border: 2px solid #ddd;
+    border-radius: 8px;
+    overflow: hidden;
+}
 
+#cameraFeed {
+    width: 100%;
+    height: auto;
+    transform: scaleX(-1); /* Mirror effect for front camera */
+}
+
+#downloadBtn {
+    margin-top: 15px;
+}
 @keyframes pulse {
     0% { transform: scale(0.95); opacity: 0.8; }
     50% { transform: scale(1.1); opacity: 1; }
