@@ -24,51 +24,57 @@
             </div>
 
             <!-- Voice Input Section -->
-            <section id="voiceInput" class="input-section" aria-labelledby="voiceHeader">
-                <div class="recording-controls">
-                    <button id="recordBtn" class="btn record" aria-label="Start recording">
-                        🎤 Record
-                    </button>
-                    <button id="stopBtn" class="btn stop" disabled aria-label="Stop recording">
-                        ⏹ Stop
-                    </button>
-                </div>
-                <div id="recordingIndicator" class="recording-indicator" aria-hidden="true"></div>
+            <section data-section="voice" class="mode-section" hidden>
+                <section id="voiceInput" class="input-section" aria-labelledby="voiceHeader">
+                    <div class="recording-controls">
+                        <button id="recordBtn" class="btn record" aria-label="Start recording">
+                            🎤 Record
+                        </button>
+                        <button id="stopBtn" class="btn stop" disabled aria-label="Stop recording">
+                            ⏹ Stop
+                        </button>
+                    </div>
+                    <div id="recordingIndicator" class="recording-indicator" aria-hidden="true"></div>
+                </section>
             </section>
 
             <!-- Text Input Section -->
-            <section id="textInput" class="input-section" aria-labelledby="textHeader" hidden>
-                <textarea id="textToConvert" 
-                          placeholder="Enter text (max 200 characters)"
-                          maxlength="200"
-                          aria-label="Text input for conversion"></textarea>
-                <div class="voice-selection">
-                    <select id="maleVoiceSelect" class="voice-select" aria-label="Select male voice">
-                        <option value="">Select Male Voice</option>
-                    </select>
-                    <select id="femaleVoiceSelect" class="voice-select" aria-label="Select female voice">
-                        <option value="">Select Female Voice</option>
-                    </select>
-                </div>
-                <button id="textConvertBtn" class="btn">Generate QR Code</button>
+            <section data-section="text" class="mode-section" hidden>
+                <section id="textInput" class="input-section" aria-labelledby="textHeader">
+                    <textarea id="textToConvert" 
+                              placeholder="Enter text (max 200 characters)"
+                              maxlength="200"
+                              aria-label="Text input for conversion"></textarea>
+                    <div class="voice-selection">
+                        <select id="maleVoiceSelect" class="voice-select" aria-label="Select male voice">
+                            <option value="">Select Male Voice</option>
+                        </select>
+                        <select id="femaleVoiceSelect" class="voice-select" aria-label="Select female voice">
+                            <option value="">Select Female Voice</option>
+                        </select>
+                    </div>
+                    <button id="textConvertBtn" class="btn">Generate QR Code</button>
+                </section>
             </section>
 
             <!-- Upload Section -->
-            <section id="uploadSection" class="input-section" aria-labelledby="uploadHeader" hidden>
-                <div class="upload-group">
-                    <input type="file" id="audioUpload" accept="audio/*" hidden>
-                    <label for="audioUpload" class="btn" aria-label="Upload audio file">
-                        📂 Upload Audio
-                    </label>
-                    
-                    <input type="file" id="qrUpload" accept="image/*" hidden>
-                    <label for="qrUpload" class="btn" aria-label="Upload QR code">
-                        📄 Upload QR
-                    </label>
-                </div>
+            <section data-section="upload" class="mode-section" hidden>
+                <section id="uploadSection" class="input-section" aria-labelledby="uploadHeader">
+                    <div class="upload-group">
+                        <input type="file" id="audioUpload" accept="audio/*" hidden>
+                        <label for="audioUpload" class="btn" aria-label="Upload audio file">
+                            📂 Upload Audio
+                        </label>
+                        
+                        <input type="file" id="qrUpload" accept="image/*" hidden>
+                        <label for="qrUpload" class="btn" aria-label="Upload QR code">
+                            📄 Upload QR
+                        </label>
+                    </div>
+                </section>
             </section>
 
-            <!-- QR Code Display -->
+            <!-- Common Sections -->
             <section class="qr-section" aria-labelledby="qrHeader">
                 <div id="qrcode" class="qrcode-container"></div>
                 <button id="downloadQRCodeBtn" class="btn" disabled>
@@ -76,7 +82,6 @@
                 </button>
             </section>
 
-            <!-- Scanner Section -->
             <section class="scanner-section" aria-labelledby="scannerHeader">
                 <button id="scanBtn" class="btn scan" aria-label="Start scanning">
                     🔍 Scan QR Code
@@ -89,7 +94,6 @@
                 </button>
             </section>
 
-            <!-- Results Section -->
             <section id="scannedContent" class="results-section" aria-labelledby="resultsHeader" hidden>
                 <h2 id="resultsHeader">Decoded Content</h2>
                 <p id="messageText" class="message-text"></p>
@@ -131,20 +135,17 @@
     <script src="js/QRCodeUploadHandling.js"></script>
     <script src="js/tts.js"></script>
     <script src="js/QRScanning.js"></script>
+    <script src="js/main.js" type="module"></script>
     
     <!-- Initialization -->
     <script type="module">
-        document.addEventListener('DOMContentLoaded', () => {
-            // Authentication check
-            if (!localStorage.getItem('loggedInUser')) {
-                window.location.href = 'signin.html';
-            }
-
-            // Initialize components
-            document.querySelectorAll('.mode-btn')[0].click();
-            document.getElementById('logoutBtn').style.display = 'inline-block';
+       document.addEventListener('DOMContentLoaded', () => {
+        if (!localStorage.getItem('loggedInUser')) {
+       window.location.href = 'signin.html';
+        }
+    initializeApp(); // From main.js
         });
-
+   </script>
         // Logout handler
         document.getElementById('logoutBtn').addEventListener('click', () => {
             localStorage.clear();
