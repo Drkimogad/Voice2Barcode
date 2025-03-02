@@ -28,3 +28,10 @@ class SecurityHandler {
         }
     }
 }
+
+
+// Encryption format
+{
+    type: 'text' | 'audio',
+    data: string // text content or base64 audio
+}
