@@ -1,37 +1,55 @@
 class SecurityHandler {
-    // Generates a random 128-bit IV (Initialization Vector) for AES encryption
-    static generateIV() {
-        return CryptoJS.lib.WordArray.random(16);  // Generates 128-bit random IV
+    // Key derivation parameters
+    static KEY_CONFIG = {
+        keySize: 256 / 32, // 256-bit key
+        iterations: 10000,
+        hasher: CryptoJS.algo.SHA512
+    };
+
+    // Generate secure encryption key from passphrase
+    static generateKey(passphrase, salt) {
+        return CryptoJS.PBKDF2(passphrase, salt, this.KEY_CONFIG);
     }
 
-    // Encrypts data with AES encryption using a dynamic key and IV
-    static encrypt(data, encryptionKey = 'user-secure-key-123') {
-        const iv = SecurityHandler.generateIV();  // Generate a random IV for each encryption
-        const encrypted = CryptoJS.AES.encrypt(data, CryptoJS.enc.Utf8.parse(encryptionKey), { iv: iv });
-        return {
-            ciphertext: encrypted.toString(),
-            iv: iv.toString(CryptoJS.enc.Base64)  // Store the IV along with the ciphertext
-        };
-    }
-
-    // Decrypts encrypted data using AES decryption with the provided key and IV
-    static decrypt(ciphertextObj, encryptionKey = 'user-secure-key-123') {
+    // Encrypt with AES-GCM (authenticated encryption)
+    static encrypt(data, key) {
         try {
-            const ciphertext = CryptoJS.enc.Base64.parse(ciphertextObj.ciphertext);
-            const iv = CryptoJS.enc.Base64.parse(ciphertextObj.iv);  // Decode the IV
-
-            const bytes = CryptoJS.AES.decrypt({ ciphertext: ciphertext }, CryptoJS.enc.Utf8.parse(encryptionKey), { iv: iv });
-            return bytes.toString(CryptoJS.enc.Utf8);
+            const iv = CryptoJS.lib.WordArray.random(128/8); // 128-bit IV
+            const encrypted = CryptoJS.AES.encrypt(data, key, { 
+                iv: iv,
+                mode: CryptoJS.mode.GCM, // Galois/Counter Mode
+                padding: CryptoJS.pad.Pkcs7
+            });
+            
+            return {
+                ciphertext: encrypted.ciphertext.toString(CryptoJS.enc.Base64),
+                iv: iv.toString(CryptoJS.enc.Base64),
+                tag: encrypted.tag.toString(CryptoJS.enc.Base64)
+            };
         } catch (error) {
-            console.error('Decryption failed:', error);
-            return null;  // Return null in case of error
+            console.error('Encryption failed:', error);
+            throw new Error('Encryption process failed');
         }
     }
-}
 
-
-// Encryption format
-{
-    type: 'text' | 'audio',
-    data: string // text content or base64 audio
+    // Decrypt with AES-GCM
+    static decrypt(ciphertextObj, key) {
+        try {
+            const cipherParams = CryptoJS.lib.CipherParams.create({
+                ciphertext: CryptoJS.enc.Base64.parse(ciphertextObj.ciphertext),
+                iv: CryptoJS.enc.Base64.parse(ciphertextObj.iv),
+                tag: CryptoJS.enc.Base64.parse(ciphertextObj.tag)
+            });
+            
+            const decrypted = CryptoJS.AES.decrypt(cipherParams, key, {
+                mode: CryptoJS.mode.GCM,
+                padding: CryptoJS.pad.Pkcs7
+            });
+            
+            return decrypted.toString(CryptoJS.enc.Utf8);
+        } catch (error) {
+            console.error('Decryption failed:', error);
+            throw new Error('Invalid key or corrupted data');
+        }
+    }
 }
