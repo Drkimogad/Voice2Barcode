@@ -1,92 +1,79 @@
-// tts.js - Text-to-Speech with QR Generation
-let synth = window.speechSynthesis;
-let voices = [];
-let audioContext;
-let mediaRecorder;
-let audioChunks = [];
+// tts.js
+(function() {
+    let synth = window.speechSynthesis;
+    let voices = [];
+    let audioContext;
 
-// Initialize voice list
-function populateVoiceList() {
-    voices = synth.getVoices();
-    const maleSelect = document.getElementById('maleVoiceSelect');
-    const femaleSelect = document.getElementById('femaleVoiceSelect');
-    
-    voices.forEach(voice => {
-        const option = document.createElement('option');
-        option.textContent = `${voice.name} (${voice.lang})`;
-        option.value = voice.name;
-        if (voice.gender === 'male') maleSelect.appendChild(option);
-        else if (voice.gender === 'female') femaleSelect.appendChild(option);
-    });
-}
-
-// Initialize audio context
-function initAudioContext() {
-    audioContext = new (window.AudioContext || window.webkitAudioContext)();
-}
-
-// Generate speech and capture audio
-async function generateSpeech(text, voiceName) {
-    return new Promise((resolve, reject) => {
-        try {
-            const utterance = new SpeechSynthesisUtterance(text);
-            utterance.voice = voices.find(v => v.name === voiceName);
-            
-            // Setup audio recording
-            const dest = audioContext.createMediaStreamDestination();
-            const sourceNode = audioContext.createMediaStreamSource(
-                new MediaStream([utterance.audioStream])
-            );
-            sourceNode.connect(dest);
-            
-            mediaRecorder = new MediaRecorder(dest.stream);
-            audioChunks = [];
-            
-            mediaRecorder.ondataavailable = e => audioChunks.push(e.data);
-            mediaRecorder.onstop = () => {
-                const audioBlob = new Blob(audioChunks, { type: 'audio/wav' });
-                resolve(URL.createObjectURL(audioBlob));
-            };
-            
-            mediaRecorder.start();
-            synth.speak(utterance);
-            
-            utterance.onend = () => {
-                mediaRecorder.stop();
-            };
-        } catch (error) {
-            reject(error);
-        }
-    });
-}
-
-// Initialize TTS functionality
-export function initializeTTS() {
-    if (synth.onvoiceschanged !== undefined) {
-        synth.onvoiceschanged = populateVoiceList;
+    function populateVoiceList() {
+        const maleSelect = document.getElementById('maleVoiceSelect');
+        const femaleSelect = document.getElementById('femaleVoiceSelect');
+        
+        // Clear existing options
+        maleSelect.innerHTML = '<option value="">Select Male Voice</option>';
+        femaleSelect.innerHTML = '<option value="">Select Female Voice</option>';
+        
+        synth.getVoices().forEach(voice => {
+            const option = new Option(`${voice.name} (${voice.lang})`, voice.name);
+            if (voice.gender === 'male') maleSelect.add(option);
+            else if (voice.gender === 'female') femaleSelect.add(option);
+        });
     }
-    
-    initAudioContext();
-    
-    document.getElementById('textConvertBtn').addEventListener('click', async () => {
-        const text = document.getElementById('textToConvert').value;
-        const voiceName = document.querySelector('.voice-select').value;
-        
-        if (!text || !voiceName) {
-            updateStatus('Please enter text and select a voice', 'error');
-            return;
+
+    window.initializeTTS = function() {
+        if (synth.onvoiceschanged !== undefined) {
+            synth.onvoiceschanged = populateVoiceList;
         }
         
         try {
-            const audioURL = await generateSpeech(text, voiceName);
-            generateQRFromData(JSON.stringify({
-                text,
-                voice: voiceName,
-                audio: audioURL
-            }));
-            updateStatus('QR generated! Click to download', 'success');
-        } catch (error) {
-            updateStatus(`Error: ${error.message}`, 'error');
+            audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        } catch (e) {
+            console.error('Web Audio API not supported');
         }
-    });
-}
+
+        document.getElementById('textConvertBtn').addEventListener('click', async function() {
+            const text = document.getElementById('textToConvert').value;
+            const voiceName = document.querySelector('.voice-select').value;
+            
+            if (!text || !voiceName) {
+                updateStatus('Please enter text and select a voice', 'error');
+                return;
+            }
+            
+            try {
+                const utterance = new SpeechSynthesisUtterance(text);
+                utterance.voice = synth.getVoices().find(v => v.name === voiceName);
+                
+                const audioBlob = await new Promise(resolve => {
+                    const chunks = [];
+                    const mediaRecorder = new MediaRecorder(
+                        new MediaStream([utterance.audioStream])
+                    );
+                    
+                    mediaRecorder.ondataavailable = e => chunks.push(e.data);
+                    mediaRecorder.onstop = () => resolve(new Blob(chunks, { type: 'audio/wav' }));
+                    
+                    mediaRecorder.start();
+                    synth.speak(utterment);
+                    utterance.onend = () => mediaRecorder.stop();
+                });
+
+                const audioURL = URL.createObjectURL(audioBlob);
+                new QRCode(document.getElementById('qrcode'), {
+                    text: JSON.stringify({
+                        text,
+                        voice: voiceName,
+                        audio: audioURL
+                    }),
+                    width: 256,
+                    height: 256
+                });
+                
+                updateStatus('QR Code generated!', 'success');
+                document.getElementById('downloadQRCodeBtn').disabled = false;
+                
+            } catch (error) {
+                updateStatus(`Error: ${error.message}`, 'error');
+            }
+        });
+    };
+})();
