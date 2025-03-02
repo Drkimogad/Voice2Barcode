@@ -41,56 +41,46 @@
                     </select>
                 </div>
             </div>
+
             <!-- Audio Upload Section -->
-<input type="file" id="audioUpload" accept="audio/*" style="display: none;">
-<label for="audioUpload" class="btn">Upload Audio File</label>
+            <input type="file" id="audioUpload" accept="audio/*" style="display: none;">
+            <label for="audioUpload" class="btn">Upload Audio File</label>
 
-<!-- QR Code Upload Section -->
-<input type="file" id="qrUpload" accept="image/png, image/jpeg" style="display: none;">
-<label for="qrUpload" class="btn">Upload QR Code</label>
+            <!-- QR Code Upload Section -->
+            <input type="file" id="qrUpload" accept="image/png, image/jpeg" style="display: none;">
+            <label for="qrUpload" class="btn">Upload QR Code</label>
 
-<!-- Section for displaying decoded content -->
-<div id="scannedMessage" class="section" style="display: none;">
-    <p>Scanned Message: <span id="messageText"></span></p>
-    <div id="scannedAudio"></div>
-</div>
-
-<!-- Section for displaying the generated QR code -->
-<div id="generatedQRCode" class="section">
-    <div id="qrcode"></div>
-    <button id="downloadQRCodeBtn" class="btn" disabled>⬇ Download QR Code</button>
-</div>
-
-            
-            <!-- Scanned Message Section -->
+            <!-- Section for displaying decoded content -->
             <div id="scannedMessage" class="section" style="display: none;">
                 <p>Scanned Message: <span id="messageText"></span></p>
+                <div id="scannedAudio"></div>
             </div>
 
-            <!-- QR Code Display Section -->
-            <div class="section">
+            <!-- Section for displaying the generated QR code -->
+            <div id="generatedQRCode" class="section">
                 <div id="qrcode"></div>
-                <button id="downloadBtn" class="btn download" disabled>⬇ Download QR</button>
+                <button id="downloadQRCodeBtn" class="btn" disabled>⬇ Download QR Code</button>
             </div>
 
-            <!-- QR Scanning Section -->
-<div class="section">
-    <button id="scanBtn" class="btn scan">🔍 Scan QR Code</button>
-    <!-- Camera Preview -->
-    <div id="cameraPreview" class="camera-preview" style="display: none;">
-        <video id="cameraFeed" autoplay playsinline></video>
-    </div>
-    <button id="switchCameraBtn" style="display:none;">Switch Camera</button>
-    <div id="scannedMessage" class="section" style="display: none;">
-        <p>Scanned Message: <span id="messageText"></span></p>
-        <div id="scannedAudio"></div>
-    </div>
-    <button id="downloadBtn" class="btn download" disabled>⬇ Download Content</button>
-</div>
+            <!-- QR Code Scanning Section -->
+            <div class="section">
+                <button id="scanBtn" class="btn scan">🔍 Scan QR Code</button>
+                <!-- Camera Preview -->
+                <div id="cameraPreview" class="camera-preview" style="display: none;">
+                    <video id="cameraFeed" autoplay playsinline></video>
+                </div>
+                <button id="switchCameraBtn" style="display:none;">Switch Camera</button>
+                <div id="scannedMessage" class="section" style="display: none;">
+                    <p>Scanned Message: <span id="messageText"></span></p>
+                    <div id="scannedAudio"></div>
+                </div>
+                <button id="downloadBtn" class="btn download" disabled>⬇ Download Content</button>
+            </div>
 
-
-    <!-- Log Out Button -->
-    <button id="logoutBtn" class="btn" style="display: none;">Log Out</button>
+            <!-- Log Out Button -->
+            <button id="logoutBtn" class="btn" style="display: none;">Log Out</button>
+        </div>
+    </div>
 
     <footer class="footer">
         <div class="container">
