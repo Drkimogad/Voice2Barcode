@@ -64,6 +64,7 @@
             </div>
         </div>
     </div>
+    
 
     <footer class="footer">
         <div class="container">
@@ -75,12 +76,27 @@
             </div>
         </div>
     </footer>
+    <script>
+    // Check if the user is logged in
+    if (!localStorage.getItem('loggedInUser')) {
+        // If not, redirect to the sign-in page
+        window.location.href = 'signin.html';
+    }
+  </script>
+    <button id="logoutBtn" class="btn">Log Out</button>
+
+<script>
+    // Log out logic
+    document.getElementById('logoutBtn').addEventListener('click', function() {
+        localStorage.removeItem('loggedInUser'); // Remove the user data from localStorage
+        window.location.href = 'signin.html'; // Redirect to the sign-in page
+    });
+</script>
 
     <!-- External Libraries -->
     <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
     <script src="https://cdn.rawgit.com/schmich/instascan-builds/master/instascan.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/dist/face-api.min.js"></script>
 
     <!-- Your Custom JS Files -->
     <script src="js/audioRecordingCompressionQR.js"></script>
