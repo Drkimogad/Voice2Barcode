@@ -84,7 +84,23 @@ body {
   opacity: 0.7;
   cursor: not-allowed;
 }
+/* Smooth transitions */
+.mode-section {
+    transition: opacity 0.3s ease, transform 0.3s ease;
+    opacity: 0;
+    transform: translateY(10px);
+}
 
+.mode-section.active {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+/* Accessibility focus states */
+.mode-btn:focus {
+    outline: 2px solid currentColor;
+    outline-offset: 2px;
+}
 /* Forms */
 .input-group {
   margin: 1.5rem 0;
