@@ -31,7 +31,7 @@ document.getElementById('loginBtn').addEventListener('click', async () => {
                         faceLoginMessage.textContent = 'Face recognized! You are logged in.';
                         // Redirect to the dashboard after successful face recognition
                         setTimeout(() => {
-                            window.location.href = 'dashboard.html';  // Redirect to dashboard
+                            window.location.href = 'Voice2BarcodeDashboard.html';  // Redirect to dashboard
                         }, 1000);  // Delay to show the "Face recognized" message
                     }
                 }, 100);
