@@ -296,3 +296,17 @@ textarea {
     gap: 10px;
     z-index: 1000;
 }
+#logoutBtn {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    padding: 10px 20px;
+    background-color: #f44336;
+    color: white;
+    border: none;
+    cursor: pointer;
+}
+
+#logoutBtn:hover {
+    background-color: #d32f2f;
+}
