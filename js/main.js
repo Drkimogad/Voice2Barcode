@@ -1,6 +1,8 @@
 // In main.js
 import { initializeQRUploadHandlers } from './js/QRCodeUploadHandling.js';
 import { generateQRFromData } from './js/audioRecordingCompressionQR.js';
+import { initializeQRScanner } from './js/QRScanning.js';
+initializeQRScanner();
 
 document.addEventListener('DOMContentLoaded', () => {
     // Existing initializations
