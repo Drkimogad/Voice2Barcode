@@ -1,71 +1,31 @@
-//Handling Audio Upload:
-document.getElementById('audioUpload').addEventListener('change', async (e) => {
-    const file = e.target.files[0];
-    if (!file) return updateStatus('No file selected!', 'error');
-
-    try {
-        const audioData = await fileToDataURL(file); // Convert file to Data URL
-        const qrCodeData = generateQRDataFromAudio(audioData); // Generate QR Code data from audio
-        generateQRFromData(qrCodeData); // Display the generated QR code
-        updateStatus('Audio uploaded and QR code generated!', 'success');
-        
-        // Enable QR code download
-        document.getElementById('downloadQRCodeBtn').disabled = false;
-        document.getElementById('downloadQRCodeBtn').addEventListener('click', () => {
-            downloadQR(qrCodeData);
-        });
-    } catch (err) {
-        updateStatus('Failed to process audio file: ' + err.message, 'error');
-    }
-});
-
-// Convert file to base64 data URL
-async function fileToDataURL(file) {
-    return new Promise((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onloadend = () => resolve(reader.result);
-        reader.onerror = reject;
-        reader.readAsDataURL(file);
-    });
-}
-
-// Generate QR code data from audio data URL
-function generateQRDataFromAudio(audioData) {
-    // Encrypt or encode audio data (Optional: Encrypt it based on your need)
-    const encryptedData = SecurityHandler.encrypt(`audio:${audioData}`);
-    return encryptedData;
-}
-
-// Generate QR Code from data
-function generateQRFromData(data) {
-    const qrcodeDiv = document.getElementById('qrcode');
-    qrcodeDiv.innerHTML = ''; // Clear previous QR code
-    new QRCode(qrcodeDiv, {
-        text: data,
-        width: 200,
-        height: 200
-    });
-}
-
-// Function to download the QR code
-function downloadQR(data) {
-    const link = document.createElement('a');
-    link.href = URL.createObjectURL(new Blob([data], { type: 'application/json' }));
-    link.download = 'qr_code_with_audio.json';
-    link.click();
-}
-
-//Handling QR Code Upload:
+// QR Code Upload Handling
 document.getElementById('qrUpload').addEventListener('change', async (e) => {
     const file = e.target.files[0];
     if (!file) return updateStatus('No file selected!', 'error');
 
     try {
         const qrData = await decodeQRFromImage(file);
-        handleScannedQR(qrData);
+        handleScannedQR(qrData); // Handle the decoded QR data
         updateStatus('QR Code uploaded and decoded!', 'success');
     } catch (err) {
         updateStatus('Failed to decode QR code: ' + err.message, 'error');
+    }
+});
+
+// Audio Upload Handling
+document.getElementById('audioUpload').addEventListener('change', async (e) => {
+    const file = e.target.files[0];
+    if (!file) return updateStatus('No file selected!', 'error');
+
+    try {
+        const audioData = await file.arrayBuffer();
+        const audioBlob = new Blob([audioData], { type: 'audio/webm' });
+        const compressedAudio = await compressAudio(audioBlob);
+        const encryptedData = SecurityHandler.encrypt(`audio:${compressedAudio}`);
+        generateQRFromData(encryptedData); // Generate the QR code for the uploaded audio
+        updateStatus('Audio file uploaded and QR generated!', 'success');
+    } catch (err) {
+        updateStatus('Failed to process audio: ' + err.message, 'error');
     }
 });
 
@@ -94,7 +54,7 @@ async function decodeQRFromImage(file) {
     });
 }
 
-// Handle Scanned QR
+// Handle Scanned QR Data (Decoding)
 function handleScannedQR(content) {
     try {
         const decrypted = SecurityHandler.decrypt(content);
@@ -102,22 +62,65 @@ function handleScannedQR(content) {
             const text = decrypted.slice(5);
             document.getElementById('scannedMessage').style.display = 'block';
             document.getElementById('messageText').textContent = text;
-            synthesizeSpeech(text);  // Speak the decoded text
+            synthesizeSpeech(text); // Play the speech for the decoded text
         } else if (decrypted.startsWith('audio:')) {
-            const audioData = decrypted.slice(6);  // Get the audio data
-            const audio = new Audio(audioData);
+            const audio = new Audio(`data:audio/ogg;base64,${decrypted.slice(6)}`);
             audio.controls = true;
             document.getElementById('scannedAudio').innerHTML = '';
             document.getElementById('scannedAudio').appendChild(audio);
             document.getElementById('scannedMessage').style.display = 'block';
             document.getElementById('messageText').textContent = 'Audio decoded successfully!';
-            audio.play(); // Play the decoded audio
         } else {
             throw new Error('Unsupported QR data format');
         }
+        generateQRFromData(content);  // Generate a QR code for the decoded content
         updateStatus('Content decoded successfully!', 'success');
     } catch (err) {
         updateStatus('Decoding failed: ' + err.message, 'error');
     }
 }
 
+// Generate QR Code from Data (audio or text)
+function generateQRFromData(data) {
+    const qrcodeDiv = document.getElementById('qrcode');
+    qrcodeDiv.innerHTML = ''; // Clear previous QR code
+
+    // Generate the QR code with the provided data (encrypted audio or decoded content)
+    new QRCode(qrcodeDiv, {
+        text: data,
+        width: 200,
+        height: 200
+    });
+
+    // Enable the download button once QR code is generated
+    document.getElementById('downloadQRCodeBtn').disabled = false;
+}
+
+// Compress Audio (Using Opus Encoder)
+async function compressAudio(audioBlob) {
+    const encoder = new OpusEncoder();
+    const arrayBuffer = await audioBlob.arrayBuffer();
+    const compressed = await encoder.encode(arrayBuffer);
+    return btoa(String.fromCharCode(...new Uint8Array(compressed)));
+}
+
+// Download QR Code
+document.getElementById('downloadQRCodeBtn').addEventListener('click', function () {
+    const qrcodeCanvas = document.querySelector('#qrcode canvas');
+    if (qrcodeCanvas) {
+        const link = document.createElement('a');
+        link.href = qrcodeCanvas.toDataURL('image/png');
+        link.download = 'qrcode.png';
+        link.click();
+        updateStatus('QR Code downloaded!', 'success');
+    } else {
+        updateStatus('No QR Code to download!', 'error');
+    }
+}
+
+// Update Status Message
+function updateStatus(message, type) {
+    const statusDiv = document.getElementById('status');
+    statusDiv.textContent = message;
+    statusDiv.className = type;
+}
