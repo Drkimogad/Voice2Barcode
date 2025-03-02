@@ -5,22 +5,24 @@ document.getElementById('textConvertBtn').addEventListener('click', function () 
     const femaleVoiceSelect = document.getElementById('femaleVoiceSelect');
     const selectedVoiceName = maleVoiceSelect.value || femaleVoiceSelect.value;
 
+    // Validate input
     if (!text || !selectedVoiceName) {
         updateStatus('Please enter text and select a voice.', 'error');
         return;
     }
 
+    // Check if TTS is supported
     if ('speechSynthesis' in window) {
         const utterance = new SpeechSynthesisUtterance(text);
         const voices = speechSynthesis.getVoices();
 
-        // Select the voice
+        // Select the voice based on user choice
         utterance.voice = voices.find(voice => voice.name === selectedVoiceName);
 
         // Speak the text
         speechSynthesis.speak(utterance);
 
-        // Generate QR code containing the speech
+        // Generate QR code containing the speech data
         generateQRCodeFromTextToSpeech(text, utterance.voice);
     } else {
         updateStatus('Text-to-speech not supported in this browser', 'error');
@@ -32,7 +34,7 @@ function generateQRCodeFromTextToSpeech(text, voice) {
     const qrcodeDiv = document.getElementById('qrcode');
     qrcodeDiv.innerHTML = ''; // Clear any existing QR code
 
-    // Generate audio data from text
+    // Generate audio data URL from text-to-speech
     const audioURL = generateAudioData(text, voice);
 
     // Create the QR code with the audio URL
@@ -43,7 +45,7 @@ function generateQRCodeFromTextToSpeech(text, voice) {
     });
 
     // Enable the download button
-    document.getElementById('downloadBtn').disabled = false;
+    document.getElementById('downloadQRCodeBtn').disabled = false;
 }
 
 // Function to generate audio data from the text-to-speech
@@ -61,7 +63,7 @@ function generateAudioData(text, voice) {
 }
 
 // Download QR Code and Audio
-document.getElementById('downloadBtn').addEventListener('click', function () {
+document.getElementById('downloadQRCodeBtn').addEventListener('click', function () {
     const qrcodeCanvas = document.querySelector('#qrcode canvas');
     if (qrcodeCanvas) {
         const link = document.createElement('a');
