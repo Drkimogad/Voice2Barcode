@@ -4,7 +4,7 @@ let mediaRecorder, audioChunks = [], audioStream, opusEncoder;
 
 // Encryption setup (Move this to SecurityHandler.js)
 const SecurityHandler = (() => {
-    const ENCRYPTION_KEY = CryptoJS.lib.WordArray.random(128/8); // Generate random key
+    const ENCRYPTION_KEY = CryptoJS.lib.WordArray.random(128/8);
     const IV = CryptoJS.lib.WordArray.random(128/8);
 
     return {
@@ -27,13 +27,36 @@ async function initializeEncoder() {
     }
 }
 
-// Enhanced recording controls
-function initializeRecordingControls() {
+// Enhanced recording controls with cleanup
+export function initializeRecordingControls() {
     const recordBtn = document.getElementById('recordBtn');
     const stopBtn = document.getElementById('stopBtn');
 
-    recordBtn.addEventListener('click', startRecording);
-    stopBtn.addEventListener('click', stopRecording);
+    const handleRecord = startRecording;
+    const handleStop = stopRecording;
+
+    recordBtn.addEventListener('click', handleRecord);
+    stopBtn.addEventListener('click', handleStop);
+
+    // Return cleanup function
+    return () => {
+        recordBtn.removeEventListener('click', handleRecord);
+        stopBtn.removeEventListener('click', handleStop);
+        
+        // Cleanup any active recording
+        if (mediaRecorder?.state === 'recording') {
+            mediaRecorder.stop();
+        }
+        
+        // Release media resources
+        if (audioStream) {
+            audioStream.getTracks().forEach(track => track.stop());
+            audioStream = null;
+        }
+        
+        audioChunks = [];
+        updateUIState(false);
+    };
 }
 
 async function startRecording() {
@@ -99,10 +122,11 @@ function stopRecording() {
 }
 
 function cleanupAfterRecording() {
-    audioStream.getTracks().forEach(track => track.stop());
+    if (audioStream) {
+        audioStream.getTracks().forEach(track => track.stop());
+    }
     audioChunks = [];
     updateUIState(false);
-    URL.revokeObjectURL(audioURL); // Clean memory
 }
 
 function updateUIState(recording) {
@@ -123,13 +147,11 @@ function startAutoStopTimer() {
         }
     }, MAX_RECORD_SECONDS * 1000);
 
-    // Cleanup timer reference
     mediaRecorder.onstop = () => clearTimeout(timer);
 }
 
-// Initialize module
-window.addEventListener('DOMContentLoaded', () => {
+// Initialize module (called from main.js)
+export function initializeAudioModule() {
     initializeEncoder();
-    initializeRecordingControls();
     document.getElementById('downloadQRCodeBtn').disabled = true;
-});
+}
