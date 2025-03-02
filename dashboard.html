@@ -5,10 +5,22 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Voice2Barcode Dashboard</title>
     <link rel="stylesheet" href="styles.css">
+    <script type="module">
+        import { OpusEncoder } from 'https://cdn.jsdelivr.net/npm/@opus-encoder/encoder@6.1.0/+esm';
+        window.OpusEncoder = OpusEncoder;
+    </script>
 </head>
 <body>
     <div class="container">
-        <h1 aria-label="Voice to Barcode Dashboard">Voice2Barcode</h1>
+        <header class="app-header">
+            <h1 aria-label="Voice to Barcode Dashboard">Voice2Barcode</h1>
+            <div class="user-controls">
+                <button id="logoutBtn" class="btn logout" aria-label="Log out" hidden>
+                    🔒 Log Out
+                </button>
+            </div>
+        </header>
+
         <div id="dashboardContent">
             <!-- Mode Selector -->
             <div class="mode-switcher" role="navigation">
@@ -74,7 +86,7 @@
                 </section>
             </section>
 
-            <!-- Common Sections -->
+            <!-- QR Code Display -->
             <section class="qr-section" aria-labelledby="qrHeader">
                 <div id="qrcode" class="qrcode-container"></div>
                 <button id="downloadQRCodeBtn" class="btn" disabled>
@@ -82,6 +94,7 @@
                 </button>
             </section>
 
+            <!-- Scanner Section -->
             <section class="scanner-section" aria-labelledby="scannerHeader">
                 <button id="scanBtn" class="btn scan" aria-label="Start scanning">
                     🔍 Scan QR Code
@@ -94,6 +107,7 @@
                 </button>
             </section>
 
+            <!-- Results Section -->
             <section id="scannedContent" class="results-section" aria-labelledby="resultsHeader" hidden>
                 <h2 id="resultsHeader">Decoded Content</h2>
                 <p id="messageText" class="message-text"></p>
@@ -106,12 +120,13 @@
             <!-- Status Display -->
             <div id="status" class="status-message" role="status" aria-live="polite"></div>
         </div>
+
+        <!-- Loading Overlay -->
+        <div id="loading-overlay" class="loading-overlay">
+            <div class="loading-spinner"></div>
+            <p class="loading-text">Initializing Application...</p>
+        </div>
     </div>
-    <!-- Add loading overlay -->
-<div id="loading-overlay" class="loading-overlay">
-    <div class="loading-spinner"></div>
-    <p class="loading-text">Initializing Application...</p>
-</div>
 
     <footer class="footer" role="contentinfo">
         <div class="container">
@@ -127,35 +142,9 @@
     <!-- Dependencies -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.0/build/qrcode.min.js"></script>
-    <script src="https://cdn.rawgit.com/schmich/instascan-builds/master/instascan.min.js"></script>
-    <script type="module">
-        import { OpusEncoder } from 'https://cdn.jsdelivr.net/npm/@opus-encoder/encoder@6.1.0/+esm';
-        window.OpusEncoder = OpusEncoder;
-    </script>
+    <script src="https://cdn.jsdelivr.net/npm/instascan@2.0.0/dist/instascan.min.js"></script>
 
     <!-- Core Application -->
-    <script src="js/SecurityHandler.js"></script>
-    <script src="js/ModeSwitching.js"></script>
-    <script src="js/audioRecordingCompressionQR.js"></script>
-    <script src="js/QRCodeUploadHandling.js"></script>
-    <script src="js/tts.js"></script>
-    <script src="js/QRScanning.js"></script>
-    <script src="js/main.js" type="module"></script>
-    
-    <!-- Initialization -->
-    <script type="module">
-       document.addEventListener('DOMContentLoaded', () => {
-        if (!localStorage.getItem('loggedInUser')) {
-       window.location.href = 'signin.html';
-        }
-    initializeApp(); // From main.js
-        });
-   </script>
-        // Logout handler
-        document.getElementById('logoutBtn').addEventListener('click', () => {
-            localStorage.clear();
-            window.location.href = 'signin.html';
-        });
-    </script>
+    <script type="module" src="js/main.js"></script>
 </body>
 </html>
