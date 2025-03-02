@@ -65,6 +65,19 @@
                 <div id="qrcode"></div>
                 <button id="downloadQRCodeBtn" class="btn" disabled>⬇ Download QR Code</button>
             </div>
+            <!-- Add this in your dashboard content -->
+<div class="qr-section">
+    <div id="qrcode" class="qrcode-container"></div>
+    <button id="downloadQRCodeBtn" class="btn" disabled>
+        ⬇ Download QR Code
+    </button>
+</div>
+
+<!-- Update scanned content section -->
+<div id="scannedContent" class="section" style="display: none;">
+    <p>Decoded Content: <span id="messageText"></span></p>
+    <div id="scannedAudio"></div>
+</div>
 
             <!-- QR Code Scanning Section -->
             <div class="section">
