@@ -1,131 +1,135 @@
-// Dependencies loaded via CDN in HTML (make sure to include them in your HTML)
-// Required: qrcode.js, opus-encoder, crypto-js
-
+// audioRecordingCompressionQR.js (Updated)
 const MAX_RECORD_SECONDS = 10;
-const ENCRYPTION_KEY = CryptoJS.enc.Utf8.parse('user-secure-key-123'); // 128-bit key
+let mediaRecorder, audioChunks = [], audioStream, opusEncoder;
 
-let mediaRecorder;
-let audioChunks = [];
-let audioStream;
-let opusEncoder;
+// Encryption setup (Move this to SecurityHandler.js)
+const SecurityHandler = (() => {
+    const ENCRYPTION_KEY = CryptoJS.lib.WordArray.random(128/8); // Generate random key
+    const IV = CryptoJS.lib.WordArray.random(128/8);
 
-// HTML Elements
-const recordBtn = document.getElementById('recordBtn');
-const stopBtn = document.getElementById('stopBtn');
-const recordingIndicator = document.getElementById('recordingIndicator');
+    return {
+        encrypt: (data) => CryptoJS.AES.encrypt(data, ENCRYPTION_KEY, { iv: IV }).toString(),
+        decrypt: (ciphertext) => {
+            const bytes = CryptoJS.AES.decrypt(ciphertext, ENCRYPTION_KEY, { iv: IV });
+            return bytes.toString(CryptoJS.enc.Utf8);
+        }
+    };
+})();
 
-// Initialize Opus Encoder
+// Initialize encoder with error handling
 async function initializeEncoder() {
-    const { OpusEncoder } = await import('https://cdn.jsdelivr.net/npm/@opus-encoder/encoder@6.1.0/+esm');
-    opusEncoder = new OpusEncoder({ forceBrowserEncoder: false });
+    try {
+        const { OpusEncoder } = await import('https://cdn.jsdelivr.net/npm/@opus-encoder/encoder@6.1.0/+esm');
+        opusEncoder = new OpusEncoder({ forceBrowserEncoder: true });
+    } catch (error) {
+        updateStatus('Failed to initialize audio encoder', 'error');
+        console.error('Encoder initialization error:', error);
+    }
 }
 
-// Encryption handler using AES
-const SecurityHandler = {
-    encrypt: (data) => {
-        return CryptoJS.AES.encrypt(data, ENCRYPTION_KEY, {
-            mode: CryptoJS.mode.ECB,
-            padding: CryptoJS.pad.Pkcs7
-        }).toString();
-    }
-};
+// Enhanced recording controls
+function initializeRecordingControls() {
+    const recordBtn = document.getElementById('recordBtn');
+    const stopBtn = document.getElementById('stopBtn');
 
-// Recording Controls
-recordBtn.addEventListener('click', async () => {
+    recordBtn.addEventListener('click', startRecording);
+    stopBtn.addEventListener('click', stopRecording);
+}
+
+async function startRecording() {
     try {
-        audioStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        audioStream = await navigator.mediaDevices.getUserMedia({ 
+            audio: { 
+                sampleRate: 48000,
+                channelCount: 1,
+                echoCancellation: true 
+            } 
+        });
+        
         mediaRecorder = new MediaRecorder(audioStream, { 
-            mimeType: 'audio/webm; codecs=opus' 
+            mimeType: 'audio/webm; codecs=opus',
+            audioBitsPerSecond: 24000
         });
 
-        mediaRecorder.ondataavailable = (event) => {
-            audioChunks.push(event.data);
-        };
+        setupMediaRecorderHandlers();
+        mediaRecorder.start();
+        
+        updateUIState(true);
+        startAutoStopTimer();
 
-        mediaRecorder.onstop = async () => {
+    } catch (error) {
+        updateStatus(`Recording failed: ${error.message}`, 'error');
+    }
+}
+
+function setupMediaRecorderHandlers() {
+    mediaRecorder.ondataavailable = event => audioChunks.push(event.data);
+    
+    mediaRecorder.onstop = async () => {
+        try {
             const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
             const compressed = await compressAudio(audioBlob);
             const encrypted = SecurityHandler.encrypt(compressed);
             
             generateQRFromData(encrypted);
+        } catch (error) {
+            updateStatus(`Processing failed: ${error.message}`, 'error');
+        } finally {
             cleanupAfterRecording();
-        };
+        }
+    };
+}
 
-        mediaRecorder.start();
-        toggleControls(true);
-        recordingIndicator.classList.add('recording');
-        
-        // Auto-stop timer
-        setTimeout(() => {
-            if (mediaRecorder.state === 'recording') {
-                mediaRecorder.stop();
-            }
-        }, MAX_RECORD_SECONDS * 1000);
-
+async function compressAudio(audioBlob) {
+    if (!opusEncoder) throw new Error('Audio encoder not initialized');
+    
+    try {
+        const buffer = await audioBlob.arrayBuffer();
+        const compressed = await opusEncoder.encode(buffer);
+        return CryptoJS.enc.Base64.stringify(CryptoJS.lib.WordArray.create(compressed));
     } catch (error) {
-        updateStatus(`Error: ${error.message}`, 'error');
+        throw new Error(`Compression failed: ${error.message}`);
     }
-});
+}
 
-stopBtn.addEventListener('click', () => {
+function stopRecording() {
     if (mediaRecorder?.state === 'recording') {
         mediaRecorder.stop();
     }
-});
-
-// Audio Processing
-async function compressAudio(audioBlob) {
-    try {
-        const buffer = await audioBlob.arrayBuffer();
-        const compressed = opusEncoder.encode(buffer);
-        return CryptoJS.enc.Base64.stringify(
-            CryptoJS.lib.WordArray.create(compressed)
-        );
-    } catch (error) {
-        throw new Error('Compression failed: ' + error.message);
-    }
 }
 
-// QR Generation
-function generateQRFromData(data) {
-    const qrcodeDiv = document.getElementById('qrcode');
-    qrcodeDiv.innerHTML = '';
-    
-    new QRCode(qrcodeDiv, {
-        text: data,
-        width: 256,
-        height: 256,
-        colorDark: '#000000',
-        colorLight: '#ffffff',
-        correctLevel: QRCode.CorrectLevel.H
-    });
-    
-    document.getElementById('downloadQRCodeBtn').disabled = false;
-}
-
-// Utilities
 function cleanupAfterRecording() {
     audioStream.getTracks().forEach(track => track.stop());
     audioChunks = [];
-    toggleControls(false);
-    recordingIndicator.classList.remove('recording');
-    updateStatus('Ready to scan QR code', 'success');
+    updateUIState(false);
+    URL.revokeObjectURL(audioURL); // Clean memory
 }
 
-function toggleControls(recording) {
+function updateUIState(recording) {
+    const recordBtn = document.getElementById('recordBtn');
+    const stopBtn = document.getElementById('stopBtn');
+    const indicator = document.getElementById('recordingIndicator');
+
     recordBtn.disabled = recording;
     stopBtn.disabled = !recording;
+    indicator.style.display = recording ? 'block' : 'none';
 }
 
-function updateStatus(message, type = 'info') {
-    const statusDiv = document.getElementById('status');
-    statusDiv.textContent = message;
-    statusDiv.className = `status-${type}`;
+function startAutoStopTimer() {
+    const timer = setTimeout(() => {
+        if (mediaRecorder?.state === 'recording') {
+            mediaRecorder.stop();
+            updateStatus('Automatically stopped after maximum duration', 'warning');
+        }
+    }, MAX_RECORD_SECONDS * 1000);
+
+    // Cleanup timer reference
+    mediaRecorder.onstop = () => clearTimeout(timer);
 }
 
-// Initialize when ready
+// Initialize module
 window.addEventListener('DOMContentLoaded', () => {
     initializeEncoder();
-    stopBtn.disabled = true;
+    initializeRecordingControls();
     document.getElementById('downloadQRCodeBtn').disabled = true;
 });
