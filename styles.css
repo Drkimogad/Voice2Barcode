@@ -1,4 +1,4 @@
-/* Updated styles.css */
+/* Body and General Styles */
 body {
     font-family: Arial, sans-serif;
     margin: 0;
@@ -19,6 +19,7 @@ body {
     box-shadow: 0 2px 4px rgba(0,0,0,0.1);
 }
 
+/* Button Styles */
 .btn {
     padding: 10px 20px;
     margin: 5px;
@@ -29,16 +30,29 @@ body {
     transition: opacity 0.3s;
 }
 
-.record { background: #ff4444; color: white; }
-.stop { background: #666; color: white; }
-.download { background: #4CAF50; color: white; }
-.scan { background: #2196F3; color: white; }
+/* Button States */
+.record { background: #D32F2F; color: white; }  /* Deep Red */
+.stop { background: #757575; color: white; }    /* Grey */
+.download { background: #FFB300; color: white; }  /* Mustard */
+.scan { background: #6A1B9A; color: white; }   /* Deep Purple */
 
+/* Focus and Hover Effects */
+.btn:hover {
+    opacity: 0.8;
+}
+
+.btn:focus {
+    outline: none;
+    border: 2px solid #2196F3;
+}
+
+/* QR Code Display */
 #qrcode {
     margin: 20px 0;
     text-align: center;
 }
 
+/* Status Messages */
 #status {
     margin-top: 20px;
     padding: 10px;
@@ -55,6 +69,7 @@ body {
     color: #2e7d32;
 }
 
+/* Footer */
 .footer {
     background-color: #2c3e50;
     color: #ecf0f1;
@@ -91,6 +106,7 @@ body {
     color: #3498db;
 }
 
+/* Input Switch */
 .input-switch {
     margin: 20px 0;
     text-align: center;
@@ -111,6 +127,7 @@ body {
     color: white;
 }
 
+/* Textarea */
 textarea {
     width: 100%;
     height: 100px;
@@ -176,8 +193,8 @@ textarea {
 
 .voice-select:focus {
     outline: none;
-    border-color: #2196F3;
-    box-shadow: 0 0 0 2px rgba(33, 150, 243, 0.2);
+    border-color: #6A1B9A;  /* Deep Purple */
+    box-shadow: 0 0 0 2px rgba(106, 27, 154, 0.2);
 }
 
 /* File Upload */
@@ -188,7 +205,7 @@ textarea {
 #audioUpload + label {
     display: inline-block;
     padding: 10px 20px;
-    background: #2196F3;
+    background: #6A1B9A;
     color: white;
     border-radius: 5px;
     cursor: pointer;
@@ -196,7 +213,11 @@ textarea {
 }
 
 #audioUpload + label:hover {
-    background: #1e88e5;
+    background: #8E24AA;
+}
+
+#audioUpload + label:focus {
+    outline: 2px solid #FFB300;  /* Mustard */
 }
 
 /* Scanned Audio Player */
@@ -246,71 +267,6 @@ textarea {
     background: #000;
 }
 
-/* Face Recognition Styling */
-#loginSection {
-    text-align: center;
-    margin-bottom: 30px;
-}
-
-#loginBtn {
-    background-color: #007bff;
-    padding: 10px 20px;
-    color: white;
-    font-size: 1.1rem;
-    border: none;
-    cursor: pointer;
-}
-
-#faceLoginMessage {
-    margin-top: 20px;
-    font-size: 1rem;
-    color: #ff0000;
-}
-
-#cameraPreview {
-    display: none;
-    margin-top: 20px;
-    text-align: center;
-}
-
-#cameraFeed {
-    width: 100%;
-    max-width: 400px;
-    border-radius: 10px;
-    border: 2px solid #ddd;
-    background: #000;
-}
-
-/* Face Recognition Loading and Status */
-#loginSection .loading {
-    position: fixed;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    background: rgba(0, 0, 0, 0.8);
-    color: white;
-    padding: 20px;
-    border-radius: 5px;
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    z-index: 1000;
-}
-#logoutBtn {
-    position: fixed;
-    top: 20px;
-    right: 20px;
-    padding: 10px 20px;
-    background-color: #f44336;
-    color: white;
-    border: none;
-    cursor: pointer;
-}
-
-#logoutBtn:hover {
-    background-color: #d32f2f;
-}
-
 /* Flashing Red Dot for Recording Indicator */
 .recording-indicator {
     width: 20px;
@@ -329,5 +285,18 @@ textarea {
     100% { opacity: 0.5; }
 }
 
+/* Log Out Button */
+#logoutBtn {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    padding: 10px 20px;
+    background-color: #D32F2F; /* Deep Red */
+    color: white;
+    border: none;
+    cursor: pointer;
+}
 
-
+#logoutBtn:hover {
+    background-color: #C2185B; /* Lighter Red */
+}
