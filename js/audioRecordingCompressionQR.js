@@ -10,6 +10,7 @@ let audio;
 let recordBtn = document.getElementById('recordBtn');
 let stopBtn = document.getElementById('stopBtn');
 let audioContainer = document.getElementById('audioContainer');
+let recordingIndicator = document.getElementById('recordingIndicator');
 
 // Start Recording
 recordBtn.addEventListener('click', async () => {
@@ -28,12 +29,14 @@ recordBtn.addEventListener('click', async () => {
             generateQRFromData(encryptedData);  // QR code generation with encrypted compressed audio
             updateStatus('Recording stopped. QR generated!', 'success');
             audioChunks = []; // Reset chunks for next recording
+            recordingIndicator.style.display = 'none';  // Stop flashing red dot
         };
 
         mediaRecorder.start();
         recordBtn.disabled = true;
         stopBtn.disabled = false;
         updateStatus('Recording...', 'success');
+        recordingIndicator.style.display = 'block';  // Show flashing red dot
 
         // Auto-stop after the set duration (MAX_RECORD_SECONDS)
         setTimeout(() => {
@@ -53,6 +56,7 @@ stopBtn.addEventListener('click', () => {
         mediaRecorder.stop();
         recordBtn.disabled = false;
         stopBtn.disabled = true;
+        recordingIndicator.style.display = 'none';  // Stop flashing red dot
     }
 });
 
@@ -73,7 +77,7 @@ function generateQRFromData(data) {
         width: 200,
         height: 200
     });
-    document.getElementById('downloadBtn').disabled = false; // Enable download button
+    document.getElementById('downloadQRCodeBtn').disabled = false; // Enable download button
 }
 
 // Update Status
@@ -83,13 +87,14 @@ function updateStatus(message, type) {
     statusDiv.className = type;
 }
 
-// Download Audio
-document.getElementById('downloadBtn').addEventListener('click', () => {
-    if (audioData) {
+// Download QR Code
+document.getElementById('downloadQRCodeBtn').addEventListener('click', () => {
+    const qrcodeCanvas = document.querySelector('#qrcode canvas');
+    if (qrcodeCanvas) {
         const link = document.createElement('a');
-        link.href = URL.createObjectURL(audioData);
-        link.download = 'audio_recording.webm';
+        link.href = qrcodeCanvas.toDataURL('image/png');
+        link.download = 'qrcode.png';
         link.click();
-        updateStatus('Audio downloaded successfully!', 'success');
+        updateStatus('QR Code downloaded successfully!', 'success');
     }
 });
