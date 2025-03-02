@@ -74,16 +74,20 @@
             </div>
 
             <!-- QR Scanning Section -->
-            <div class="section">
-                <button id="scanBtn" class="btn scan">🔍 Scan QR to Play</button>
-                <!-- Camera Preview -->
-                <div id="cameraPreview" class="camera-preview" style="display: none;">
-                    <video id="cameraFeed" autoplay playsinline></video>
-                </div>
-                <div id="scannedAudio"></div>
-            </div>
-        </div>
+<div class="section">
+    <button id="scanBtn" class="btn scan">🔍 Scan QR Code</button>
+    <!-- Camera Preview -->
+    <div id="cameraPreview" class="camera-preview" style="display: none;">
+        <video id="cameraFeed" autoplay playsinline></video>
     </div>
+    <button id="switchCameraBtn" style="display:none;">Switch Camera</button>
+    <div id="scannedMessage" class="section" style="display: none;">
+        <p>Scanned Message: <span id="messageText"></span></p>
+        <div id="scannedAudio"></div>
+    </div>
+    <button id="downloadBtn" class="btn download" disabled>⬇ Download Content</button>
+</div>
+
 
     <!-- Log Out Button -->
     <button id="logoutBtn" class="btn" style="display: none;">Log Out</button>
