@@ -20,7 +20,8 @@ document.getElementById('signinForm').addEventListener('submit', function(event)
     // Check if the password matches
     if (storedPassword === password) {
         alert('Login successful!');
-        window.location.href = 'dashboard.html'; // Redirect to the dashboard after successful login
+        localStorage.setItem('loggedInUser', username);  // Store the logged-in user
+        window.location.href = 'dashboard.html';  // Redirect to dashboard
     } else {
         alert('Incorrect password. Please try again.');
     }
