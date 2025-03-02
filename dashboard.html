@@ -122,6 +122,16 @@
     <script src="js/tts.js"></script>
     <script src="js/QRScanning.js"></script>
     <script src="js/main.js"></script>
+    
+    <!-- Add this in your head section -->
+<script type="module">
+    import { initializeEncoder, initializeRecordingControls } from './js/audioRecordingCompressionQR.js';
+    
+    window.addEventListener('DOMContentLoaded', () => {
+        initializeEncoder();
+        initializeRecordingControls();
+    });
+</script>
 
     <script>
         // Authorization check (UPDATED)
