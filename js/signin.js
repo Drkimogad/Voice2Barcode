@@ -8,10 +8,10 @@ document.getElementById('loginBtn').addEventListener('click', async () => {
     faceLoginMessage.textContent = 'Initializing face recognition...';
 
     try {
+        // Load face-api.js models from GitHub Pages or your server
         await faceapi.nets.ssdMobilenetv1.loadFromUri('https://drkimogad.github.io/Voice2Barcode/models/ssd_mobilenetv1_model-weights_manifest.json');
         await faceapi.nets.faceLandmark68Net.loadFromUri('https://drkimogad.github.io/Voice2Barcode/models/face_landmark_68_model-shard1');
         await faceapi.nets.faceRecognitionNet.loadFromUri('https://drkimogad.github.io/Voice2Barcode/models/face_recognition_model-shard2');
-
 
         // Access the camera and start the video stream
         navigator.mediaDevices.getUserMedia({ video: {} })
@@ -29,7 +29,10 @@ document.getElementById('loginBtn').addEventListener('click', async () => {
 
                     if (detections.length > 0) {
                         faceLoginMessage.textContent = 'Face recognized! You are logged in.';
-                        // Handle successful login (e.g., redirect or show logged-in UI)
+                        // Redirect to the dashboard after successful face recognition
+                        setTimeout(() => {
+                            window.location.href = 'dashboard.html';  // Redirect to dashboard
+                        }, 1000);  // Delay to show the "Face recognized" message
                     }
                 }, 100);
             })
