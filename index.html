@@ -5,114 +5,14 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Voice2Barcode</title>
     <link rel="stylesheet" href="styles.css">
-    <!-- Add Opus and Crypto CDNs -->
-    <script src="https://cdn.jsdelivr.net/npm/libopus@0.3.0/libopus.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
-    <!-- Face Recognition Library (Face-api.js) -->
-    <script src="https://cdn.jsdelivr.net/npm/face-api.js"></script>
 </head>
 <body>
-    <!-- Loading Indicator -->
-    <div id="loading" class="loading" style="display: none;">
-        <div class="spinner"></div>
-        <span class="loading-text">Processing...</span>
-    </div>
-
     <div class="container">
-        <h1>Voice to Barcode Converter</h1>
+        <h1>Welcome to Voice2Barcode</h1>
+        <p>This is your entry point to the Voice2Barcode app. Please sign in to get started.</p>
 
-        <!-- Login Section -->
-        <div id="loginSection" class="section">
-            <button id="loginBtn" class="btn">Login with Face Recognition</button>
-            <div id="faceLoginMessage" style="display: none;"></div>
-        </div>
-
-        <!-- Mode Switching Section -->
-        <div class="input-switch">
-            <button class="btn mode-btn active" data-mode="voice">Voice</button>
-            <button class="btn mode-btn" data-mode="text">Text</button>
-            <button class="btn mode-btn" data-mode="upload">Upload</button>
-        </div>
-
-        <!-- Recording Section -->
-        <div id="voiceInput" class="section" style="display: block;">
-            <button id="recordBtn" class="btn record">🎤 Record</button>
-            <button id="stopBtn" class="btn stop" disabled>⏹ Stop</button>
-            <div id="audioContainer"></div>
-        </div>
-
-        <!-- Text Input Section -->
-        <div id="textInput" class="section" style="display: none;">
-            <textarea id="textToConvert" placeholder="Enter text (max 200 characters)"></textarea>
-            <button id="textConvertBtn" class="btn">Generate from Text</button>
-            
-            <!-- Voice Selection -->
-            <div class="voice-selection">
-                <select id="maleVoiceSelect" class="voice-select">
-                    <option value="">Select a Male Voice</option>
-                </select>
-                <select id="femaleVoiceSelect" class="voice-select">
-                    <option value="">Select a Female Voice</option>
-                </select>
-            </div>
-        </div>
-
-        <!-- Scanned Message Section -->
-        <div id="scannedMessage" class="section" style="display: none;">
-            <p>Scanned Message: <span id="messageText"></span></p>
-        </div>
-
-        <!-- Audio Upload Section -->
-        <div id="uploadSection" class="section" style="display: none;">
-            <input type="file" id="audioUpload" accept="audio/*">
-            <label for="audioUpload" class="btn">Choose Audio File</label>
-            <input type="file" id="qrUpload" accept="image/png, image/jpeg" style="display: none;">
-            <label for="qrUpload" class="btn">Upload QR Code</label>
-        </div>
-
-        <!-- QR Code Display Section -->
-        <div class="section">
-            <div id="qrcode"></div>
-            <button id="downloadBtn" class="btn download" disabled>⬇ Download QR</button>
-        </div>
-
-        <!-- Scanning Section -->
-        <div class="section">
-            <button id="scanBtn" class="btn scan">🔍 Scan QR to Play</button>
-            <!-- Camera Preview -->
-            <div id="cameraPreview" class="camera-preview" style="display: none;">
-                <video id="cameraFeed" autoplay playsinline></video>
-            </div>
-            <div id="scannedAudio"></div>
-        </div>
-
-        <div id="status"></div>
+        <!-- Link to sign in page -->
+        <a href="signin.html" class="btn">Login with Face Recognition</a>
     </div>
-
-    <!-- Footer -->
-    <footer class="footer">
-        <div class="container">
-            <p>© 2024 Voice2Barcode. All rights reserved.</p>
-            <div class="footer-links">
-                <a href="#" class="footer-link">Privacy Policy</a>
-                <a href="#" class="footer-link">Terms of Service</a>
-                <a href="#" class="footer-link">GitHub Repo</a>
-            </div>
-        </div>
-    </footer>
-
-    <!-- Libraries -->
-    <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
-    <script src="https://cdn.rawgit.com/schmich/instascan-builds/master/instascan.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
-
-    <!-- Your Custom JS Files -->
-    <script src="js/audioRecordingCompressionQR.js"></script>
-    <script src="js/uploadQRCodeGeneration.js"></script>
-    <script src="js/modeSwitch.js"></script>
-    <script src="js/securityHandler.js"></script>
-    <script src="js/tts.js"></script>
-    <script src="js/qrScanning.js"></script>
-    <script src="js/SignIn.js"></script>
 </body>
 </html>
