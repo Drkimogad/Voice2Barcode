@@ -1,79 +1,144 @@
-// main.js - Updated with proper initialization sequence
+// main.js - Enhanced Version
 import { initializeQRUploadHandlers } from './js/QRCodeUploadHandling.js';
 import { initializeQRScanner } from './js/QRScanning.js';
 import { initializeTTS } from './js/tts.js';
 import { initializeModeSwitching } from './js/ModeSwitching.js';
 import { initializeRecordingControls } from './js/audioRecordingCompressionQR.js';
+import { updateStatus } from './js/utils.js'; // Add this utility module
 
-// Global error handler
-window.onerror = (message, source, lineno, colno, error) => {
-    console.error(`Application Error: ${message}`, error);
-    updateStatus('A critical error occurred. Please refresh.', 'error');
-};
+// Global error handling
+window.addEventListener('error', (event) => {
+    console.error('Global Error:', event.error);
+    updateStatus(`Critical error: ${event.message}`, 'error');
+    return true; // Prevent default handler
+});
 
-// Initialize all components
-function initializeApp() {
+window.addEventListener('unhandledrejection', (event) => {
+    console.error('Unhandled Rejection:', event.reason);
+    updateStatus(`Async error: ${event.reason.message}`, 'error');
+});
+
+// Application state management
+let isInitialized = false;
+const cleanupCallbacks = [];
+
+async function initializeApp() {
+    if (isInitialized) return;
+    
     try {
-        // Core functionality
-        initializeModeSwitching();
-        initializeRecordingControls();
-        initializeTTS();
-        initializeQRScanner();
-        initializeQRUploadHandlers();
-
-        // UI handlers
-        initializeDownloadHandlers();
-        initializeLogoutHandler();
+        showLoading(true);
         
-        // Set initial mode
-        document.querySelector('.mode-btn[data-mode="voice"]').click();
+        // Ordered initialization
+        await initializeCoreComponents();
+        initializeUIHandlers();
         
-        updateStatus('App initialized successfully', 'success');
+        // Set initial state
+        document.dispatchEvent(new CustomEvent('app-ready'));
+        updateStatus('Application ready', 'success');
+        isInitialized = true;
     } catch (error) {
-        console.error('Initialization failed:', error);
-        updateStatus('Failed to initialize application', 'error');
+        console.error('Boot failed:', error);
+        updateStatus('Failed to initialize. Please refresh.', 'error');
+        showLoading(false);
+        throw error;
+    } finally {
+        showLoading(false);
     }
 }
 
-// Download handlers
-function initializeDownloadHandlers() {
-    // QR Code Download
-    document.getElementById('downloadQRCodeBtn').addEventListener('click', () => {
-        const canvas = document.querySelector('#qrcode canvas');
-        if (canvas) {
-            try {
-                const url = canvas.toDataURL();
-                const link = document.createElement('a');
-                link.download = `voice-barcode-${Date.now()}.png`;
-                link.href = url;
-                link.click();
-                URL.revokeObjectURL(url);
-                updateStatus('QR code downloaded', 'success');
-            } catch (error) {
-                updateStatus('Failed to download QR', 'error');
-            }
-        }
-    });
+async function initializeCoreComponents() {
+    const initQueue = [
+        { fn: initializeModeSwitching, name: 'Mode Switching' },
+        { fn: initializeRecordingControls, name: 'Recording Controls' },
+        { fn: initializeTTS, name: 'Text-to-Speech' },
+        { fn: initializeQRScanner, name: 'QR Scanner' },
+        { fn: initializeQRUploadHandlers, name: 'File Uploads' }
+    ];
 
-    // Content Download
-    document.getElementById('downloadBtn').addEventListener('click', handleDownload);
+    for (const { fn, name } of initQueue) {
+        try {
+            await fn();
+            updateStatus(`Initialized: ${name}`, 'info');
+        } catch (error) {
+            console.error(`${name} init failed:`, error);
+            updateStatus(`${name} initialization failed`, 'warning');
+        }
+    }
 }
 
-// Logout handler
-function initializeLogoutHandler() {
-    document.getElementById('logoutBtn').addEventListener('click', () => {
-        localStorage.clear();
+function initializeUIHandlers() {
+    // Download handlers
+    const downloadCleanup = [
+        setupDownloadHandler('#downloadQRCodeBtn', handleQRDownload),
+        setupDownloadHandler('#downloadBtn', handleContentDownload)
+    ];
+    
+    // Logout handler
+    const logoutBtn = document.getElementById('logoutBtn');
+    const logoutHandler = () => {
+        performCleanup();
         window.location.href = 'signin.html';
+    };
+    
+    logoutBtn.addEventListener('click', logoutHandler);
+    cleanupCallbacks.push(() => {
+        logoutBtn.removeEventListener('click', logoutHandler);
     });
+
+    cleanupCallbacks.push(...downloadCleanup);
+}
+
+function setupDownloadHandler(selector, handler) {
+    const btn = document.querySelector(selector);
+    const clickHandler = () => {
+        try {
+            handler();
+        } catch (error) {
+            updateStatus(`Download failed: ${error.message}`, 'error');
+        }
+    };
+    
+    btn.addEventListener('click', clickHandler);
+    return () => btn.removeEventListener('click', clickHandler);
+}
+
+function handleQRDownload() {
+    const canvas = document.querySelector('#qrcode canvas');
+    if (!canvas) throw new Error('No QR code available');
+    
+    const url = canvas.toDataURL();
+    const link = document.createElement('a');
+    link.download = `v2b-${Date.now()}.png`;
+    link.href = url;
+    link.click();
+    URL.revokeObjectURL(url);
+    updateStatus('QR code downloaded', 'success');
+}
+
+function handleContentDownload() {
+    // Implement your content download logic here
+    throw new Error('Content download not implemented');
+}
+
+function performCleanup() {
+    // Clear media streams and handlers
+    cleanupCallbacks.forEach(fn => fn());
+    localStorage.clear();
+}
+
+function showLoading(visible) {
+    const loader = document.getElementById('loading-overlay');
+    if (loader) loader.style.display = visible ? 'flex' : 'none';
 }
 
 // Start application
 document.addEventListener('DOMContentLoaded', () => {
     if (!localStorage.getItem('loggedInUser')) {
-        window.location.href = 'signin.html';
-        return;
+        return window.location.replace('signin.html');
     }
     
     document.getElementById('logoutBtn').hidden = false;
-    initializeApp();
+    initializeApp().catch(() => {
+        updateStatus('Application failed to start', 'error');
+    });
 });
