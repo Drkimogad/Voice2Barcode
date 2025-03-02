@@ -10,8 +10,8 @@ document.getElementById('loginBtn').addEventListener('click', async () => {
     try {
         // Load face-api.js models from GitHub Pages or your server
         await faceapi.nets.ssdMobilenetv1.loadFromUri('https://drkimogad.github.io/Voice2Barcode/models/ssd_mobilenetv1_model-weights_manifest.json');
-        await faceapi.nets.faceLandmark68Net.loadFromUri('https://drkimogad.github.io/Voice2Barcode/models/face_landmark_68_model-shard1');
-        await faceapi.nets.faceRecognitionNet.loadFromUri('https://drkimogad.github.io/Voice2Barcode/models/face_recognition_model-shard2');
+        await faceapi.nets.faceLandmark68Net.loadFromUri('https://drkimogad.github.io/Voice2Barcode/models/face_landmark_68_model-shard1.json');
+        await faceapi.nets.faceRecognitionNet.loadFromUri('https://drkimogad.github.io/Voice2Barcode/models/face_recognition_model-shard2.json');
 
         // Access the camera and start the video stream
         navigator.mediaDevices.getUserMedia({ video: {} })
