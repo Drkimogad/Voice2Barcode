@@ -3,29 +3,30 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Voice2Barcode</title>
+    <title>Sign Up</title>
     <link rel="stylesheet" href="styles.css">
-    <script src="https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/dist/face-api.min.js"></script>
 </head>
 <body>
     <div class="container">
-        <h1>Welcome to Voice2Barcode</h1>
-        <p>This is your entry point to the Voice2Barcode app. Please sign in to get started.</p>
-
-        <!-- Link to sign in page -->
-        <a href="signin.html" class="btn">Login with Face Recognition</a>
+        <h1>Create Account</h1>
+        <div id="signupSection" class="section">
+            <form id="signupForm">
+                <label for="username">Username:</label>
+                <input type="text" id="username" required>
+                <label for="password">Password:</label>
+                <input type="password" id="password" required>
+                <button type="submit" class="btn">Sign Up</button>
+            </form>
+            <p>Already have an account? <a href="signin.html">Sign In</a></p>
+        </div>
     </div>
+    
     <footer class="footer">
         <div class="container">
             <p>© 2024 Voice2Barcode. All rights reserved.</p>
-            <div class="footer-links">
-                <a href="#" class="footer-link">Privacy Policy</a>
-                <a href="#" class="footer-link">Terms of Service</a>
-                <a href="#" class="footer-link">GitHub Repo</a>
-            </div>
         </div>
     </footer>
-        <!-- Include your custom JavaScript -->
-    <script src="js/signin.js"></script>
+
+    <script src="js/signup.js"></script>
 </body>
 </html>
