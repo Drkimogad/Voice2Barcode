@@ -1,108 +1,132 @@
-let currentCameraIndex = 0;
-let cameras = [];
-let scanner;
+// QRScanning.js
+export function initializeQRScanner() {
+    let currentCameraIndex = 0;
+    let cameras = [];
+    let scanner = null;
+    const scanBtn = document.getElementById('scanBtn');
+    const switchCameraBtn = document.getElementById('switchCameraBtn');
+    const cameraPreview = document.getElementById('cameraPreview');
 
-document.getElementById('scanBtn').addEventListener('click', async () => {
-    try {
-        cameras = await Instascan.Camera.getCameras();
-        
-        if (cameras.length > 0) {
-            // Initialize scanner with the first camera
-            scanner = new Instascan.Scanner({ video: document.getElementById('cameraFeed') });
+    async function initializeScanner() {
+        try {
+            cameras = await Instascan.Camera.getCameras();
             
-            // Listener for QR scan event
-            scanner.addListener('scan', (content) => {
-                handleScannedQR(content);
+            if (cameras.length === 0) {
+                throw new Error('No cameras found');
+            }
+
+            scanner = new Instascan.Scanner({
+                video: document.getElementById('cameraFeed'),
+                mirror: false,
+                backgroundScan: false
             });
+
+            scanner.addListener('scan', content => {
+                handleScannedQR(content);
+                scanner.stop();
+                cameraPreview.style.display = 'none';
+            });
+
+            await scanner.start(cameras[currentCameraIndex]);
+            switchCameraBtn.style.display = cameras.length > 1 ? 'block' : 'none';
+            updateStatus('Scanning active', 'success');
             
-            // Start the scanner with the current camera
+        } catch (error) {
+            cameraPreview.style.display = 'none';
+            updateStatus(`Scanner error: ${error.message}`, 'error');
+        }
+    }
+
+    function handleScannedQR(content) {
+        try {
+            const decrypted = SecurityHandler.decrypt(content);
+            const container = document.getElementById('scannedContent');
+            const messageEl = document.getElementById('messageText');
+            const audioEl = document.getElementById('scannedAudio');
+
+            container.style.display = 'block';
+            
+            if (decrypted.type === 'text') {
+                messageEl.textContent = decrypted.data;
+                audioEl.innerHTML = '';
+                enableDownload('text', decrypted.data);
+            } else if (decrypted.type === 'audio') {
+                const audioURL = URL.createObjectURL(
+                    new Blob([base64ToArrayBuffer(decrypted.data)], { type: 'audio/webm' }
+                ));
+                audioEl.innerHTML = `<audio controls src="${audioURL}"></audio>`;
+                messageEl.textContent = 'Decoded audio message';
+                enableDownload('audio', decrypted.data);
+            } else {
+                throw new Error('Unsupported content type');
+            }
+            
+            updateStatus('Decode successful', 'success');
+        } catch (error) {
+            updateStatus(`Decode failed: ${error.message}`, 'error');
+        }
+    }
+
+    // Event Listeners
+    scanBtn.addEventListener('click', async () => {
+        cameraPreview.style.display = 'block';
+        await initializeScanner();
+    });
+
+    switchCameraBtn.addEventListener('click', () => {
+        if (cameras.length > 1) {
+            currentCameraIndex = (currentCameraIndex + 1) % cameras.length;
             scanner.start(cameras[currentCameraIndex]);
-
-            document.getElementById('cameraPreview').style.display = 'block';
-            document.getElementById('switchCameraBtn').style.display = 'inline-block';
-            updateStatus('Scanning QR Code...', 'success');
-        } else {
-            updateStatus('No cameras found!', 'error');
+            updateStatus(`Switched to ${cameras[currentCameraIndex].name}`, 'info');
         }
-    } catch (err) {
-        updateStatus('Camera access denied!', 'error');
-    }
-});
+    });
 
-// Switch Camera (front <-> rear)
-document.getElementById('switchCameraBtn').addEventListener('click', () => {
-    if (cameras.length > 1) {
-        currentCameraIndex = (currentCameraIndex + 1) % cameras.length;
-        scanner.start(cameras[currentCameraIndex]);
-        updateStatus(`Switched to ${cameras[currentCameraIndex].name}`, 'success');
-    }
-});
-
-// Handle Scanned QR
-function handleScannedQR(content) {
-    try {
-        const decrypted = SecurityHandler.decrypt(content);
-        if (decrypted.startsWith('text:')) {
-            const text = decrypted.slice(5);
-            document.getElementById('scannedMessage').style.display = 'block';
-            document.getElementById('messageText').textContent = text;
-            synthesizeSpeech(text);  // Read the text aloud
-            enableDownload('text', text);  // Enable download of text
-        } else if (decrypted.startsWith('audio:')) {
-            const audioData = decrypted.slice(6);  // Extract audio data
-            const audio = new Audio(audioData);
-            audio.controls = true;
-            document.getElementById('scannedAudio').innerHTML = ''; // Clear any previous audio
-            document.getElementById('scannedAudio').appendChild(audio);
-            document.getElementById('scannedMessage').style.display = 'block';
-            document.getElementById('messageText').textContent = 'Audio decoded successfully!';
-            audio.play(); // Play the decoded audio
-            enableDownload('audio', audioData); // Enable download of audio
-        } else {
-            throw new Error('Unsupported QR data format');
-        }
-        updateStatus('Content decoded successfully!', 'success');
-    } catch (err) {
-        updateStatus('Decoding failed: ' + err.message, 'error');
-    }
-}
-
-// Enable Download (for text or audio)
-function enableDownload(type, data) {
-    const downloadBtn = document.getElementById('downloadBtn');
-    downloadBtn.disabled = false;
-    downloadBtn.addEventListener('click', () => {
-        if (type === 'text') {
-            downloadText(data);  // Download text file
-        } else if (type === 'audio') {
-            downloadAudio(data);  // Download audio file
-        }
+    // Cleanup when leaving page
+    window.addEventListener('beforeunload', () => {
+        if (scanner) scanner.stop();
     });
 }
 
-// Download Text (as .txt file)
+// Utility functions
+function base64ToArrayBuffer(base64) {
+    const binaryString = atob(base64);
+    const bytes = new Uint8Array(binaryString.length);
+    for (let i = 0; i < binaryString.length; i++) {
+        bytes[i] = binaryString.charCodeAt(i);
+    }
+    return bytes.buffer;
+}
+
+function enableDownload(type, data) {
+    const btn = document.getElementById('downloadBtn');
+    btn.disabled = false;
+    
+    btn.onclick = () => {
+        if (type === 'text') {
+            downloadText(data);
+        } else if (type === 'audio') {
+            downloadAudio(data);
+        }
+    };
+}
+
 function downloadText(text) {
     const blob = new Blob([text], { type: 'text/plain' });
+    const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
-    link.href = URL.createObjectURL(blob);
-    link.download = 'scannedText.txt';
+    link.href = url;
+    link.download = `decoded-${Date.now()}.txt`;
     link.click();
-    updateStatus('Text downloaded successfully!', 'success');
+    URL.revokeObjectURL(url);
 }
 
-// Download Audio (as .ogg or .mp3 file)
 function downloadAudio(audioData) {
-    const blob = new Blob([audioData], { type: 'audio/ogg' }); // You can change the MIME type to your preferred format
+    const buffer = base64ToArrayBuffer(audioData);
+    const blob = new Blob([buffer], { type: 'audio/webm' });
+    const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
-    link.href = URL.createObjectURL(blob);
-    link.download = 'scannedAudio.ogg';
+    link.href = url;
+    link.download = `decoded-${Date.now()}.webm`;
     link.click();
-    updateStatus('Audio downloaded successfully!', 'success');
-}
-
-// Update Status
-function updateStatus(message, type) {
-    const statusDiv = document.getElementById('status');
-    statusDiv.textContent = message;
-    statusDiv.className = type;
+    URL.revokeObjectURL(url);
 }
