@@ -19,6 +19,24 @@ body {
     box-shadow: 0 2px 4px rgba(0,0,0,0.1);
 }
 
+.qr-section {
+    margin: 20px 0;
+    text-align: center;
+}
+
+.qrcode-container {
+    margin: 0 auto;
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    display: inline-block;
+}
+
+#scannedContent audio {
+    width: 100%;
+    margin-top: 15px;
+}
+
 /* Button Styles */
 .btn {
     padding: 10px 20px;
