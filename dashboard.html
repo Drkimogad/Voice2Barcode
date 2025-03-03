@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Voice2Barcode Dashboard</title>
     <link rel="stylesheet" href="styles.css">
+    <!-- OpusEncoder loaded early for better initialization -->
     <script type="module">
         import { OpusEncoder } from 'https://cdn.jsdelivr.net/npm/@opus-encoder/encoder@6.1.0/+esm';
         window.OpusEncoder = OpusEncoder;
@@ -14,117 +15,90 @@
     <div class="container">
         <header class="app-header">
             <h1 aria-label="Voice to Barcode Dashboard">Voice2Barcode</h1>
-            <div class="user-controls">
-                <button id="logoutBtn" class="btn logout" aria-label="Log out" hidden>
-                    🔒 Log Out
-                </button>
-            </div>
+            <button id="logoutBtn" class="btn logout" aria-label="Log out" hidden>
+                🔒 Log Out
+            </button>
         </header>
 
         <div id="dashboardContent">
-            <!-- Mode Selector -->
+            <!-- Mode Switching -->
             <div class="mode-switcher" role="navigation">
-                <button class="btn mode-btn active" data-mode="voice" aria-label="Voice mode">
-                    🎤 Voice
-                </button>
-                <button class="btn mode-btn" data-mode="text" aria-label="Text mode">
-                    📝 Text
-                </button>
-                <button class="btn mode-btn" data-mode="upload" aria-label="Upload mode">
-                    📤 Upload
-                </button>
+                <button class="btn mode-btn" data-mode="voice" aria-label="Voice mode">🎤 Voice</button>
+                <button class="btn mode-btn" data-mode="text" aria-label="Text mode">📝 Text</button>
+                <button class="btn mode-btn" data-mode="upload" aria-label="Upload mode">📤 Upload</button>
             </div>
 
-            <!-- Voice Input Section -->
+            <!-- Voice Section -->
             <section data-section="voice" class="mode-section" hidden>
-                <section id="voiceInput" class="input-section" aria-labelledby="voiceHeader">
+                <div class="input-section">
                     <div class="recording-controls">
-                        <button id="recordBtn" class="btn record" aria-label="Start recording">
-                            🎤 Record
-                        </button>
-                        <button id="stopBtn" class="btn stop" disabled aria-label="Stop recording">
-                            ⏹ Stop
-                        </button>
+                        <button id="recordBtn" class="btn record" aria-label="Start recording">🎤 Record</button>
+                        <button id="stopBtn" class="btn stop" disabled aria-label="Stop recording">⏹ Stop</button>
                     </div>
                     <div id="recordingIndicator" class="recording-indicator" aria-hidden="true"></div>
-                </section>
+                </div>
             </section>
 
-            <!-- Text Input Section -->
+            <!-- Text Section -->
             <section data-section="text" class="mode-section" hidden>
-                <section id="textInput" class="input-section" aria-labelledby="textHeader">
-                    <textarea id="textToConvert" 
-                              placeholder="Enter text (max 200 characters)"
-                              maxlength="200"
-                              aria-label="Text input for conversion"></textarea>
+                <div class="input-section">
+                    <textarea id="textToConvert" placeholder="Enter text (max 200 characters)" 
+                              maxlength="200" aria-label="Text input"></textarea>
                     <div class="voice-selection">
-                        <select id="maleVoiceSelect" class="voice-select" aria-label="Select male voice">
+                        <select id="maleVoiceSelect" class="voice-select" aria-label="Male voice">
                             <option value="">Select Male Voice</option>
                         </select>
-                        <select id="femaleVoiceSelect" class="voice-select" aria-label="Select female voice">
+                        <select id="femaleVoiceSelect" class="voice-select" aria-label="Female voice">
                             <option value="">Select Female Voice</option>
                         </select>
                     </div>
-                    <button id="textConvertBtn" class="btn">Generate QR Code</button>
-                </section>
+                    <button id="textConvertBtn" class="btn">Generate QR</button>
+                </div>
             </section>
 
             <!-- Upload Section -->
             <section data-section="upload" class="mode-section" hidden>
-                <section id="uploadSection" class="input-section" aria-labelledby="uploadHeader">
+                <div class="input-section">
                     <div class="upload-group">
                         <input type="file" id="audioUpload" accept="audio/*" hidden>
-                        <label for="audioUpload" class="btn" aria-label="Upload audio file">
-                            📂 Upload Audio
-                        </label>
-                        
+                        <label for="audioUpload" class="btn" aria-label="Upload audio">📂 Upload Audio</label>
                         <input type="file" id="qrUpload" accept="image/*" hidden>
-                        <label for="qrUpload" class="btn" aria-label="Upload QR code">
-                            📄 Upload QR
-                        </label>
+                        <label for="qrUpload" class="btn" aria-label="Upload QR">📄 Upload QR</label>
                     </div>
-                </section>
+                </div>
             </section>
 
-            <!-- QR Code Display -->
-            <section class="qr-section" aria-labelledby="qrHeader">
+            <!-- QR Display -->
+            <section class="qr-section">
                 <div id="qrcode" class="qrcode-container"></div>
-                <button id="downloadQRCodeBtn" class="btn" disabled>
-                    ⬇ Download QR
-                </button>
+                <button id="downloadQRCodeBtn" class="btn" disabled>⬇ Download QR</button>
             </section>
 
             <!-- Scanner Section -->
-            <section class="scanner-section" aria-labelledby="scannerHeader">
-                <button id="scanBtn" class="btn scan" aria-label="Start scanning">
-                    🔍 Scan QR Code
-                </button>
+            <section class="scanner-section">
+                <button id="scanBtn" class="btn scan" aria-label="Start scanner">🔍 Scan QR</button>
                 <div id="cameraPreview" class="camera-preview" hidden>
                     <video id="cameraFeed" autoplay playsinline muted></video>
                 </div>
-                <button id="switchCameraBtn" class="btn" hidden aria-label="Switch camera">
-                    🔄 Switch Camera
-                </button>
+                <button id="switchCameraBtn" class="btn" hidden aria-label="Switch camera">🔄 Switch</button>
             </section>
 
             <!-- Results Section -->
-            <section id="scannedContent" class="results-section" aria-labelledby="resultsHeader" hidden>
-                <h2 id="resultsHeader">Decoded Content</h2>
-                <p id="messageText" class="message-text"></p>
-                <div id="scannedAudio" class="audio-player"></div>
-                <button id="downloadBtn" class="btn" disabled>
-                    ⬇ Download Content
-                </button>
+            <section id="scannedContent" class="results-section" hidden>
+                <h2>Decoded Content</h2>
+                <p id="messageText"></p>
+                <div id="scannedAudio"></div>
+                <button id="downloadBtn" class="btn" disabled>⬇ Download</button>
             </section>
 
-            <!-- Status Display -->
-            <div id="status" class="status-message" role="status" aria-live="polite"></div>
+            <!-- Status Messages -->
+            <div id="status" class="status-message" aria-live="polite"></div>
         </div>
 
         <!-- Loading Overlay -->
         <div id="loading-overlay" class="loading-overlay">
             <div class="loading-spinner"></div>
-            <p class="loading-text">Initializing Application...</p>
+            <p class="loading-text">Initializing...</p>
         </div>
     </div>
 
