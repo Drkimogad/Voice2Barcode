@@ -1,7 +1,4 @@
 // tts.js - Final Version
-document.addEventListener('DOMContentLoaded', () => {
-    initializeTTS();
-});
 let synth = window.speechSynthesis;
 let voices = [];
 
