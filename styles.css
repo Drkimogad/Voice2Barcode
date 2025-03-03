@@ -34,6 +34,21 @@ body {
   flex-direction: column;
 }
 
+/* Ensure footer stays at the bottom */
+html, body {
+  height: 100%;
+}
+
+.container {
+  flex: 1; /* This will ensure the container takes up the remaining space */
+  display: flex;
+  flex-direction: column;
+}
+
+footer.footer {
+  margin-top: auto;
+}
+
 /* ===== Header ===== */
 header.app-header {
   background-color: var(--header-bg);
@@ -251,4 +266,10 @@ footer.footer .footer-link:hover {
   #dashboardContent {
     padding: 1rem;
   }
+}
+
+/* ===== Info Container ===== */
+.info-container {
+  text-align: center;
+  margin-top: 1rem;
 }
