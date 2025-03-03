@@ -5,10 +5,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Voice2Barcode Dashboard</title>
     <link rel="stylesheet" href="styles.css">
-    <!-- OpusEncoder loaded early for better initialization -->
+    <!-- OpusRecorder loaded early for better initialization -->
     <script type="module">
-        import { OpusEncoder } from 'https://cdn.jsdelivr.net/npm/@opus-encoder/encoder@3.0.0/+esm'; // Use the correct version
-        window.OpusEncoder = OpusEncoder;
+        import Recorder from './libs/opus-recorder/opus-recorder.js';
+        window.Recorder = Recorder;
     </script>
 </head>
 <body>
@@ -42,8 +42,7 @@
             <!-- Text Section -->
             <section data-section="text" class="mode-section" hidden>
                 <div class="input-section">
-                    <textarea id="textToConvert" placeholder="Enter text (max 200 characters)" 
-                              maxlength="200" aria-label="Text input"></textarea>
+                    <textarea id="textToConvert" placeholder="Enter text (max 200 characters)" maxlength="200" aria-label="Text input"></textarea>
                     <div class="voice-selection">
                         <select id="maleVoiceSelect" class="voice-select" aria-label="Male voice">
                             <option value="">Select Male Voice</option>
