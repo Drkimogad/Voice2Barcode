@@ -1,10 +1,10 @@
 // main.js - Final Version
-import { initializeQRUploadHandlers } from './js/QRCodeUploadHandling.js';
-import { initializeQRScanner } from './js/QRScanning.js';
-import { initializeTTS } from './js/tts.js';
-import { initializeModeSwitching } from './js/ModeSwitching.js';
-import { initializeRecordingControls, initializeAudioModule } from './js/audioRecordingCompressionQR.js';
-import { updateStatus } from './js/utils.js';
+import { initializeQRUploadHandlers } from './QRCodeUploadHandling.js';
+import { initializeQRScanner } from './QRScanning.js';
+import { initializeTTS } from './tts.js';
+import { initializeModeSwitching } from './ModeSwitching.js';
+import { initializeRecordingControls, initializeAudioModule } from './audioRecordingCompressionQR.js';
+import { updateStatus } from './utils.js';
 
 // Global error handling
 window.addEventListener('error', (event) => {
