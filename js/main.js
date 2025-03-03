@@ -22,7 +22,6 @@ window.addEventListener('unhandledrejection', (event) => {
 let isInitialized = false;
 const cleanupCallbacks = [];
 
-// Main initialization function
 async function initializeApp() {
     if (isInitialized) return;
     
@@ -47,7 +46,6 @@ async function initializeApp() {
     }
 }
 
-// Core component initialization
 async function initializeCoreComponents() {
     const initQueue = [
         { fn: initializeModeSwitching, name: 'Mode Switching' },
@@ -72,7 +70,6 @@ async function initializeCoreComponents() {
     }
 }
 
-// UI event handlers
 function initializeUIHandlers() {
     // Download handlers
     const downloadCleanup = [
@@ -95,7 +92,6 @@ function initializeUIHandlers() {
     cleanupCallbacks.push(...downloadCleanup);
 }
 
-// Download handler setup
 function setupDownloadHandler(selector, handler) {
     const btn = document.querySelector(selector);
     const clickHandler = () => {
@@ -110,7 +106,6 @@ function setupDownloadHandler(selector, handler) {
     return () => btn.removeEventListener('click', clickHandler);
 }
 
-// QR code download handler
 function handleQRDownload() {
     const canvas = document.querySelector('#qrcode canvas');
     if (!canvas) throw new Error('No QR code available');
@@ -124,7 +119,6 @@ function handleQRDownload() {
     updateStatus('QR code downloaded', 'success');
 }
 
-// Content download handler
 function handleContentDownload() {
     const content = document.getElementById('messageText')?.textContent || 
                     document.getElementById('scannedAudio')?.innerHTML;
@@ -143,13 +137,11 @@ function handleContentDownload() {
     updateStatus('Content downloaded', 'success');
 }
 
-// Cleanup function
 function performCleanup() {
     cleanupCallbacks.forEach(fn => fn());
     localStorage.clear();
 }
 
-// Loading state management
 function showLoading(visible) {
     const loader = document.getElementById('loading-overlay');
     if (loader) {
