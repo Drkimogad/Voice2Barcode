@@ -1,4 +1,5 @@
 // main.js - Final Version
+import { initializeRecordingControls, initializeAudioModule } from './audioRecordingCompressionQR.js';
 import { initializeQRUploadHandlers } from './QRCodeUploadHandling.js';
 import { initializeQRScanner } from './QRScanning.js';
 import { initializeTTS } from './tts.js';
