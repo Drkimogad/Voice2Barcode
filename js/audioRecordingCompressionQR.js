@@ -16,6 +16,11 @@ export function initializeRecordingControls() {
     };
 }
 
+export function initializeAudioModule() {
+    // Your initialization logic for the audio module here
+    console.log('Audio module initialized');
+}
+
 async function startRecording() {
     try {
         audioStream = await navigator.mediaDevices.getUserMedia({ audio: true });
