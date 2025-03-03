@@ -3,7 +3,6 @@ import { initializeQRUploadHandlers } from './QRCodeUploadHandling.js';
 import { initializeQRScanner } from './QRScanning.js';
 import { initializeTTS } from './tts.js';
 import { initializeModeSwitching } from './ModeSwitching.js';
-import { initializeRecordingControls, initializeAudioModule } from './audioRecordingCompressionQR.js';
 import { updateStatus } from './utils.js';
 
 // Global error handling
