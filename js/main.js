@@ -162,3 +162,6 @@ document.addEventListener('DOMContentLoaded', () => {
         updateStatus('Application failed to start', 'error');
     });
 });
+document.addEventListener('DOMContentLoaded', () => {
+    initializeTTS();
+});
