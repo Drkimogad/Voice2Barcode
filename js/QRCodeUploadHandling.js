@@ -1,80 +1,106 @@
-// QRCodeUploadHandling.js
+// QRCodeUploadHandling.js - Final Version
 export function initializeQRUploadHandlers() {
-    // QR Code Upload
-    document.getElementById('qrUpload').addEventListener('change', async (e) => {
-        const file = e.target.files[0];
-        if (!file) return updateStatus('No file selected!', 'error');
+    const audioUpload = document.getElementById('audioUpload');
+    const qrUpload = document.getElementById('qrUpload');
 
-        try {
-            const qrData = await decodeQRFromImage(file);
-            const decryptedData = SecurityHandler.decrypt(qrData);
-            handleScannedContent(decryptedData);
-            updateStatus('QR Code processed successfully!', 'success');
-        } catch (err) {
-            updateStatus(`QR Error: ${err.message}`, 'error');
-        } finally {
-            URL.revokeObjectURL(file); // Clean up memory
-        }
-    });
+    audioUpload.addEventListener('change', handleAudioUpload);
+    qrUpload.addEventListener('change', handleQRUpload);
 
-    // Audio Upload
-    document.getElementById('audioUpload').addEventListener('change', async (e) => {
-        const file = e.target.files[0];
-        if (!file) return updateStatus('No file selected!', 'error');
-
-        try {
-            const audioBlob = new Blob([await file.arrayBuffer()], { type: file.type });
-            const compressed = await compressAudio(audioBlob);
-            const encrypted = SecurityHandler.encrypt(compressed);
-            generateQRFromData(encrypted);
-            updateStatus('Audio encoded in QR!', 'success');
-        } catch (err) {
-            updateStatus(`Audio Error: ${err.message}`, 'error');
-        }
-    });
+    return () => {
+        audioUpload.removeEventListener('change', handleAudioUpload);
+        qrUpload.removeEventListener('change', handleQRUpload);
+    };
 }
 
-// QR Decoding
+async function handleAudioUpload(event) {
+    const file = event.target.files[0];
+    if (!file) {
+        updateStatus('No file selected', 'error');
+        return;
+    }
+
+    try {
+        const arrayBuffer = await file.arrayBuffer();
+        const audioBlob = new Blob([arrayBuffer], { type: file.type });
+        generateQRFromData({ type: 'audio', data: URL.createObjectURL(audioBlob) });
+        updateStatus('Audio file processed', 'success');
+    } catch (error) {
+        updateStatus(`Failed to process audio: ${error.message}`, 'error');
+    }
+}
+
+async function handleQRUpload(event) {
+    const file = event.target.files[0];
+    if (!file) {
+        updateStatus('No file selected', 'error');
+        return;
+    }
+
+    try {
+        const content = await decodeQRFromImage(file);
+        const data = JSON.parse(content);
+        displayScannedContent(data);
+    } catch (error) {
+        updateStatus(`Failed to decode QR: ${error.message}`, 'error');
+    }
+}
+
 async function decodeQRFromImage(file) {
     return new Promise((resolve, reject) => {
         const img = new Image();
         img.src = URL.createObjectURL(file);
-        
+
         img.onload = () => {
             const canvas = document.createElement('canvas');
             const ctx = canvas.getContext('2d');
-            [canvas.width, canvas.height] = [img.width, img.height];
+            canvas.width = img.width;
+            canvas.height = img.height;
             ctx.drawImage(img, 0, 0);
-            
+
             const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-            const result = jsQR(imageData.data, imageData.width, imageData.height);
-            
-            result ? resolve(result.data) : reject(new Error('No QR code found'));
+            const code = jsQR(imageData.data, imageData.width, imageData.height);
+
+            if (code) {
+                resolve(code.data);
+            } else {
+                reject(new Error('No QR code found in image'));
+            }
         };
-        
-        img.onerror = () => reject(new Error('Invalid image file'));
+
+        img.onerror = () => reject(new Error('Failed to load image'));
     });
 }
 
-// Content Handling
-function handleScannedContent(content) {
-    try {
-        const container = document.getElementById('scannedContent');
-        const messageEl = document.getElementById('messageText');
-        const audioEl = document.getElementById('scannedAudio');
+function generateQRFromData(data) {
+    const qrcodeDiv = document.getElementById('qrcode');
+    qrcodeDiv.innerHTML = '';
+    new QRCode(qrcodeDiv, {
+        text: JSON.stringify(data),
+        width: 256,
+        height: 256
+    });
+    document.getElementById('downloadQRCodeBtn').disabled = false;
+}
 
-        container.style.display = 'block';
-        
-        if (content.startsWith('text:')) {
-            messageEl.textContent = content.slice(5);
-            audioEl.innerHTML = '';
-        } else if (content.startsWith('audio:')) {
-            audioEl.innerHTML = `<audio controls src="data:audio/webm;base64,${content.slice(6)}"></audio>`;
-            messageEl.textContent = 'Decoded audio message';
-        } else {
-            throw new Error('Unknown content type');
-        }
-    } catch (err) {
-        throw new Error(`Content handling failed: ${err.message}`);
+function displayScannedContent(data) {
+    const scannedContent = document.getElementById('scannedContent');
+    const messageText = document.getElementById('messageText');
+    const scannedAudio = document.getElementById('scannedAudio');
+
+    scannedContent.hidden = false;
+
+    if (data.type === 'text') {
+        messageText.textContent = data.data;
+        scannedAudio.innerHTML = '';
+    } else if (data.type === 'audio') {
+        const audio = new Audio(data.data);
+        audio.controls = true;
+        scannedAudio.innerHTML = '';
+        scannedAudio.appendChild(audio);
+        messageText.textContent = 'Audio decoded successfully!';
+    } else {
+        throw new Error('Unsupported content type');
     }
+
+    updateStatus('Content decoded successfully', 'success');
 }
