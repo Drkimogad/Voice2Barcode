@@ -27,6 +27,7 @@ async function initializeApp() {
     
     try {
         showLoading(true);
+        updateStatus('Initializing application...', 'info');
         
         // Ordered initialization
         await initializeCoreComponents();
@@ -58,6 +59,7 @@ async function initializeCoreComponents() {
 
     for (const { fn, name } of initQueue) {
         try {
+            console.log(`Initializing: ${name}`);
             const cleanup = await fn();
             if (typeof cleanup === 'function') {
                 cleanupCallbacks.push(cleanup);
