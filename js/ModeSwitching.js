@@ -1,5 +1,5 @@
 // ModeSwitching.js - Enhanced Version
-export function initializeModeSwitching() {
+function initializeModeSwitching() {
     const modes = {
         voice: {
             button: '[data-mode="voice"]',
@@ -99,3 +99,6 @@ export function initializeModeSwitching() {
     // Initialize
     setDefaultMode();
 }
+
+// Expose functions to the global scope
+window.initializeModeSwitching = initializeModeSwitching;
