@@ -11,7 +11,7 @@ var expect = chai.expect;
 
 describe('decoderWorker', function() {
 
-  var Module = require('../dist/decoderWorker.min');
+  var Module = require('libs/opus-recorder//decoderWorker.min');
   var decoder;
   var _opus_decoder_create_spy;
   var _opus_decoder_destroy_spy;
