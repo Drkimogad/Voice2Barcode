@@ -15,7 +15,6 @@ const APP_CONFIG = {
 let isInitialized = false;
 let initializationAttempts = 0;
 const cleanupCallbacks = new Set();
-
 // Enhanced Error Handling
 window.addEventListener('error', ({ error }) => {
     console.error('Runtime Error:', error);
@@ -204,3 +203,15 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('logoutBtn').hidden = false;
     initializeApp().catch(handleCriticalFailure);
 });
+
+// Load critical modules first
+async function criticalModules() {
+  await initializeModeSwitching();
+  await initializeQRUploadHandlers();
+}
+
+// Defer non-essential
+function secondaryModules() {
+  initializeTTS();
+  initializeScanner();
+}
