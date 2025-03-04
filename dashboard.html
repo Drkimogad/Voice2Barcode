@@ -5,6 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Voice2Barcode Dashboard</title>
     <link rel="stylesheet" href="styles.css">
+    <script src="js/audioRecordingCompressionQR.js"></script>
+    <script src="js/main.js" defer></script>
     <!-- OpusRecorder loaded early for better initialization -->
     <script src="./libs/opus-recorder/src/recorder.js"></script>
 </head>
@@ -115,12 +117,10 @@
     <script src="https://cdn.jsdelivr.net/npm/instascan@2.0.0/dist/instascan.min.js"></script>
 
     <!-- Core Application -->
-    <script src="js/audioRecordingCompressionQR.js"></script>
     <script src="js/QRCodeUploadHandling.js"></script>
     <script src="js/QRScanning.js"></script>
     <script src="js/tts.js"></script>
     <script src="js/ModeSwitching.js"></script>
     <script src="js/utils.js"></script>
-    <script src="js/main.js"></script>
 </body>
 </html>
