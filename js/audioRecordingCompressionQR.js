@@ -1,9 +1,8 @@
-// audioRecordingCompressionQR.js
 const MAX_RECORD_SECONDS = 10;
 let recorder; // Changed from mediaRecorder
 let audioStream;
 
-export function initializeRecordingControls() {
+function initializeRecordingControls() {
     const recordBtn = document.getElementById('recordBtn');
     const stopBtn = document.getElementById('stopBtn');
 
@@ -86,7 +85,7 @@ function updateUIState(recording) {
     document.getElementById('recordingIndicator').style.display = recording ? 'block' : 'none';
 }
 
-export function generateQRFromData(data) {
+function generateQRFromData(data) {
     const qrcodeDiv = document.getElementById('qrcode');
     qrcodeDiv.innerHTML = '';
     new QRCode(qrcodeDiv, {
@@ -97,4 +96,6 @@ export function generateQRFromData(data) {
     document.getElementById('downloadQRCodeBtn').disabled = false;
 }
 
-// Keep other existing functions as-is
+// Expose functions to the global scope
+window.initializeRecordingControls = initializeRecordingControls;
+window.generateQRFromData = generateQRFromData;
