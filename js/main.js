@@ -204,6 +204,23 @@ document.addEventListener('DOMContentLoaded', () => {
     initializeApp().catch(handleCriticalFailure);
 });
 
+const perfMetrics = {
+  start: Date.now(),
+  stages: {},
+  mark(stage) {
+    this.stages[stage] = Date.now() - this.start;
+  },
+  report() {
+    console.table(this.stages);
+  }
+};
+
+// Usage
+perfMetrics.mark('dom_loaded');
+await initializeCoreComponents(); // After each stage
+perfMetrics.mark('components_loaded');
+
+
 // Load critical modules first
 async function criticalModules() {
   await initializeModeSwitching();
