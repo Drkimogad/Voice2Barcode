@@ -91,7 +91,7 @@
                 <h2>Decoded Content</h2>
                 <p id="messageText" class="content-meta"></p>
                 <div id="scannedAudio" class="audio-player"></div>
-                <button id="downloadBtn" class="btn" disabled>⬇ Download</button>
+                <button id="downloadBtn" class="btn" disabled onclick="downloadDecodedContent()">⬇ Download</button>
             </section>
 
             <!-- Status Messages -->
@@ -132,10 +132,12 @@
     <script>
     document.addEventListener('DOMContentLoaded', async () => {
         try {
-            // Initialize core systems
+            // Initialize all core systems
             await initializeAudioModule();
             await initializeRecordingControls();
             initializeQRUploadHandlers();
+            initializeScanner();
+            initializeTTS();
 
             // Set up QR download observer
             const qrObserver = new MutationObserver(() => {
@@ -147,10 +149,13 @@
                 subtree: true
             });
 
-            // Initialize other modules
-            if(typeof initializeScanner === 'function') {
-                initializeScanner();
-            }
+            // Initialize status cleanup
+            setInterval(() => {
+                const status = document.getElementById('status');
+                if(status.textContent && !status.classList.contains('status-error')) {
+                    status.textContent = '';
+                }
+            }, 5000);
 
         } catch (error) {
             console.error('Initialization error:', error);
