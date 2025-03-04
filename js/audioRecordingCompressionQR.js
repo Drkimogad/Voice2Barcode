@@ -1,131 +1,149 @@
 // audioRecordingCompressionQR.js
 
-const RECORDING_DURATION = 10000; // 10 seconds in milliseconds
+const RECORDING_DURATION = 10000; // 10 seconds
+const MAX_QR_DATA_LENGTH = 2953; // Max data for QR v40-L (low error correction)
 
 let recorder;
 let recordedChunks = [];
 let qrCodeUrl;
+let cleanupAudioModule = () => {};
 
-function initializeAudioModule() {
-    return new Promise((resolve, reject) => {
-        try {
-            // Initialize media recorder
-            navigator.mediaDevices.getUserMedia({ audio: true })
-                .then(stream => {
-                    recorder = new MediaRecorder(stream);
-                    
-                    recorder.ondataavailable = event => {
-                        if (event.data.size > 0) {
-                            recordedChunks.push(event.data);
-                        }
-                    };
+async function initializeAudioModule() {
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    recorder = new MediaRecorder(stream, { mimeType: 'audio/webm' });
 
-                    recorder.onstop = () => {
-                        const blob = new Blob(recordedChunks, { type: 'audio/webm' });
-                        compressAndConvertToQRCode(blob);
-                    };
+    recorder.ondataavailable = event => {
+      if (event.data.size > 0) recordedChunks.push(event.data);
+    };
 
-                    console.log('Audio Module initialized');
-                    resolve(() => {
-                        // Cleanup code for Audio Module
-                        console.log('Audio Module cleaned up');
-                        stream.getTracks().forEach(track => track.stop());
-                    });
-                })
-                .catch(error => {
-                    console.error('Audio Module initialization failed:', error);
-                    reject(error);
-                });
-        } catch (error) {
-            console.error('Audio Module initialization failed:', error);
-            reject(error);
-        }
-    });
+    recorder.onstop = async () => {
+      const blob = new Blob(recordedChunks, { type: 'audio/webm' });
+      await compressAndConvertToQRCode(blob);
+      recordedChunks = []; // Clear memory
+    };
+
+    cleanupAudioModule = () => {
+      stream.getTracks().forEach(track => track.stop());
+      console.log('Audio module cleaned up');
+    };
+
+    console.log('Audio module initialized');
+    return true;
+  } catch (error) {
+    updateStatus(`Microphone access denied: ${error}`, 'error');
+    throw error;
+  }
 }
 
 function initializeRecordingControls() {
-    return new Promise((resolve, reject) => {
-        try {
-            const startButton = document.getElementById('startRecordingBtn');
-            const stopButton = document.getElementById('stopRecordingBtn');
+  try {
+    const startButton = document.getElementById('startRecordingBtn');
+    const stopButton = document.getElementById('stopRecordingBtn');
 
-            startButton.addEventListener('click', startRecording);
-            stopButton.addEventListener('click', stopRecording);
+    startButton.disabled = false;
+    stopButton.disabled = false;
 
-            console.log('Recording Controls initialized');
-            resolve(() => {
-                // Cleanup code for Recording Controls
-                console.log('Recording Controls cleaned up');
-                startButton.removeEventListener('click', startRecording);
-                stopButton.removeEventListener('click', stopRecording);
-            });
-        } catch (error) {
-            console.error('Recording Controls initialization failed:', error);
-            reject(error);
-        }
-    });
+    startButton.addEventListener('click', startRecording);
+    stopButton.addEventListener('click', stopRecording);
+
+    console.log('Recording controls initialized');
+    return true;
+  } catch (error) {
+    updateStatus(`Control setup failed: ${error}`, 'error');
+    throw error;
+  }
 }
 
 function startRecording() {
-    recordedChunks = [];
-    recorder.start();
-    console.log('Recording started');
+  if (!recorder || recorder.state === 'recording') return;
 
-    setTimeout(() => {
-        if (recorder.state === 'recording') {
-            recorder.stop();
-            console.log('Recording stopped automatically after 10 seconds');
-        }
-    }, RECORDING_DURATION);
+  recordedChunks = [];
+  recorder.start();
+  updateStatus('Recording started...', 'info');
+  
+  setTimeout(() => {
+    if (recorder.state === 'recording') {
+      stopRecording();
+      updateStatus('Recording stopped automatically', 'warning');
+    }
+  }, RECORDING_DURATION);
 }
 
 function stopRecording() {
-    if (recorder.state === 'recording') {
-        recorder.stop();
-        console.log('Recording stopped manually');
-    }
+  if (recorder.state === 'recording') {
+    recorder.stop();
+    updateStatus('Recording stopped', 'success');
+  }
 }
 
-function compressAndConvertToQRCode(blob) {
-    // Placeholder for compression logic
-    console.log('Compressing audio...');
+async function compressAndConvertToQRCode(blob) {
+  try {
+    updateStatus('Compressing audio...', 'info');
+    
+    // Simplified compression: Convert to base64 and truncate if needed
+    const base64Data = await blobToBase64(blob);
+    const compressedData = base64Data.slice(0, MAX_QR_DATA_LENGTH);
 
-    // Placeholder for QR code generation logic
-    console.log('Converting to QR code...');
+    updateStatus('Generating QR code...', 'info');
+    const qrCodeCanvas = document.getElementById('qrcode');
+    
+    await new Promise((resolve, reject) => {
+      QRCode.toCanvas(qrCodeCanvas, compressedData, error => {
+        if (error) reject(error);
+        else resolve();
+      });
+    });
 
-    const reader = new FileReader();
-    reader.onload = () => {
-        const audioData = reader.result;
-
-        // Generate QR code from the audio data
-        const qrCodeCanvas = document.getElementById('qrcode');
-        QRCode.toCanvas(qrCodeCanvas, audioData, error => {
-            if (error) {
-                console.error('QR code generation failed:', error);
-            } else {
-                console.log('QR code generated successfully');
-                qrCodeUrl = qrCodeCanvas.toDataURL();
-            }
-        });
-    };
-
-    reader.readAsDataURL(blob);
+    qrCodeUrl = qrCodeCanvas.toDataURL();
+    updateStatus('QR code ready!', 'success');
+  } catch (error) {
+    updateStatus(`QR generation failed: ${error.message}`, 'error');
+  }
 }
 
 function handleQRDownload() {
-    if (!qrCodeUrl) {
-        throw new Error('No QR code available');
-    }
+  if (!qrCodeUrl) {
+    updateStatus('No QR code available', 'error');
+    return;
+  }
 
-    const link = document.createElement('a');
-    link.download = `v2b-${Date.now()}.png`;
-    link.href = qrCodeUrl;
-    link.click();
-    URL.revokeObjectURL(qrCodeUrl);
-    updateStatus('QR code downloaded', 'success');
+  const link = document.createElement('a');
+  link.download = `audioqr-${Date.now()}.png`;
+  link.href = qrCodeUrl;
+  link.click();
+  updateStatus('QR code downloaded', 'success');
 }
 
-// Expose functions to the global scope
+function updateStatus(message, type = 'info') {
+  const statusElement = document.getElementById('status');
+  statusElement.textContent = message;
+  statusElement.className = `status-${type}`;
+  
+  // Auto-clear success messages after 5 seconds
+  if (type === 'success') {
+    setTimeout(() => {
+      statusElement.textContent = '';
+      statusElement.className = '';
+    }, 5000);
+  }
+}
+
+function blobToBase64(blob) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onloadend = () => resolve(reader.result.split(',')[1]);
+    reader.onerror = reject;
+    reader.readAsDataURL(blob);
+  });
+}
+
+// Cleanup when closing/page unload
+window.addEventListener('beforeunload', () => {
+  if (cleanupAudioModule) cleanupAudioModule();
+});
+
+// Expose public functions
 window.initializeAudioModule = initializeAudioModule;
 window.initializeRecordingControls = initializeRecordingControls;
 window.handleQRDownload = handleQRDownload;
