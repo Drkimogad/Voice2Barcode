@@ -317,4 +317,5 @@ Recorder.prototype.onresume = function() {};
 Recorder.prototype.onstart = function() {};
 Recorder.prototype.onstop = function() {};
 
-module.exports = Recorder;
+// Expose Recorder to the global scope
+window.Recorder = Recorder;
