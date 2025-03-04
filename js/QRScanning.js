@@ -3,7 +3,7 @@ let scanner = null;
 let currentCameraIndex = 0;
 let cameras = [];
 
-export function initializeQRScanner() {
+function initializeQRScanner() {
     const scanBtn = document.getElementById('scanBtn');
     const switchCameraBtn = document.getElementById('switchCameraBtn');
     const cameraPreview = document.getElementById('cameraPreview');
@@ -88,3 +88,11 @@ function displayScannedContent(data) {
 
     updateStatus('Content decoded successfully', 'success');
 }
+
+// Expose functions to the global scope
+window.initializeQRScanner = initializeQRScanner;
+window.startScanner = startScanner;
+window.stopScanner = stopScanner;
+window.switchCamera = switchCamera;
+window.handleScan = handleScan;
+window.displayScannedContent = displayScannedContent;
