@@ -52,6 +52,12 @@ async function initializeCoreComponents() {
     ];
 
     for (const { fn, name } of initQueue) {
+        if (typeof fn !== 'function') {
+            console.error(`${name} init failed: Not a function`);
+            updateStatus(`${name} initialization failed`, 'warning');
+            continue;
+        }
+        
         try {
             console.log(`Initializing: ${name}`);
             const cleanup = await fn();
@@ -157,5 +163,10 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 });
 document.addEventListener('DOMContentLoaded', () => {
-    window.initializeTTS();
+    if (typeof window.initializeTTS === 'function') {
+        window.initializeTTS();
+    } else {
+        console.error('Text-to-Speech initialization failed: Not a function');
+        updateStatus('Text-to-Speech initialization failed', 'warning');
+    }
 });
