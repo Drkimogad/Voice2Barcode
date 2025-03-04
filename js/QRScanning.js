@@ -1,13 +1,12 @@
+// QRScanning.js
 let scanner = null;
 let currentCameraIndex = 0;
 let cameras = [];
 
-function initializeQRScanner() {
+function initializeScanner() {
     const scanBtn = document.getElementById('scanBtn');
     const switchCameraBtn = document.getElementById('switchCameraBtn');
-    const cameraPreview = document.getElementById('cameraPreview');
-    const cameraFeed = document.getElementById('cameraFeed');
-
+    
     scanBtn.addEventListener('click', startScanner);
     switchCameraBtn.addEventListener('click', switchCamera);
 
@@ -34,7 +33,7 @@ async function startScanner() {
         scanner.addListener('scan', handleScan);
         await scanner.start(cameras[currentCameraIndex]);
 
-        cameraPreview.hidden = false;
+        document.getElementById('cameraPreview').hidden = false;
         document.getElementById('switchCameraBtn').hidden = cameras.length <= 1;
         updateStatus('Scanning started', 'success');
     } catch (error) {
@@ -60,66 +59,67 @@ function handleScan(content) {
     try {
         const data = JSON.parse(content);
         displayScannedContent(data);
-        downloadDecodedContent(data);
+        document.getElementById('downloadBtn').disabled = false;
+        window.lastScannedData = data; // Store for download
     } catch (error) {
         updateStatus('Invalid QR code content', 'error');
     }
 }
 
+// Updated to match HTML structure
 function displayScannedContent(data) {
     const scannedContent = document.getElementById('scannedContent');
     const messageText = document.getElementById('messageText');
     const scannedAudio = document.getElementById('scannedAudio');
 
     scannedContent.hidden = false;
+    scannedAudio.innerHTML = '';
+    messageText.textContent = '';
 
     if (data.type === 'text') {
         messageText.textContent = data.data;
-        scannedAudio.innerHTML = '';
     } else if (data.type === 'audio') {
         const audio = new Audio(data.data);
         audio.controls = true;
-        scannedAudio.innerHTML = '';
         scannedAudio.appendChild(audio);
-        messageText.textContent = 'Audio decoded successfully!';
+        messageText.textContent = `Audio content (${data.mimeType})`;
     } else {
-        throw new Error('Unsupported content type');
+        updateStatus('Unsupported content type', 'error');
     }
-
-    updateStatus('Content decoded successfully', 'success');
 }
 
-function downloadDecodedContent(data) {
-    if (data.type === 'text') {
-        const blob = new Blob([data.data], { type: 'text/plain' });
+function downloadDecodedContent() {
+    const data = window.lastScannedData;
+    if (!data) return;
+
+    try {
+        let blob, filename;
+        if (data.type === 'text') {
+            blob = new Blob([data.data], { type: 'text/plain' });
+            filename = 'decoded_text.txt';
+        } else if (data.type === 'audio') {
+            const byteString = atob(data.data.split(',')[1]);
+            const arrayBuffer = new ArrayBuffer(byteString.length);
+            const uintArray = new Uint8Array(arrayBuffer);
+            for (let i = 0; i < byteString.length; i++) {
+                uintArray[i] = byteString.charCodeAt(i);
+            }
+            blob = new Blob([arrayBuffer], { type: data.mimeType });
+            filename = `audio_${Date.now()}.${data.mimeType.split('/')[1]}`;
+        }
+
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
-        a.download = 'decoded_text.txt';
+        a.download = filename;
         document.body.appendChild(a);
         a.click();
         document.body.removeChild(a);
-    } else if (data.type === 'audio') {
-        const a = document.createElement('a');
-        a.href = data.data;
-        a.download = 'decoded_audio.mp3';
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+    } catch (error) {
+        updateStatus(`Download failed: ${error.message}`, 'error');
     }
 }
 
-function updateStatus(message, status) {
-    const statusBox = document.getElementById('statusBox');
-    statusBox.textContent = message;
-    statusBox.className = status;
-}
-
-// Expose functions to the global scope
-window.initializeQRScanner = initializeQRScanner;
-window.startScanner = startScanner;
-window.stopScanner = stopScanner;
-window.switchCamera = switchCamera;
-window.handleScan = handleScan;
-window.displayScannedContent = displayScannedContent;
+window.initializeScanner = initializeScanner;
 window.downloadDecodedContent = downloadDecodedContent;
