@@ -1,11 +1,14 @@
 "use strict";
 
+var global = typeof window !== 'undefined' ? window : (typeof globalThis !== 'undefined' ? globalThis : global);
 var AudioContext = global.AudioContext || global.webkitAudioContext;
 
+if (!AudioContext) {
+    throw new Error("AudioContext is not supported in this environment");
+}
 
 // Constructor
 var Recorder = function( config = {} ){
-
   if ( !Recorder.isRecordingSupported() ) {
     throw new Error("Recording is not supported in this browser");
   }
@@ -32,6 +35,8 @@ var Recorder = function( config = {} ){
   this.initAudioContext();
   this.initialize = this.initWorklet().then(() => this.initEncoder());
 };
+
+// Rest of the code remains the same...
 
 
 // Static Methods
