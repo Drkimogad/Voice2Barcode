@@ -1,172 +1,206 @@
-// main.js - Final Version
+// main.js - Production-Ready Implementation
+const APP_CONFIG = {
+    authRedirect: 'signin.html',
+    initSequence: [
+        { name: 'Mode Switching', init: window.initializeModeSwitching },
+        { name: 'Audio Module', init: window.initializeAudioModule },
+        { name: 'Recording Controls', init: window.initializeRecordingControls },
+        { name: 'Text-to-Speech', init: window.initializeTTS },
+        { name: 'QR Scanner', init: window.initializeScanner },
+        { name: 'File Uploads', init: window.initializeQRUploadHandlers }
+    ],
+    maxInitAttempts: 2
+};
 
-// Global error handling
-window.addEventListener('error', (event) => {
-    console.error('Global Error:', event.error);
-    updateStatus(`Critical error: ${event.message}`, 'error');
-    return true;
-});
-
-window.addEventListener('unhandledrejection', (event) => {
-    console.error('Unhandled Rejection:', event.reason);
-    updateStatus(`Async error: ${event.reason.message}`, 'error');
-});
-
-// Application state management
 let isInitialized = false;
-const cleanupCallbacks = [];
+let initializationAttempts = 0;
+const cleanupCallbacks = new Set();
 
+// Enhanced Error Handling
+window.addEventListener('error', ({ error }) => {
+    console.error('Runtime Error:', error);
+    updateStatus('Application instability detected', 'error');
+});
+
+window.addEventListener('unhandledrejection', ({ reason }) => {
+    console.error('Async Error:', reason);
+    updateStatus('Unexpected system error', 'error');
+});
+
+// Core Application Lifecycle
 async function initializeApp() {
-    if (isInitialized) return;
-    
+    if (isInitialized || initializationAttempts >= APP_CONFIG.maxInitAttempts) return;
+    initializationAttempts++;
+
     try {
-        showLoading(true);
-        updateStatus('Initializing application...', 'info');
+        toggleLoading(true);
+        await initializeCoreSystems();
+        setupUIEventHandlers();
         
-        // Ordered initialization
-        await initializeCoreComponents();
-        initializeUIHandlers();
-        
-        // Set initial state
         document.dispatchEvent(new CustomEvent('app-ready'));
-        updateStatus('Application ready', 'success');
+        updateStatus('System operational', 'success');
         isInitialized = true;
-    } catch (error) {
-        console.error('Boot failed:', error);
-        updateStatus('Failed to initialize. Please refresh.', 'error');
-        showLoading(false);
-        throw error;
+    } catch (criticalError) {
+        handleCriticalFailure(criticalError);
     } finally {
-        showLoading(false);
+        toggleLoading(false);
     }
 }
 
-async function initializeCoreComponents() {
-    const initQueue = [
-        { fn: window.initializeModeSwitching, name: 'Mode Switching' },
-        { fn: window.initializeAudioModule, name: 'Audio Module' },
-        { fn: window.initializeRecordingControls, name: 'Recording Controls' },
-        { fn: window.initializeTTS, name: 'Text-to-Speech' },
-        { fn: window.initializeQRScanner, name: 'QR Scanner' },
-        { fn: window.initializeQRUploadHandlers, name: 'File Uploads' }
-    ];
-
-    for (const { fn, name } of initQueue) {
-        if (typeof fn !== 'function') {
-            console.error(`${name} init failed: Not a function`);
-            updateStatus(`${name} initialization failed`, 'warning');
-            continue;
-        }
-        
+async function initializeCoreSystems() {
+    const initializationResults = [];
+    
+    for (const { name, init } of APP_CONFIG.initSequence) {
         try {
-            console.log(`Initializing: ${name}`);
-            const cleanup = await fn();
+            if (typeof init !== 'function') throw new Error('Invalid module');
+            
+            const cleanup = await init();
             if (typeof cleanup === 'function') {
-                cleanupCallbacks.push(cleanup);
+                cleanupCallbacks.add(cleanup);
             }
-            updateStatus(`Initialized: ${name}`, 'info');
+            
+            initializationResults.push({ name, status: 'success' });
         } catch (error) {
-            console.error(`${name} init failed:`, error);
+            initializationResults.push({ name, status: 'failed', error });
             updateStatus(`${name} initialization failed`, 'warning');
         }
     }
+
+    if (initializationResults.some(r => r.status === 'failed')) {
+        throw new Error('Partial initialization failure');
+    }
 }
 
-function initializeUIHandlers() {
-    // Download handlers
-    const downloadCleanup = [
-        setupDownloadHandler('#downloadQRCodeBtn', handleQRDownload),
-        setupDownloadHandler('#downloadBtn', handleContentDownload)
+function setupUIEventHandlers() {
+    const downloadHandlers = [
+        { selector: '#downloadQRCodeBtn', handler: handleSecureQRDownload },
+        { selector: '#downloadBtn', handler: handleContentExport }
     ];
+
+    const authHandler = createSecureAuthHandler();
     
-    // Logout handler
-    const logoutBtn = document.getElementById('logoutBtn');
-    const logoutHandler = () => {
-        performCleanup();
-        window.location.href = 'signin.html';
-    };
-    
-    logoutBtn.addEventListener('click', logoutHandler);
-    cleanupCallbacks.push(() => {
-        logoutBtn.removeEventListener('click', logoutHandler);
+    // Setup event listeners
+    downloadHandlers.forEach(({ selector, handler }) => {
+        const element = document.querySelector(selector);
+        if (element) {
+            const wrapper = () => {
+                try {
+                    handler();
+                } catch (error) {
+                    updateStatus(`Download error: ${error.message}`, 'error');
+                }
+            };
+            element.addEventListener('click', wrapper);
+            cleanupCallbacks.add(() => element.removeEventListener('click', wrapper));
+        }
     });
 
-    cleanupCallbacks.push(...downloadCleanup);
+    document.getElementById('logoutBtn').addEventListener('click', authHandler);
 }
 
-function setupDownloadHandler(selector, handler) {
-    const btn = document.querySelector(selector);
-    const clickHandler = () => {
+function createSecureAuthHandler() {
+    return async () => {
         try {
-            handler();
+            await performSecureCleanup();
+            window.location.href = APP_CONFIG.authRedirect;
         } catch (error) {
-            updateStatus(`Download failed: ${error.message}`, 'error');
+            updateStatus('Logout failed. Please clear cookies.', 'error');
         }
     };
-    
-    btn.addEventListener('click', clickHandler);
-    return () => btn.removeEventListener('click', clickHandler);
 }
 
-function handleQRDownload() {
+// Secure Download Handlers
+function handleSecureQRDownload() {
     const canvas = document.querySelector('#qrcode canvas');
     if (!canvas) throw new Error('No QR code available');
     
-    const url = canvas.toDataURL();
-    const link = document.createElement('a');
-    link.download = `v2b-${Date.now()}.png`;
-    link.href = url;
-    link.click();
-    URL.revokeObjectURL(url);
-    updateStatus('QR code downloaded', 'success');
-}
-
-function handleContentDownload() {
-    const content = document.getElementById('messageText')?.textContent || 
-                    document.getElementById('scannedAudio')?.innerHTML;
+    const dataURL = canvas.toDataURL('image/png');
+    const filename = `SecureV2B-${Date.now()}-${crypto.randomUUID().slice(0, 8)}.png`;
     
-    if (!content) {
-        throw new Error('No content available to download');
+    triggerSecureDownload(dataURL, filename);
+    updateStatus('QR code securely downloaded', 'success');
+}
+
+function handleContentExport() {
+    const content = getValidatedContent();
+    const blob = new Blob([content.data], { type: content.mimeType });
+    const filename = `V2B-Export-${Date.now()}.${content.fileExt}`;
+    
+    triggerSecureDownload(URL.createObjectURL(blob), filename);
+    updateStatus('Content export completed', 'success');
+}
+
+// Utility Functions
+function getValidatedContent() {
+    const textContent = document.getElementById('messageText')?.textContent;
+    const audioElement = document.getElementById('scannedAudio')?.querySelector('audio');
+    
+    if (audioElement) {
+        return {
+            data: audioElement.src,
+            mimeType: 'audio/webm',
+            fileExt: 'webm'
+        };
     }
+    
+    if (textContent) {
+        return {
+            data: textContent,
+            mimeType: 'text/plain',
+            fileExt: 'txt'
+        };
+    }
+    
+    throw new Error('No exportable content found');
+}
 
-    const blob = new Blob([content], { type: 'text/plain' });
-    const url = URL.createObjectURL(blob);
+function triggerSecureDownload(url, filename) {
     const link = document.createElement('a');
-    link.download = `v2b-content-${Date.now()}.txt`;
+    link.download = filename;
     link.href = url;
+    link.rel = 'noopener noreferrer';
+    document.body.appendChild(link);
     link.click();
-    URL.revokeObjectURL(url);
-    updateStatus('Content downloaded', 'success');
+    setTimeout(() => {
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+    }, 1000);
 }
 
-function performCleanup() {
-    cleanupCallbacks.forEach(fn => fn());
+async function performSecureCleanup() {
+    cleanupCallbacks.forEach(cleanup => {
+        try {
+            cleanup();
+        } catch (error) {
+            console.error('Cleanup error:', error);
+        }
+    });
+    cleanupCallbacks.clear();
     localStorage.clear();
+    sessionStorage.clear();
 }
 
-function showLoading(visible) {
+function toggleLoading(visible) {
     const loader = document.getElementById('loading-overlay');
     if (loader) {
         loader.style.display = visible ? 'flex' : 'none';
+        loader.setAttribute('aria-busy', visible.toString());
     }
 }
 
-// Start application
+function handleCriticalFailure(error) {
+    console.error('Boot Failure:', error);
+    updateStatus('System initialization failed. Please refresh.', 'error');
+    performSecureCleanup();
+}
+
+// Application Bootstrap
 document.addEventListener('DOMContentLoaded', () => {
-    if (!localStorage.getItem('loggedInUser')) {
-        return window.location.replace('signin.html');
+    if (!localStorage.getItem('authToken')) {
+        window.location.replace(APP_CONFIG.authRedirect);
+        return;
     }
-    
+
     document.getElementById('logoutBtn').hidden = false;
-    initializeApp().catch(() => {
-        updateStatus('Application failed to start', 'error');
-    });
-});
-document.addEventListener('DOMContentLoaded', () => {
-    if (typeof window.initializeTTS === 'function') {
-        window.initializeTTS();
-    } else {
-        console.error('Text-to-Speech initialization failed: Not a function');
-        updateStatus('Text-to-Speech initialization failed', 'warning');
-    }
+    initializeApp().catch(handleCriticalFailure);
 });
