@@ -72,14 +72,18 @@ async function decodeQRFromImage(file) {
 }
 
 function generateQRFromData(data) {
-    const qrcodeDiv = document.getElementById('qrcode');
-    qrcodeDiv.innerHTML = '';
-    new QRCode(qrcodeDiv, {
-        text: JSON.stringify(data),
-        width: 256,
-        height: 256
-    });
-    document.getElementById('downloadQRCodeBtn').disabled = false;
+    try {
+        const qrcodeDiv = document.getElementById('qrcode');
+        qrcodeDiv.innerHTML = '';
+        new QRCode(qrcodeDiv, {
+            text: JSON.stringify(data),
+            width: 256,
+            height: 256
+        });
+        document.getElementById('downloadQRCodeBtn').disabled = false;
+    } catch (error) {
+        updateStatus(`QR code generation failed: ${error.message}`, 'error');
+    }
 }
 
 function displayScannedContent(data) {
