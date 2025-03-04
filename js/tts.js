@@ -2,7 +2,7 @@
 let synth = window.speechSynthesis;
 let voices = [];
 
-export function initializeTTS() {
+function initializeTTS() {
     // Load available voices
     synth.onvoiceschanged = () => {
         voices = synth.getVoices();
@@ -74,3 +74,9 @@ function generateQRFromText(text, voiceName) {
         updateStatus(`QR code generation failed: ${error.message}`, 'error');
     }
 }
+
+// Expose functions to the global scope
+window.initializeTTS = initializeTTS;
+window.populateVoiceSelects = populateVoiceSelects;
+window.handleTextConversion = handleTextConversion;
+window.generateQRFromText = generateQRFromText;
