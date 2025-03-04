@@ -15,7 +15,7 @@ export function initializeRecordingControls() {
 
     // Create Recorder instance
     recorder = new window.Recorder({
-        encoderPath: './libs/opus-recorder/encoderWorker.min.js', // Verify path
+        encoderPath: './libs/opus-recorder/dist/encoderWorker.min.js', // Verify path
         streamPages: true,
         encoderSampleRate: 24000,
         encoderApplication: 2048 // 2048 for audio, 2049 for voice
