@@ -1,32 +1,34 @@
-// SecurityHandler.js - v2.0 (Secure Implementation)
+// SecurityHandler.js - v2.1 (Hardened Implementation)
 class SecurityHandler {
-    static KEY_CONFIG = {
+    static #CONFIG = {
         keySize: 256/32,
-        iterations: 100000, // Increased iterations for PBKDF2
+        iterations: 310000, // OWASP 2023 recommendation
         hasher: CryptoJS.algo.SHA512,
-        saltSize: 128/8
+        saltSize: 128/8,
+        maxDataAge: 1000 * 60 * 60 * 24 * 2, // 2 days
+        minPasswordLength: 12,
+        passwordRegex: /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{12,}$/
     };
 
-    // Key Generation (Should be called with user-provided password)
     static generateKey(password, salt) {
-        if (!password || password.length < 12) {
-            throw new Error('Password must be at least 12 characters');
-        }
+        this.#validatePasswordComplexity(password);
         return CryptoJS.PBKDF2(
             password,
             salt,
-            this.KEY_CONFIG
+            this.#CONFIG
         );
     }
 
-    // Encryption (AES-GCM)
     static encrypt(data, key) {
         try {
-            this.validateKey(key);
+            this.#validateKey(key);
             const iv = CryptoJS.lib.WordArray.random(128/8);
-            
             const encrypted = CryptoJS.AES.encrypt(
-                JSON.stringify(data), // Always stringify structured data
+                JSON.stringify({
+                    ...data,
+                    timestamp: new Date().toISOString(),
+                    version: '2.1'
+                }),
                 key,
                 {
                     iv: iv,
@@ -35,80 +37,94 @@ class SecurityHandler {
                 }
             );
 
-            return {
-                ciphertext: encrypted.ciphertext.toString(CryptoJS.enc.Base64),
-                iv: iv.toString(CryptoJS.enc.Base64),
-                tag: encrypted.tag.toString(CryptoJS.enc.Base64),
-                salt: CryptoJS.lib.WordArray.random(this.KEY_CONFIG.saltSize).toString(CryptoJS.enc.Base64)
-            };
+            return this.#serializeEncryptedData(encrypted, iv);
         } catch (error) {
-            console.error('Encryption error:', error);
-            throw new Error('Failed to encrypt data');
+            this.#handleSecurityError('Encryption failure', error);
         }
     }
 
-    // Decryption (AES-GCM)
     static decrypt(encryptedData, password) {
         try {
-            if (!encryptedData?.iv || !encryptedData?.tag || !encryptedData?.ciphertext || !encryptedData?.salt) {
-                throw new Error('Invalid encrypted data format');
-            }
-
-            const salt = CryptoJS.enc.Base64.parse(encryptedData.salt);
+            const { ciphertext, iv, tag, salt } = this.#parseEncryptedData(encryptedData);
             const key = this.generateKey(password, salt);
             
-            const cipherParams = CryptoJS.lib.CipherParams.create({
-                ciphertext: CryptoJS.enc.Base64.parse(encryptedData.ciphertext),
-                iv: CryptoJS.enc.Base64.parse(encryptedData.iv),
-                tag: CryptoJS.enc.Base64.parse(encryptedData.tag)
-            });
-
-            const decryptedBytes = CryptoJS.AES.decrypt(
-                cipherParams,
+            const decrypted = CryptoJS.AES.decrypt(
+                { ciphertext, iv, tag },
                 key,
                 { mode: CryptoJS.mode.GCM }
             );
 
-            return this.validatePayload(
-                decryptedBytes.toString(CryptoJS.enc.Utf8)
+            return this.#validateDecryptedPayload(
+                decrypted.toString(CryptoJS.enc.Utf8)
             );
         } catch (error) {
-            console.error('Decryption error:', error.message);
-            throw new Error('Failed to decrypt data');
+            this.#handleSecurityError('Decryption failure', error);
         }
     }
 
-    // Data Validation
-    static validatePayload(decryptedText) {
-        try {
-            const payload = JSON.parse(decryptedText);
-            
-            if (
-                typeof payload !== 'object' ||
-                !['text', 'audio'].includes(payload.type) ||
-                typeof payload.data !== 'string' ||
-                !payload.timestamp ||
-                !this.validateTimestamp(payload.timestamp)
-            ) {
-                throw new Error('Invalid payload structure');
-            }
-            
-            return payload;
-        } catch (error) {
-            throw new Error('Invalid or tampered data: ' + error.message);
+    // Private methods
+    static #validatePasswordComplexity(password) {
+        if (password.length < this.#CONFIG.minPasswordLength) {
+            throw new Error('Insufficient password length');
+        }
+        if (!this.#CONFIG.passwordRegex.test(password)) {
+            throw new Error('Password complexity requirements not met');
         }
     }
 
-    // Helper Methods
-    static validateKey(key) {
+    static #validateKey(key) {
         if (!(key instanceof CryptoJS.lib.WordArray)) {
-            throw new Error('Invalid key format');
+            throw new Error('Invalid cryptographic material');
         }
     }
 
-    static validateTimestamp(timestamp) {
-        const maxAge = 1000 * 60 * 60 * 24 * 7; // 1 week
-        const parsedDate = new Date(timestamp);
-        return !isNaN(parsedDate) && Date.now() - parsedDate < maxAge;
+    static #serializeEncryptedData(encrypted, iv) {
+        return {
+            ct: encrypted.ciphertext.toString(CryptoJS.enc.Base64),
+            iv: iv.toString(CryptoJS.enc.Base64),
+            tg: encrypted.tag.toString(CryptoJS.enc.Base64),
+            s: CryptoJS.lib.WordArray.random(this.#CONFIG.saltSize)
+                        .toString(CryptoJS.enc.Base64),
+            v: '2.1'
+        };
+    }
+
+    static #parseEncryptedData(data) {
+        const requiredFields = ['ct', 'iv', 'tg', 's', 'v'];
+        if (!requiredFields.every(f => data[f])) {
+            throw new Error('Invalid security envelope');
+        }
+        if (data.v !== '2.1') {
+            throw new Error('Unsupported security version');
+        }
+
+        return {
+            ciphertext: CryptoJS.enc.Base64.parse(data.ct),
+            iv: CryptoJS.enc.Base64.parse(data.iv),
+            tag: CryptoJS.enc.Base64.parse(data.tg),
+            salt: CryptoJS.enc.Base64.parse(data.s)
+        };
+    }
+
+    static #validateDecryptedPayload(payload) {
+        const data = JSON.parse(payload);
+        const age = Date.now() - new Date(data.timestamp).getTime();
+        
+        if (age > this.#CONFIG.maxDataAge) {
+            throw new Error('Expired security token');
+        }
+        if (!['text', 'audio'].includes(data.type)) {
+            throw new Error('Invalid payload type');
+        }
+        if (typeof data.data !== 'string') {
+            throw new Error('Invalid payload format');
+        }
+        
+        return data;
+    }
+
+    static #handleSecurityError(context, error) {
+        console.error(`Security Exception: ${context} - ${error.message}`);
+        throw new Error('Security processing failed');
     }
 }
