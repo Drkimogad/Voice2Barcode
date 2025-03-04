@@ -5,8 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Voice2Barcode Dashboard</title>
     <link rel="stylesheet" href="styles.css">
-    <!-- QR Code Library -->
+    <!-- QR Code Libraries -->
     <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.0/build/qrcode.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
     <!-- OpusRecorder -->
     <script src="./libs/opus-recorder/src/recorder.js"></script>
 </head>
@@ -27,11 +28,10 @@
                 <button class="btn mode-btn" data-mode="upload" aria-label="Upload mode">📤 Upload</button>
             </div>
 
-            <!-- Voice Section - Updated IDs -->
+            <!-- Voice Section -->
             <section data-section="voice" class="mode-section">
                 <div class="input-section">
                     <div class="recording-controls">
-                        <!-- Changed IDs to match JS -->
                         <button id="startRecordingBtn" class="btn record" aria-label="Start recording">🎤 Record</button>
                         <button id="stopRecordingBtn" class="btn stop" disabled aria-label="Stop recording">⏹ Stop</button>
                     </div>
@@ -42,10 +42,11 @@
                 </div>
             </section>
 
-            <!-- Text Section (unchanged) -->
+            <!-- Text Section -->
             <section data-section="text" class="mode-section" hidden>
                 <div class="input-section">
-                    <textarea id="textToConvert" placeholder="Enter text (max 200 characters)" maxlength="200" aria-label="Text input"></textarea>
+                    <textarea id="textToConvert" placeholder="Enter text (max 200 characters)" 
+                              maxlength="200" aria-label="Text input"></textarea>
                     <div class="voice-selection">
                         <select id="maleVoiceSelect" class="voice-select" aria-label="Male voice">
                             <option value="">Select Male Voice</option>
@@ -58,7 +59,7 @@
                 </div>
             </section>
 
-            <!-- Upload Section (unchanged) -->
+            <!-- Upload Section -->
             <section data-section="upload" class="mode-section" hidden>
                 <div class="input-section">
                     <div class="upload-group">
@@ -70,14 +71,13 @@
                 </div>
             </section>
 
-            <!-- QR Display - Updated canvas element -->
+            <!-- QR Display Section -->
             <section class="qr-section">
                 <canvas id="qrcode" class="qrcode-container" aria-label="Generated QR Code"></canvas>
-                <!-- Updated download handler -->
                 <button id="downloadQRCodeBtn" class="btn" disabled onclick="handleQRDownload()">⬇ Download QR</button>
             </section>
 
-            <!-- Scanner Section (unchanged) -->
+            <!-- Scanner Section -->
             <section class="scanner-section">
                 <button id="scanBtn" class="btn scan" aria-label="Start scanner">🔍 Scan QR</button>
                 <div id="cameraPreview" class="camera-preview" hidden>
@@ -86,19 +86,19 @@
                 <button id="switchCameraBtn" class="btn" hidden aria-label="Switch camera">🔄 Switch</button>
             </section>
 
-            <!-- Results Section (unchanged) -->
+            <!-- Results Section -->
             <section id="scannedContent" class="results-section" hidden>
                 <h2>Decoded Content</h2>
-                <p id="messageText"></p>
-                <div id="scannedAudio"></div>
+                <p id="messageText" class="content-meta"></p>
+                <div id="scannedAudio" class="audio-player"></div>
                 <button id="downloadBtn" class="btn" disabled>⬇ Download</button>
             </section>
 
-            <!-- Status Messages - Enhanced for audio system -->
-            <div id="status" class="status-message" aria-live="polite"></div>
+            <!-- Status Messages -->
+            <div id="status" class="status-message" aria-live="polite" role="alert"></div>
         </div>
 
-        <!-- Loading Overlay (unchanged) -->
+        <!-- Loading Overlay -->
         <div id="loading-overlay" class="loading-overlay">
             <div class="loading-spinner"></div>
             <p class="loading-text">Initializing...</p>
@@ -132,24 +132,31 @@
     <script>
     document.addEventListener('DOMContentLoaded', async () => {
         try {
-            // Initialize audio system
+            // Initialize core systems
             await initializeAudioModule();
-            
-            // Set up recording controls
             await initializeRecordingControls();
-            
-            // Enable QR download when available
-            const statusObserver = new MutationObserver((mutations) => {
+            initializeQRUploadHandlers();
+
+            // Set up QR download observer
+            const qrObserver = new MutationObserver(() => {
                 const qrBtn = document.getElementById('downloadQRCodeBtn');
-                qrBtn.disabled = !document.getElementById('qrcode').querySelector('canvas');
+                qrBtn.disabled = !document.querySelector('#qrcode canvas');
             });
-            statusObserver.observe(document.getElementById('qrcode'), {
+            qrObserver.observe(document.getElementById('qrcode'), {
                 childList: true,
                 subtree: true
             });
+
+            // Initialize other modules
+            if(typeof initializeScanner === 'function') {
+                initializeScanner();
+            }
+
         } catch (error) {
             console.error('Initialization error:', error);
-            updateStatus(`Initialization failed: ${error.message}`, 'error');
+            updateStatus(`System initialization failed: ${error.message}`, 'error');
+        } finally {
+            document.getElementById('loading-overlay').hidden = true;
         }
     });
     </script>
