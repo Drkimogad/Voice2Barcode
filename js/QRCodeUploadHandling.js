@@ -1,87 +1,130 @@
+// QRCodeUploadHandling.js
+
+const MAX_AUDIO_SIZE = 5 * 1024 * 1024; // 5MB
+const MAX_QR_IMAGE_SIZE = 2 * 1024 * 1024; // 2MB
+const VALID_CONTENT_TYPES = ['audio', 'text'];
+let activeObjectURLs = new Set();
+
 function initializeQRUploadHandlers() {
     const audioUpload = document.getElementById('audioUpload');
     const qrUpload = document.getElementById('qrUpload');
 
-    audioUpload.addEventListener('change', handleAudioUpload);
-    qrUpload.addEventListener('change', handleQRUpload);
+    const handlers = {
+        audio: handleAudioUpload,
+        qr: handleQRUpload
+    };
+
+    audioUpload.addEventListener('change', handlers.audio);
+    qrUpload.addEventListener('change', handlers.qr);
 
     return () => {
-        audioUpload.removeEventListener('change', handleAudioUpload);
-        qrUpload.removeEventListener('change', handleQRUpload);
+        audioUpload.removeEventListener('change', handlers.audio);
+        qrUpload.removeEventListener('change', handlers.qr);
+        cleanupObjectURLs();
     };
 }
 
-async function handleAudioUpload(event) {
-    const file = event.target.files[0];
-    if (!file) {
-        updateStatus('No file selected', 'error');
-        return;
-    }
+function cleanupObjectURLs() {
+    activeObjectURLs.forEach(url => URL.revokeObjectURL(url));
+    activeObjectURLs.clear();
+}
 
+async function handleAudioUpload(event) {
+    clearStatus();
+    const file = event.target.files[0];
+    
     try {
-        const arrayBuffer = await file.arrayBuffer();
-        const audioBlob = new Blob([arrayBuffer], { type: file.type });
-        generateQRFromData({ type: 'audio', data: URL.createObjectURL(audioBlob) });
-        updateStatus('Audio file processed', 'success');
+        if (!file) throw new Error('No file selected');
+        if (!file.type.startsWith('audio/')) throw new Error('Invalid audio format');
+        if (file.size > MAX_AUDIO_SIZE) throw new Error(`File too large (max ${MAX_AUDIO_SIZE/1024/1024}MB)`);
+
+        const dataUrl = await readFileAsDataURL(file);
+        generateQRFromData({
+            type: 'audio',
+            data: dataUrl,
+            mimeType: file.type,
+            size: file.size
+        });
+        updateStatus('Audio encoded in QR successfully', 'success');
     } catch (error) {
-        updateStatus(`Failed to process audio: ${error.message}`, 'error');
+        updateStatus(error.message, 'error');
     }
 }
 
 async function handleQRUpload(event) {
+    clearStatus();
     const file = event.target.files[0];
-    if (!file) {
-        updateStatus('No file selected', 'error');
-        return;
-    }
-
+    
     try {
+        if (!file) throw new Error('No file selected');
+        if (!file.type.startsWith('image/')) throw new Error('Invalid image format');
+        if (file.size > MAX_QR_IMAGE_SIZE) throw new Error(`Image too large (max ${MAX_QR_IMAGE_SIZE/1024/1024}MB)`);
+
         const content = await decodeQRFromImage(file);
-        const data = JSON.parse(content);
+        const data = validateQRContent(content);
         displayScannedContent(data);
     } catch (error) {
-        updateStatus(`Failed to decode QR: ${error.message}`, 'error');
+        updateStatus(error.message, 'error');
+    }
+}
+
+function validateQRContent(content) {
+    try {
+        const data = JSON.parse(content);
+        if (!VALID_CONTENT_TYPES.includes(data?.type)) throw new Error('Invalid content type');
+        if (!data?.data) throw new Error('Missing content data');
+        return data;
+    } catch (error) {
+        throw new Error(`Invalid QR content: ${error.message}`);
     }
 }
 
 async function decodeQRFromImage(file) {
     return new Promise((resolve, reject) => {
         const img = new Image();
-        img.src = URL.createObjectURL(file);
+        const url = URL.createObjectURL(file);
+        activeObjectURLs.add(url);
 
         img.onload = () => {
-            const canvas = document.createElement('canvas');
-            const ctx = canvas.getContext('2d');
-            canvas.width = img.width;
-            canvas.height = img.height;
-            ctx.drawImage(img, 0, 0);
+            try {
+                const canvas = document.createElement('canvas');
+                const ctx = canvas.getContext('2d');
+                canvas.width = img.width;
+                canvas.height = img.height;
+                ctx.drawImage(img, 0, 0);
 
-            const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-            const code = jsQR(imageData.data, imageData.width, imageData.height);
-
-            if (code) {
+                const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+                const code = jsQR(imageData.data, imageData.width, imageData.height);
+                
+                if (!code) reject(new Error('No QR code found'));
                 resolve(code.data);
-            } else {
-                reject(new Error('No QR code found in image'));
+            } finally {
+                URL.revokeObjectURL(url);
+                activeObjectURLs.delete(url);
             }
         };
 
-        img.onerror = () => reject(new Error('Failed to load image'));
+        img.onerror = () => {
+            URL.revokeObjectURL(url);
+            activeObjectURLs.delete(url);
+            reject(new Error('Failed to load image'));
+        };
+
+        img.src = url;
     });
 }
 
 function generateQRFromData(data) {
     try {
-        const qrcodeDiv = document.getElementById('qrcode');
-        qrcodeDiv.innerHTML = '';
-        new QRCode(qrcodeDiv, {
-            text: JSON.stringify(data),
-            width: 256,
-            height: 256
+        const qrCodeCanvas = document.getElementById('qrcode');
+        qrCodeCanvas.innerHTML = '';
+        
+        QRCode.toCanvas(qrCodeCanvas, JSON.stringify(data), (error) => {
+            if (error) throw error;
+            document.getElementById('downloadQRCodeBtn').disabled = false;
         });
-        document.getElementById('downloadQRCodeBtn').disabled = false;
     } catch (error) {
-        updateStatus(`QR code generation failed: ${error.message}`, 'error');
+        throw new Error(`QR generation failed: ${error.message}`);
     }
 }
 
@@ -91,33 +134,41 @@ function displayScannedContent(data) {
     const scannedAudio = document.getElementById('scannedAudio');
 
     scannedContent.hidden = false;
+    scannedAudio.innerHTML = '';
+    messageText.textContent = '';
 
-    if (data.type === 'text') {
-        messageText.textContent = data.data;
-        scannedAudio.innerHTML = '';
-    } else if (data.type === 'audio') {
+    if (data.type === 'audio') {
         const audio = new Audio(data.data);
         audio.controls = true;
-        scannedAudio.innerHTML = '';
         scannedAudio.appendChild(audio);
-        messageText.textContent = 'Audio decoded successfully!';
-    } else {
-        throw new Error('Unsupported content type');
+        messageText.textContent = `Audio (${(data.size/1024).toFixed(1)}KB)`;
+    } else if (data.type === 'text') {
+        messageText.textContent = data.data;
     }
 
     updateStatus('Content decoded successfully', 'success');
 }
 
-function updateStatus(message, status) {
-    const statusBox = document.getElementById('statusBox');
-    statusBox.textContent = message;
-    statusBox.className = status;
+// Utility Functions
+function readFileAsDataURL(file) {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result);
+        reader.onerror = () => reject(new Error('File read failed'));
+        reader.readAsDataURL(file);
+    });
 }
 
-// Expose functions to the global scope
+function updateStatus(message, type = 'info') {
+    const statusElement = document.getElementById('status');
+    statusElement.textContent = message;
+    statusElement.className = `status-${type}`;
+    if (type === 'success') setTimeout(() => statusElement.textContent = '', 5000);
+}
+
+function clearStatus() {
+    document.getElementById('status').textContent = '';
+}
+
+// Export functions
 window.initializeQRUploadHandlers = initializeQRUploadHandlers;
-window.generateQRFromData = generateQRFromData;
-window.displayScannedContent = displayScannedContent;
-window.decodeQRFromImage = decodeQRFromImage;
-window.handleAudioUpload = handleAudioUpload;
-window.handleQRUpload = handleQRUpload;
