@@ -1,7 +1,7 @@
 var chai = require('chai');
 var sinon = require('sinon');
 var sinonChai = require("sinon-chai");
-var { Module, OggOpusEncoder } = require('../dist/encoderWorker.min');
+var { Module, OggOpusEncoder } = require('libs/opus-recorder/encoderWorker.min');
 
 chai.use(sinonChai);
 var should = chai.should();
