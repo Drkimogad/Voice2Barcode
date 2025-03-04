@@ -1,10 +1,4 @@
 // main.js - Final Version
-import { initializeRecordingControls, initializeAudioModule } from './audioRecordingCompressionQR.js';
-import { initializeQRUploadHandlers } from './QRCodeUploadHandling.js';
-import { initializeQRScanner } from './QRScanning.js';
-import { initializeTTS } from './tts.js';
-import { initializeModeSwitching } from './ModeSwitching.js';
-import { updateStatus } from './utils.js';
 
 // Global error handling
 window.addEventListener('error', (event) => {
@@ -49,12 +43,12 @@ async function initializeApp() {
 
 async function initializeCoreComponents() {
     const initQueue = [
-        { fn: initializeModeSwitching, name: 'Mode Switching' },
-        { fn: initializeAudioModule, name: 'Audio Module' },
-        { fn: initializeRecordingControls, name: 'Recording Controls' },
-        { fn: initializeTTS, name: 'Text-to-Speech' },
-        { fn: initializeQRScanner, name: 'QR Scanner' },
-        { fn: initializeQRUploadHandlers, name: 'File Uploads' }
+        { fn: window.initializeModeSwitching, name: 'Mode Switching' },
+        { fn: window.initializeAudioModule, name: 'Audio Module' },
+        { fn: window.initializeRecordingControls, name: 'Recording Controls' },
+        { fn: window.initializeTTS, name: 'Text-to-Speech' },
+        { fn: window.initializeQRScanner, name: 'QR Scanner' },
+        { fn: window.initializeQRUploadHandlers, name: 'File Uploads' }
     ];
 
     for (const { fn, name } of initQueue) {
@@ -163,5 +157,5 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 });
 document.addEventListener('DOMContentLoaded', () => {
-    initializeTTS();
+    window.initializeTTS();
 });
