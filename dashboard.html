@@ -5,9 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Voice2Barcode Dashboard</title>
     <link rel="stylesheet" href="styles.css">
-    <script src="js/audioRecordingCompressionQR.js"></script>
-    <script src="js/main.js" defer></script>
-    <!-- OpusRecorder loaded early for better initialization -->
+    <!-- QR Code Library -->
+    <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.0/build/qrcode.min.js"></script>
+    <!-- OpusRecorder -->
     <script src="./libs/opus-recorder/src/recorder.js"></script>
 </head>
 <body>
@@ -22,23 +22,27 @@
         <div id="dashboardContent">
             <!-- Mode Switching -->
             <div class="mode-switcher" role="navigation">
-                <button class="btn mode-btn" data-mode="voice" aria-label="Voice mode">🎤 Voice</button>
+                <button class="btn mode-btn active" data-mode="voice" aria-label="Voice mode">🎤 Voice</button>
                 <button class="btn mode-btn" data-mode="text" aria-label="Text mode">📝 Text</button>
                 <button class="btn mode-btn" data-mode="upload" aria-label="Upload mode">📤 Upload</button>
             </div>
 
-            <!-- Voice Section -->
-            <section data-section="voice" class="mode-section" hidden>
+            <!-- Voice Section - Updated IDs -->
+            <section data-section="voice" class="mode-section">
                 <div class="input-section">
                     <div class="recording-controls">
-                        <button id="recordBtn" class="btn record" aria-label="Start recording">🎤 Record</button>
-                        <button id="stopBtn" class="btn stop" disabled aria-label="Stop recording">⏹ Stop</button>
+                        <!-- Changed IDs to match JS -->
+                        <button id="startRecordingBtn" class="btn record" aria-label="Start recording">🎤 Record</button>
+                        <button id="stopRecordingBtn" class="btn stop" disabled aria-label="Stop recording">⏹ Stop</button>
                     </div>
                     <div id="recordingIndicator" class="recording-indicator" aria-hidden="true"></div>
+                    <div class="recording-timer">
+                        <span id="timerDisplay">00:00</span>
+                    </div>
                 </div>
             </section>
 
-            <!-- Text Section -->
+            <!-- Text Section (unchanged) -->
             <section data-section="text" class="mode-section" hidden>
                 <div class="input-section">
                     <textarea id="textToConvert" placeholder="Enter text (max 200 characters)" maxlength="200" aria-label="Text input"></textarea>
@@ -54,7 +58,7 @@
                 </div>
             </section>
 
-            <!-- Upload Section -->
+            <!-- Upload Section (unchanged) -->
             <section data-section="upload" class="mode-section" hidden>
                 <div class="input-section">
                     <div class="upload-group">
@@ -66,13 +70,14 @@
                 </div>
             </section>
 
-            <!-- QR Display -->
+            <!-- QR Display - Updated canvas element -->
             <section class="qr-section">
-                <div id="qrcode" class="qrcode-container"></div>
-                <button id="downloadQRCodeBtn" class="btn" disabled>⬇ Download QR</button>
+                <canvas id="qrcode" class="qrcode-container" aria-label="Generated QR Code"></canvas>
+                <!-- Updated download handler -->
+                <button id="downloadQRCodeBtn" class="btn" disabled onclick="handleQRDownload()">⬇ Download QR</button>
             </section>
 
-            <!-- Scanner Section -->
+            <!-- Scanner Section (unchanged) -->
             <section class="scanner-section">
                 <button id="scanBtn" class="btn scan" aria-label="Start scanner">🔍 Scan QR</button>
                 <div id="cameraPreview" class="camera-preview" hidden>
@@ -81,7 +86,7 @@
                 <button id="switchCameraBtn" class="btn" hidden aria-label="Switch camera">🔄 Switch</button>
             </section>
 
-            <!-- Results Section -->
+            <!-- Results Section (unchanged) -->
             <section id="scannedContent" class="results-section" hidden>
                 <h2>Decoded Content</h2>
                 <p id="messageText"></p>
@@ -89,11 +94,11 @@
                 <button id="downloadBtn" class="btn" disabled>⬇ Download</button>
             </section>
 
-            <!-- Status Messages -->
+            <!-- Status Messages - Enhanced for audio system -->
             <div id="status" class="status-message" aria-live="polite"></div>
         </div>
 
-        <!-- Loading Overlay -->
+        <!-- Loading Overlay (unchanged) -->
         <div id="loading-overlay" class="loading-overlay">
             <div class="loading-spinner"></div>
             <p class="loading-text">Initializing...</p>
@@ -113,14 +118,40 @@
 
     <!-- Dependencies -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.0/build/qrcode.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/instascan@2.0.0/dist/instascan.min.js"></script>
 
     <!-- Core Application -->
+    <script src="js/audioRecordingCompressionQR.js"></script>
     <script src="js/QRCodeUploadHandling.js"></script>
     <script src="js/QRScanning.js"></script>
     <script src="js/tts.js"></script>
     <script src="js/ModeSwitching.js"></script>
     <script src="js/utils.js"></script>
+
+    <!-- Initialization Script -->
+    <script>
+    document.addEventListener('DOMContentLoaded', async () => {
+        try {
+            // Initialize audio system
+            await initializeAudioModule();
+            
+            // Set up recording controls
+            await initializeRecordingControls();
+            
+            // Enable QR download when available
+            const statusObserver = new MutationObserver((mutations) => {
+                const qrBtn = document.getElementById('downloadQRCodeBtn');
+                qrBtn.disabled = !document.getElementById('qrcode').querySelector('canvas');
+            });
+            statusObserver.observe(document.getElementById('qrcode'), {
+                childList: true,
+                subtree: true
+            });
+        } catch (error) {
+            console.error('Initialization error:', error);
+            updateStatus(`Initialization failed: ${error.message}`, 'error');
+        }
+    });
+    </script>
 </body>
 </html>
