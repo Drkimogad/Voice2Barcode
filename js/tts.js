@@ -60,13 +60,17 @@ function handleTextConversion() {
 }
 
 function generateQRFromText(text, voiceName) {
-    const qrcodeDiv = document.getElementById('qrcode');
-    qrcodeDiv.innerHTML = '';
-    new QRCode(qrcodeDiv, {
-        text: JSON.stringify({ type: 'text', data: text, voice: voiceName }),
-        width: 256,
-        height: 256
-    });
-    document.getElementById('downloadQRCodeBtn').disabled = false;
-    updateStatus('QR code generated!', 'success');
+    try {
+        const qrcodeDiv = document.getElementById('qrcode');
+        qrcodeDiv.innerHTML = '';
+        new QRCode(qrcodeDiv, {
+            text: JSON.stringify({ type: 'text', data: text, voice: voiceName }),
+            width: 256,
+            height: 256
+        });
+        document.getElementById('downloadQRCodeBtn').disabled = false;
+        updateStatus('QR code generated!', 'success');
+    } catch (error) {
+        updateStatus(`QR code generation failed: ${error.message}`, 'error');
+    }
 }
