@@ -1,4 +1,5 @@
 // tts.js - Final Version
+
 let synth = window.speechSynthesis;
 let voices = [];
 
@@ -10,11 +11,11 @@ function initializeTTS() {
     };
 
     // Initialize TTS button
-    const textConvertBtn = document.getElementById('textConvertBtn');
-    textConvertBtn.addEventListener('click', handleTextConversion);
+    const generateQRCodeBtn = document.getElementById('generateQRCodeBtn');
+    generateQRCodeBtn.addEventListener('click', handleTextConversion);
 
     return () => {
-        textConvertBtn.removeEventListener('click', handleTextConversion);
+        generateQRCodeBtn.removeEventListener('click', handleTextConversion);
     };
 }
 
@@ -34,9 +35,9 @@ function populateVoiceSelects() {
         option.dataset.lang = voice.lang;
         option.dataset.gender = voice.gender || 'unknown';
 
-        if (voice.gender === 'male') {
+        if (voice.name.toLowerCase().includes('male')) {
             maleSelect.appendChild(option);
-        } else if (voice.gender === 'female') {
+        } else if (voice.name.toLowerCase().includes('female')) {
             femaleSelect.appendChild(option);
         }
     });
@@ -44,7 +45,8 @@ function populateVoiceSelects() {
 
 function handleTextConversion() {
     const text = document.getElementById('textToConvert').value;
-    const voiceName = document.querySelector('.voice-select').value;
+    const voiceSelect = document.querySelector('.voice-select');
+    const voiceName = voiceSelect ? voiceSelect.value : '';
 
     if (!text || !voiceName) {
         updateStatus('Please enter text and select a voice', 'error');
