@@ -1,10 +1,32 @@
 // audioRecordingCompressionQR.js
 const MAX_RECORD_SECONDS = 10;
-let mediaRecorder, audioChunks = [], audioStream;
+let recorder; // Changed from mediaRecorder
+let audioStream;
 
 export function initializeRecordingControls() {
     const recordBtn = document.getElementById('recordBtn');
     const stopBtn = document.getElementById('stopBtn');
+
+    // Initialize Opus-Recorder once
+    if (!window.Recorder) {
+        console.error('Opus-Recorder not loaded!');
+        return;
+    }
+
+    // Create Recorder instance
+    recorder = new window.Recorder({
+        encoderPath: './libs/opus-recorder/encoderWorker.min.js', // Verify path
+        streamPages: true,
+        encoderSampleRate: 24000,
+        encoderApplication: 2048 // 2048 for audio, 2049 for voice
+    });
+
+    // Setup event handlers
+    recorder.ondataavailable = (typedArray) => {
+        // Convert to Blob for QR generation
+        const audioBlob = new Blob([typedArray], { type: 'audio/ogg; codecs=opus' });
+        generateQRFromData(audioBlob);
+    };
 
     recordBtn.addEventListener('click', startRecording);
     stopBtn.addEventListener('click', stopRecording);
@@ -12,52 +34,52 @@ export function initializeRecordingControls() {
     return () => {
         recordBtn.removeEventListener('click', startRecording);
         stopBtn.removeEventListener('click', stopRecording);
-        stopRecording(); // Ensure cleanup
+        stopRecording();
     };
 }
 
-export function initializeAudioModule() {
-    // Your initialization logic for the audio module here
-    console.log('Audio module initialized');
-}
-
+// Removed mediaRecorder-related logic
 async function startRecording() {
     try {
         audioStream = await navigator.mediaDevices.getUserMedia({ audio: true });
-        mediaRecorder = new MediaRecorder(audioStream, { 
-            mimeType: 'audio/webm; codecs=opus',
-            audioBitsPerSecond: 24000
+        
+        // Start Opus-Recorder
+        recorder.start(audioStream).then(() => {
+            updateUIState(true);
+            setTimeout(() => {
+                if (recorder && recorder.isRecording) {
+                    stopRecording();
+                }
+            }, MAX_RECORD_SECONDS * 1000);
+        }).catch(error => {
+            updateStatus(`Recording failed: ${error.message}`, 'error');
         });
 
-        mediaRecorder.ondataavailable = (event) => audioChunks.push(event.data);
-        mediaRecorder.onstop = handleRecordingStop;
-
-        mediaRecorder.start();
-        updateUIState(true);
-        setTimeout(() => mediaRecorder?.state === 'recording' && mediaRecorder.stop(), MAX_RECORD_SECONDS * 1000);
     } catch (error) {
-        updateStatus(`Recording failed: ${error.message}`, 'error');
+        updateStatus(`Microphone access denied: ${error.message}`, 'error');
     }
 }
 
 function stopRecording() {
-    if (mediaRecorder?.state === 'recording') {
-        mediaRecorder.stop();
+    if (recorder && recorder.isRecording) {
+        recorder.stop().then(() => {
+            cleanupAfterRecording();
+        }).catch(error => {
+            updateStatus(`Stop failed: ${error.message}`, 'error');
+        });
     }
 }
 
-function handleRecordingStop() {
-    const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
-    generateQRFromData(audioBlob);
-    cleanupAfterRecording();
-}
-
+// Simplified cleanup
 function cleanupAfterRecording() {
-    audioStream?.getTracks().forEach(track => track.stop());
-    audioChunks = [];
+    if (audioStream) {
+        audioStream.getTracks().forEach(track => track.stop());
+        audioStream = null;
+    }
     updateUIState(false);
 }
 
+// Rest of the code remains the same...
 function updateUIState(recording) {
     document.getElementById('recordBtn').disabled = recording;
     document.getElementById('stopBtn').disabled = !recording;
@@ -74,3 +96,5 @@ export function generateQRFromData(data) {
     });
     document.getElementById('downloadQRCodeBtn').disabled = false;
 }
+
+// Keep other existing functions as-is
