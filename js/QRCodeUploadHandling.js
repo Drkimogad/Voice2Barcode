@@ -1,4 +1,3 @@
-// QRCodeUploadHandling.js - Final Version
 function initializeQRUploadHandlers() {
     const audioUpload = document.getElementById('audioUpload');
     const qrUpload = document.getElementById('qrUpload');
@@ -107,6 +106,12 @@ function displayScannedContent(data) {
     }
 
     updateStatus('Content decoded successfully', 'success');
+}
+
+function updateStatus(message, status) {
+    const statusBox = document.getElementById('statusBox');
+    statusBox.textContent = message;
+    statusBox.className = status;
 }
 
 // Expose functions to the global scope
