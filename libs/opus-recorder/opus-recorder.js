@@ -11,7 +11,7 @@ var expect = chai.expect;
 
 describe('Recorder unsupported', function(){
 
-  var Recorder = require('../dist/recorder.min');
+  var Recorder = require('libs/opus-recorder/recorder.min');
 
   it('should not support Recording', function () {
     expect(Recorder.isRecordingSupported()).to.not.be.ok;
