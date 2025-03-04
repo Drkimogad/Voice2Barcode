@@ -1,21 +1,19 @@
-// tts.js - Final Version
-
+// tts.js
 let synth = window.speechSynthesis;
 let voices = [];
 
 function initializeTTS() {
-    // Load available voices
+    const textConvertBtn = document.getElementById('textConvertBtn');
+    
     synth.onvoiceschanged = () => {
         voices = synth.getVoices();
         populateVoiceSelects();
     };
 
-    // Initialize TTS button
-    const generateQRCodeBtn = document.getElementById('generateQRCodeBtn');
-    generateQRCodeBtn.addEventListener('click', handleTextConversion);
+    textConvertBtn.addEventListener('click', handleTextConversion);
 
     return () => {
-        generateQRCodeBtn.removeEventListener('click', handleTextConversion);
+        textConvertBtn.removeEventListener('click', handleTextConversion);
     };
 }
 
@@ -23,21 +21,22 @@ function populateVoiceSelects() {
     const maleSelect = document.getElementById('maleVoiceSelect');
     const femaleSelect = document.getElementById('femaleVoiceSelect');
 
-    // Clear existing options
     maleSelect.innerHTML = '<option value="">Select Male Voice</option>';
     femaleSelect.innerHTML = '<option value="">Select Female Voice</option>';
 
-    // Populate voice options
     voices.forEach(voice => {
         const option = document.createElement('option');
         option.textContent = `${voice.name} (${voice.lang})`;
         option.value = voice.name;
-        option.dataset.lang = voice.lang;
-        option.dataset.gender = voice.gender || 'unknown';
+        
+        // Improved voice gender detection
+        const voiceGender = voice.voiceURI.toLowerCase().includes('male') ? 'male' : 
+                          voice.voiceURI.toLowerCase().includes('female') ? 'female' : 
+                          'unknown';
 
-        if (voice.name.toLowerCase().includes('male')) {
+        if (voiceGender === 'male') {
             maleSelect.appendChild(option);
-        } else if (voice.name.toLowerCase().includes('female')) {
+        } else if (voiceGender === 'female') {
             femaleSelect.appendChild(option);
         }
     });
@@ -45,17 +44,25 @@ function populateVoiceSelects() {
 
 function handleTextConversion() {
     const text = document.getElementById('textToConvert').value;
-    const voiceSelect = document.querySelector('.voice-select');
-    const voiceName = voiceSelect ? voiceSelect.value : '';
+    const maleVoice = document.getElementById('maleVoiceSelect').value;
+    const femaleVoice = document.getElementById('femaleVoiceSelect').value;
+    const selectedVoice = maleVoice || femaleVoice;
 
-    if (!text || !voiceName) {
+    if (!text || !selectedVoice) {
         updateStatus('Please enter text and select a voice', 'error');
         return;
     }
 
     const utterance = new SpeechSynthesisUtterance(text);
-    utterance.voice = voices.find(v => v.name === voiceName);
-    utterance.onend = () => generateQRFromText(text, voiceName);
+    utterance.voice = voices.find(v => v.name === selectedVoice);
+    
+    utterance.onend = () => {
+        generateQRFromText(text, selectedVoice);
+    };
+
+    utterance.onerror = (error) => {
+        updateStatus(`TTS Error: ${error.error}`, 'error');
+    };
 
     synth.speak(utterance);
     updateStatus('Converting text to speech...', 'info');
@@ -63,22 +70,22 @@ function handleTextConversion() {
 
 function generateQRFromText(text, voiceName) {
     try {
-        const qrcodeDiv = document.getElementById('qrcode');
-        qrcodeDiv.innerHTML = '';
-        new QRCode(qrcodeDiv, {
-            text: JSON.stringify({ type: 'text', data: text, voice: voiceName }),
-            width: 256,
-            height: 256
+        const qrData = {
+            type: 'text',
+            data: text,
+            voice: voiceName,
+            timestamp: new Date().toISOString()
+        };
+
+        const qrCodeCanvas = document.getElementById('qrcode');
+        QRCode.toCanvas(qrCodeCanvas, JSON.stringify(qrData), (error) => {
+            if (error) throw error;
+            document.getElementById('downloadQRCodeBtn').disabled = false;
+            updateStatus('QR code generated!', 'success');
         });
-        document.getElementById('downloadQRCodeBtn').disabled = false;
-        updateStatus('QR code generated!', 'success');
     } catch (error) {
-        updateStatus(`QR code generation failed: ${error.message}`, 'error');
+        updateStatus(`QR generation failed: ${error.message}`, 'error');
     }
 }
 
-// Expose functions to the global scope
 window.initializeTTS = initializeTTS;
-window.populateVoiceSelects = populateVoiceSelects;
-window.handleTextConversion = handleTextConversion;
-window.generateQRFromText = generateQRFromText;
