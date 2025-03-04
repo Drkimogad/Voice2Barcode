@@ -1,4 +1,3 @@
-// QRScanning.js - Final Version
 let scanner = null;
 let currentCameraIndex = 0;
 let cameras = [];
@@ -61,6 +60,7 @@ function handleScan(content) {
     try {
         const data = JSON.parse(content);
         displayScannedContent(data);
+        downloadDecodedContent(data);
     } catch (error) {
         updateStatus('Invalid QR code content', 'error');
     }
@@ -89,6 +89,32 @@ function displayScannedContent(data) {
     updateStatus('Content decoded successfully', 'success');
 }
 
+function downloadDecodedContent(data) {
+    if (data.type === 'text') {
+        const blob = new Blob([data.data], { type: 'text/plain' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'decoded_text.txt';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+    } else if (data.type === 'audio') {
+        const a = document.createElement('a');
+        a.href = data.data;
+        a.download = 'decoded_audio.mp3';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+    }
+}
+
+function updateStatus(message, status) {
+    const statusBox = document.getElementById('statusBox');
+    statusBox.textContent = message;
+    statusBox.className = status;
+}
+
 // Expose functions to the global scope
 window.initializeQRScanner = initializeQRScanner;
 window.startScanner = startScanner;
@@ -96,3 +122,4 @@ window.stopScanner = stopScanner;
 window.switchCamera = switchCamera;
 window.handleScan = handleScan;
 window.displayScannedContent = displayScannedContent;
+window.downloadDecodedContent = downloadDecodedContent;
