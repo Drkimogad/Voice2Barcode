@@ -1,5 +1,5 @@
 // QRCodeUploadHandling.js - Final Version
-export function initializeQRUploadHandlers() {
+function initializeQRUploadHandlers() {
     const audioUpload = document.getElementById('audioUpload');
     const qrUpload = document.getElementById('qrUpload');
 
@@ -108,3 +108,11 @@ function displayScannedContent(data) {
 
     updateStatus('Content decoded successfully', 'success');
 }
+
+// Expose functions to the global scope
+window.initializeQRUploadHandlers = initializeQRUploadHandlers;
+window.generateQRFromData = generateQRFromData;
+window.displayScannedContent = displayScannedContent;
+window.decodeQRFromImage = decodeQRFromImage;
+window.handleAudioUpload = handleAudioUpload;
+window.handleQRUpload = handleQRUpload;
