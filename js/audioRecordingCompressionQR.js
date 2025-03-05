@@ -17,6 +17,25 @@ async function initializeAudioModule() {
   }
 }
 
+function initializeRecordingControls() {
+  try {
+    const startButton = document.getElementById('startRecordingBtn');
+    const stopButton = document.getElementById('stopRecordingBtn');
+
+    startButton.disabled = false;
+    stopButton.disabled = false;
+
+    startButton.addEventListener('click', startRecording);
+    stopButton.addEventListener('click', stopRecording);
+
+    console.log('Recording controls initialized');
+    return true;
+  } catch (error) {
+    updateStatus(`Control setup failed: ${error}`, 'error');
+    throw error;
+  }
+}
+
 async function startRecording() {
   if (recorder && recorder.state === 'recording') return;
 
