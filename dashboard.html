@@ -136,7 +136,7 @@
         try {
             // Initialize all core systems
             await initializeAudioModule();
-            await initializeRecordingControls();
+            await initializeRecordingControls(); // Set up recording controls
             initializeQRUploadHandlers();
             initializeTTS();
 
@@ -219,26 +219,6 @@
             document.getElementById('loading-overlay').hidden = true;
         }
     });
-
-    // Expose initializeRecordingControls globally
-    window.initializeRecordingControls = function() {
-        try {
-            const startButton = document.getElementById('startRecordingBtn');
-            const stopButton = document.getElementById('stopRecordingBtn');
-
-            startButton.disabled = false;
-            stopButton.disabled = false;
-
-            startButton.addEventListener('click', startRecording);
-            stopButton.addEventListener('click', stopRecording);
-
-            console.log('Recording controls initialized');
-            return true;
-        } catch (error) {
-            updateStatus(`Control setup failed: ${error}`, 'error');
-            throw error;
-        }
-    };
     </script>
 </body>
 </html>
