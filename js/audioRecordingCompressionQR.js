@@ -8,33 +8,8 @@ let cleanupAudioModule = () => {};
 
 async function initializeAudioModule() {
   try {
-    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-
-    // Initialize OpusRecorder
-    recorder = new Recorder({
-      encoderPath: './libs/opus-recorder/src/encoderWorker.min.js', // Path to encoder worker
-      decoderPath: './libs/opus-recorder/src/decoderWorker.min.js', // Path to decoder worker
-      numberOfChannels: 1, // Mono audio
-      encoderSampleRate: 48000, // Sample rate for Opus
-      encoderBitRate: 64000, // Bit rate for Opus
-    });
-
-    recorder.ondataavailable = (blob) => {
-      recordedChunks.push(blob); // Store the recorded Opus audio blob
-    };
-
-    recorder.onstop = async () => {
-      const blob = new Blob(recordedChunks, { type: 'audio/ogg; codecs=opus' });
-      await compressAndConvertToQRCode(blob);
-      recordedChunks = []; // Clear memory
-    };
-
-    cleanupAudioModule = () => {
-      stream.getTracks().forEach(track => track.stop());
-      console.log('Audio module cleaned up');
-    };
-
-    console.log('Audio module initialized');
+    // Do not initialize the microphone here
+    console.log('Audio module initialized (microphone not accessed yet)');
     return true;
   } catch (error) {
     updateStatus(`Microphone access denied: ${error}`, 'error');
@@ -42,42 +17,53 @@ async function initializeAudioModule() {
   }
 }
 
-function initializeRecordingControls() {
+async function startRecording() {
+  if (recorder && recorder.state === 'recording') return;
+
   try {
-    const startButton = document.getElementById('startRecordingBtn');
-    const stopButton = document.getElementById('stopRecordingBtn');
+    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
 
-    startButton.disabled = false;
-    stopButton.disabled = false;
+    // Initialize OpusRecorder only when recording starts
+    recorder = new Recorder({
+      encoderPath: './libs/opus-recorder/src/encoderWorker.min.js',
+      decoderPath: './libs/opus-recorder/src/decoderWorker.min.js',
+      numberOfChannels: 1,
+      encoderSampleRate: 48000,
+      encoderBitRate: 64000,
+    });
 
-    startButton.addEventListener('click', startRecording);
-    stopButton.addEventListener('click', stopRecording);
+    recorder.ondataavailable = (blob) => {
+      recordedChunks.push(blob);
+    };
 
-    console.log('Recording controls initialized');
-    return true;
+    recorder.onstop = async () => {
+      const blob = new Blob(recordedChunks, { type: 'audio/ogg; codecs=opus' });
+      await compressAndConvertToQRCode(blob);
+      recordedChunks = [];
+    };
+
+    cleanupAudioModule = () => {
+      stream.getTracks().forEach(track => track.stop());
+      console.log('Audio module cleaned up');
+    };
+
+    recordedChunks = [];
+    recorder.start();
+    updateStatus('Recording started...', 'info');
+
+    setTimeout(() => {
+      if (recorder.state === 'recording') {
+        stopRecording();
+        updateStatus('Recording stopped automatically', 'warning');
+      }
+    }, RECORDING_DURATION);
   } catch (error) {
-    updateStatus(`Control setup failed: ${error}`, 'error');
-    throw error;
+    updateStatus(`Failed to start recording: ${error}`, 'error');
   }
 }
 
-function startRecording() {
-  if (!recorder || recorder.state === 'recording') return;
-
-  recordedChunks = [];
-  recorder.start();
-  updateStatus('Recording started...', 'info');
-  
-  setTimeout(() => {
-    if (recorder.state === 'recording') {
-      stopRecording();
-      updateStatus('Recording stopped automatically', 'warning');
-    }
-  }, RECORDING_DURATION);
-}
-
 function stopRecording() {
-  if (recorder.state === 'recording') {
+  if (recorder && recorder.state === 'recording') {
     recorder.stop();
     updateStatus('Recording stopped', 'success');
   }
