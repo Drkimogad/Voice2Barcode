@@ -13,6 +13,8 @@
     <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
     <!-- OpusRecorder -->
     <script src="./libs/opus-recorder/src/recorder.js"></script>
+    <!-- Html5-QRCode Library -->
+    <script src="https://unpkg.com/html5-qrcode"></script>
 </head>
 <body>
     <div class="container">
@@ -121,12 +123,10 @@
 
     <!-- Dependencies -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
-    <script src="js/instascan.min.js"></script>
 
     <!-- Core Application -->
     <script src="js/audioRecordingCompressionQR.js"></script>
     <script src="js/QRCodeUploadHandling.js"></script>
-    <script src="js/QRScanning.js"></script>
     <script src="js/tts.js"></script>
     <script src="js/ModeSwitching.js"></script>
     <script src="js/utils.js"></script>
@@ -139,7 +139,6 @@
             await initializeAudioModule();
             await initializeRecordingControls();
             initializeQRUploadHandlers();
-            initializeScanner();
             initializeTTS();
 
             // Set up QR download observer
@@ -150,6 +149,60 @@
             qrObserver.observe(document.getElementById('qrcode'), {
                 childList: true,
                 subtree: true
+            });
+
+            // Initialize Html5-QRCode Scanner
+            const html5QrCode = new Html5Qrcode("cameraFeed");
+            const scanBtn = document.getElementById('scanBtn');
+            const cameraPreview = document.getElementById('cameraPreview');
+            const switchCameraBtn = document.getElementById('switchCameraBtn');
+
+            scanBtn.addEventListener('click', async () => {
+                try {
+                    await html5QrCode.start(
+                        { facingMode: "environment" }, // Use rear camera
+                        { fps: 10, qrbox: 250 },       // Optional: Set frame rate and scanning box size
+                        (decodedText) => {
+                            // Success callback
+                            console.log("Scanned QR Code:", decodedText);
+                            document.getElementById('messageText').textContent = decodedText;
+                            document.getElementById('scannedContent').hidden = false;
+                            html5QrCode.stop(); // Stop scanning after successful scan
+                            cameraPreview.hidden = true;
+                            switchCameraBtn.hidden = true;
+                        },
+                        (errorMessage) => {
+                            // Error callback
+                            console.error(errorMessage);
+                        }
+                    );
+                    cameraPreview.hidden = false;
+                    switchCameraBtn.hidden = false;
+                } catch (err) {
+                    console.error("Unable to start scanning:", err);
+                }
+            });
+
+            switchCameraBtn.addEventListener('click', () => {
+                const currentFacingMode = html5QrCode.getRunningTrackSettings().facingMode;
+                const newFacingMode = currentFacingMode === "environment" ? "user" : "environment";
+                html5QrCode.stop().then(() => {
+                    html5QrCode.start(
+                        { facingMode: newFacingMode },
+                        { fps: 10, qrbox: 250 },
+                        (decodedText) => {
+                            console.log("Scanned QR Code:", decodedText);
+                            document.getElementById('messageText').textContent = decodedText;
+                            document.getElementById('scannedContent').hidden = false;
+                            html5QrCode.stop();
+                            cameraPreview.hidden = true;
+                            switchCameraBtn.hidden = true;
+                        },
+                        (errorMessage) => {
+                            console.error(errorMessage);
+                        }
+                    );
+                });
             });
 
             // Initialize status cleanup
