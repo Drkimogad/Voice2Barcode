@@ -12,7 +12,6 @@ const APP_CONFIG = {
     maxInitAttempts: 2
 };
 
-
 // Temporary performance logger
 const initTimestamps = {
   start: Date.now(),
@@ -23,27 +22,10 @@ const initTimestamps = {
   }
 };
 
-async function initializeApp() {
-  initTimestamps.log('start');
-  
-  // Load critical first
-  initTimestamps.log('pre-core');
-  await initializeModeSwitching();
-  initTimestamps.log('post-mode');
-  
-  // Defer heavy modules
-  setTimeout(() => {
-    initializeAudioModule();
-    initializeScanner();
-  }, 3000); // 3s delay
-  
-  // Rest of your code
-}
-
-
 let isInitialized = false;
 let initializationAttempts = 0;
 const cleanupCallbacks = new Set();
+
 // Enhanced Error Handling
 window.addEventListener('error', ({ error }) => {
     console.error('Runtime Error:', error);
@@ -248,7 +230,6 @@ const perfMetrics = {
 perfMetrics.mark('dom_loaded');
 await initializeCoreComponents(); // After each stage
 perfMetrics.mark('components_loaded');
-
 
 // Load critical modules first
 async function criticalModules() {
