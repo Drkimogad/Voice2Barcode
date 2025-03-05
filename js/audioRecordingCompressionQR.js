@@ -1,5 +1,3 @@
-// audioRecordingCompressionQR.js
-
 const RECORDING_DURATION = 10000; // 10 seconds
 const MAX_QR_DATA_LENGTH = 2953; // Max data for QR v40-L (low error correction)
 
@@ -11,14 +9,22 @@ let cleanupAudioModule = () => {};
 async function initializeAudioModule() {
   try {
     const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-    recorder = new MediaRecorder(stream, { mimeType: 'audio/webm' });
 
-    recorder.ondataavailable = event => {
-      if (event.data.size > 0) recordedChunks.push(event.data);
+    // Initialize OpusRecorder
+    recorder = new Recorder({
+      encoderPath: './libs/opus-recorder/src/encoderWorker.min.js', // Path to encoder worker
+      decoderPath: './libs/opus-recorder/src/decoderWorker.min.js', // Path to decoder worker
+      numberOfChannels: 1, // Mono audio
+      encoderSampleRate: 48000, // Sample rate for Opus
+      encoderBitRate: 64000, // Bit rate for Opus
+    });
+
+    recorder.ondataavailable = (blob) => {
+      recordedChunks.push(blob); // Store the recorded Opus audio blob
     };
 
     recorder.onstop = async () => {
-      const blob = new Blob(recordedChunks, { type: 'audio/webm' });
+      const blob = new Blob(recordedChunks, { type: 'audio/ogg; codecs=opus' });
       await compressAndConvertToQRCode(blob);
       recordedChunks = []; // Clear memory
     };
@@ -81,7 +87,7 @@ async function compressAndConvertToQRCode(blob) {
   try {
     updateStatus('Compressing audio...', 'info');
     
-    // Simplified compression: Convert to base64 and truncate if needed
+    // Convert Opus audio blob to base64
     const base64Data = await blobToBase64(blob);
     const compressedData = base64Data.slice(0, MAX_QR_DATA_LENGTH);
 
