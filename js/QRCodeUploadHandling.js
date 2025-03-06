@@ -1,5 +1,3 @@
-// QRCodeUploadHandling.js
-
 const MAX_AUDIO_SIZE = 5 * 1024 * 1024; // 5MB
 const MAX_QR_IMAGE_SIZE = 2 * 1024 * 1024; // 2MB
 const VALID_CONTENT_TYPES = ['audio', 'text'];
