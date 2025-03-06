@@ -3,6 +3,7 @@ document.getElementById('signinForm').addEventListener('submit', async (event) =
     await handleSignIn();
 });
 
+async function handleSignIn() {
     const username = document.getElementById('signinUsername').value;
     const password = document.getElementById('signinPassword').value;
 
@@ -28,4 +29,4 @@ document.getElementById('signinForm').addEventListener('submit', async (event) =
     } else {
         alert('Incorrect password. Please try again.');
     }
-});
+}
