@@ -65,7 +65,6 @@ function handleScan(content) {
     }
 }
 
-// Updated to match HTML structure
 function displayScannedContent(data) {
     const scannedContent = document.getElementById('scannedContent');
     const messageText = document.getElementById('messageText');
