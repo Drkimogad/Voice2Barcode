@@ -144,8 +144,35 @@
             console.log('Welcome ' + loggedInUser);
             initializeAudioModule();
             initializeRecordingControls();
+            initializeTTS();
         }
-    });  
+    });
+
+    document.querySelectorAll('.mode-btn').forEach(button => {
+        button.addEventListener('click', () => {
+            const mode = button.getAttribute('data-mode');
+            document.querySelectorAll('.mode-section').forEach(section => {
+                section.hidden = true;
+            });
+            document.querySelector(`[data-section="${mode}"]`).hidden = false;
+            
+            switch (mode) {
+                case 'voice':
+                    initializeAudioModule();
+                    initializeRecordingControls();
+                    break;
+                case 'text':
+                    initializeTTS();
+                    break;
+                case 'upload':
+                    // Initialize upload functionalities if any
+                    break;
+                case 'scan':
+                    // Initialize scan functionalities if any
+                    break;
+            }
+        });
+    });
     </script>
 </body>
 </html>
