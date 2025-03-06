@@ -119,6 +119,21 @@ function createSecureAuthHandler() {
     };
 }
 
+async function handleSignIn() {
+    try {
+        // Perform sign-in logic here and get the token
+        const authToken = await signInUser(); // Modify this line based on your actual sign-in logic
+
+        // Store the token in local storage
+        localStorage.setItem('authToken', authToken);
+
+        // Redirect to the dashboard
+        window.location.href = 'dashboard.html'; // Ensure this is the correct path to your dashboard
+    } catch (error) {
+        updateStatus('Sign-in failed. Please try again.', 'error');
+    }
+}
+
 function handleSecureQRDownload() {
     const canvas = document.querySelector('#qrcode canvas');
     if (!canvas) throw new Error('No QR code available');
