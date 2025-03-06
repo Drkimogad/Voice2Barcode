@@ -126,6 +126,7 @@ async function handleSignIn() {
 
         // Store the token in local storage
         localStorage.setItem('authToken', authToken);
+        localStorage.setItem('loggedInUser', 'true'); // Ensure login state
 
         // Redirect to the dashboard
         window.location.href = 'dashboard.html'; // Ensure this is the correct path to your dashboard
@@ -199,7 +200,8 @@ async function performSecureCleanup() {
         }
     });
     cleanupCallbacks.clear();
-    localStorage.clear();
+    localStorage.removeItem('loggedInUser'); // Only remove login status
+    localStorage.removeItem('authToken');    // Only remove auth token
     sessionStorage.clear();
 }
 
@@ -217,8 +219,9 @@ function handleCriticalFailure(error) {
     performSecureCleanup();
 }
 
+// FIXED AUTHENTICATION CHECK:
 document.addEventListener('DOMContentLoaded', () => {
-    if (!localStorage.getItem('authToken')) {
+    if (!localStorage.getItem('loggedInUser')) {  // Now checking 'loggedInUser' instead of 'authToken'
         window.location.replace(APP_CONFIG.authRedirect);
         return;
     }
