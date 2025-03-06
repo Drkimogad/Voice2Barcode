@@ -66,7 +66,6 @@ function handleScan(content) {
     }
 }
 
-// Updated to match HTML structure
 function displayScannedContent(data) {
     const scannedContent = document.getElementById('scannedContent');
     const messageText = document.getElementById('messageText');
@@ -119,6 +118,13 @@ function downloadDecodedContent() {
     } catch (error) {
         updateStatus(`Download failed: ${error.message}`, 'error');
     }
+}
+
+function updateStatus(message, type = 'info') {
+    const statusElement = document.getElementById('status');
+    statusElement.textContent = message;
+    statusElement.className = `status-${type}`;
+    if (type === 'success') setTimeout(() => statusElement.textContent = '', 5000);
 }
 
 window.initializeScanner = initializeScanner;
