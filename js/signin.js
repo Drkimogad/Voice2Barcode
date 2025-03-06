@@ -21,6 +21,7 @@ document.getElementById('signinForm').addEventListener('submit', function(event)
     if (storedPassword === password) {
         alert('Login successful!');
         localStorage.setItem('loggedInUser', username);  // Store the logged-in user
+        console.log('User logged in:', username);  // Log the logged-in user
         window.location.href = 'dashboard.html';  // Redirect to dashboard
     } else {
         alert('Incorrect password. Please try again.');
