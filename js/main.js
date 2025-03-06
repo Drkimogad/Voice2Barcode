@@ -1,32 +1,12 @@
-// main.js - Production-Ready Implementation
 const APP_CONFIG = {
     authRedirect: 'signin.html',
-    initSequence: [
-        { name: 'Mode Switching', init: window.initializeModeSwitching },
-        { name: 'Audio Module', init: window.initializeAudioModule },
-        { name: 'Recording Controls', init: window.initializeRecordingControls },
-        { name: 'Text-to-Speech', init: window.initializeTTS },
-        { name: 'QR Scanner', init: window.initializeScanner },
-        { name: 'File Uploads', init: window.initializeQRUploadHandlers }
-    ],
     maxInitAttempts: 2
-};
-
-// Temporary performance logger
-const initTimestamps = {
-  start: Date.now(),
-  stages: {},
-  log(stage) {
-    this.stages[stage] = Date.now() - this.start;
-    console.log(`${stage}: +${this.stages[stage]}ms`);
-  }
 };
 
 let isInitialized = false;
 let initializationAttempts = 0;
 const cleanupCallbacks = new Set();
 
-// Enhanced Error Handling
 window.addEventListener('error', ({ error }) => {
     console.error('Runtime Error:', error);
     updateStatus('Application instability detected', 'error');
@@ -37,14 +17,25 @@ window.addEventListener('unhandledrejection', ({ reason }) => {
     updateStatus('Unexpected system error', 'error');
 });
 
-// Core Application Lifecycle
 async function initializeApp() {
     if (isInitialized || initializationAttempts >= APP_CONFIG.maxInitAttempts) return;
     initializationAttempts++;
 
     try {
         toggleLoading(true);
-        await initializeCoreSystems();
+        
+        // Setup event listeners for mode buttons
+        document.querySelectorAll('.mode-btn').forEach(button => {
+            button.addEventListener('click', async (event) => {
+                const mode = event.target.getAttribute('data-mode');
+                await initializeMode(mode);
+            });
+        });
+
+        // Automatically initialize based on the last chosen mode or default to 'voice'
+        const lastMode = localStorage.getItem('lastMode') || 'voice';
+        await initializeMode(lastMode);
+
         setupUIEventHandlers();
         
         document.dispatchEvent(new CustomEvent('app-ready'));
@@ -57,27 +48,37 @@ async function initializeApp() {
     }
 }
 
-async function initializeCoreSystems() {
-    const initializationResults = [];
-    
-    for (const { name, init } of APP_CONFIG.initSequence) {
-        try {
-            if (typeof init !== 'function') throw new Error('Invalid module');
-            
-            const cleanup = await init();
-            if (typeof cleanup === 'function') {
-                cleanupCallbacks.add(cleanup);
-            }
-            
-            initializationResults.push({ name, status: 'success' });
-        } catch (error) {
-            initializationResults.push({ name, status: 'failed', error });
-            updateStatus(`${name} initialization failed`, 'warning');
-        }
-    }
+async function initializeMode(mode) {
+    try {
+        toggleLoading(true);
 
-    if (initializationResults.some(r => r.status === 'failed')) {
-        throw new Error('Partial initialization failure');
+        // Cleanup previous mode
+        cleanupCallbacks.forEach(callback => callback());
+        cleanupCallbacks.clear();
+
+        switch (mode) {
+            case 'voice':
+                cleanupCallbacks.add(await initializeAudioModule());
+                cleanupCallbacks.add(initializeRecordingControls());
+                break;
+            case 'text':
+                cleanupCallbacks.add(initializeTTS());
+                break;
+            case 'upload':
+                cleanupCallbacks.add(initializeQRUploadHandlers());
+                break;
+            case 'scan':
+                cleanupCallbacks.add(initializeScanner());
+                break;
+            default:
+                throw new Error(`Unknown mode: ${mode}`);
+        }
+        localStorage.setItem('lastMode', mode); // Save the chosen mode
+        updateStatus(`${mode.charAt(0).toUpperCase() + mode.slice(1)} mode initialized`, 'success');
+    } catch (error) {
+        handleCriticalFailure(error);
+    } finally {
+        toggleLoading(false);
     }
 }
 
@@ -89,7 +90,6 @@ function setupUIEventHandlers() {
 
     const authHandler = createSecureAuthHandler();
     
-    // Setup event listeners
     downloadHandlers.forEach(({ selector, handler }) => {
         const element = document.querySelector(selector);
         if (element) {
@@ -119,7 +119,6 @@ function createSecureAuthHandler() {
     };
 }
 
-// Secure Download Handlers
 function handleSecureQRDownload() {
     const canvas = document.querySelector('#qrcode canvas');
     if (!canvas) throw new Error('No QR code available');
@@ -140,7 +139,6 @@ function handleContentExport() {
     updateStatus('Content export completed', 'success');
 }
 
-// Utility Functions
 function getValidatedContent() {
     const textContent = document.getElementById('messageText')?.textContent;
     const audioElement = document.getElementById('scannedAudio')?.querySelector('audio');
@@ -204,7 +202,6 @@ function handleCriticalFailure(error) {
     performSecureCleanup();
 }
 
-// Application Bootstrap
 document.addEventListener('DOMContentLoaded', () => {
     if (!localStorage.getItem('authToken')) {
         window.location.replace(APP_CONFIG.authRedirect);
@@ -214,31 +211,3 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('logoutBtn').hidden = false;
     initializeApp().catch(handleCriticalFailure);
 });
-
-const perfMetrics = {
-  start: Date.now(),
-  stages: {},
-  mark(stage) {
-    this.stages[stage] = Date.now() - this.start;
-  },
-  report() {
-    console.table(this.stages);
-  }
-};
-
-// Usage
-perfMetrics.mark('dom_loaded');
-await initializeCoreComponents(); // After each stage
-perfMetrics.mark('components_loaded');
-
-// Load critical modules first
-async function criticalModules() {
-  await initializeModeSwitching();
-  await initializeQRUploadHandlers();
-}
-
-// Defer non-essential
-function secondaryModules() {
-  initializeTTS();
-  initializeScanner();
-}
