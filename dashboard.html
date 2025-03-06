@@ -147,6 +147,7 @@
             initializeRecordingControls();
             initializeTTS();
             initializeScanner();
+            initializeUpload(); // Placeholder for upload initialization
         }
     });
 
@@ -167,7 +168,7 @@
                     initializeTTS();
                     break;
                 case 'upload':
-                    // Initialize upload functionalities if any
+                    initializeUpload(); // Placeholder for upload initialization
                     break;
                 case 'scan':
                     initializeScanner();
@@ -175,6 +176,11 @@
             }
         });
     });
-    </script>
+
+    function initializeUpload() {
+        // Placeholder for upload initialization
+        console.log('Upload mode initialized');
+    }
+</script>
 </body>
 </html>
