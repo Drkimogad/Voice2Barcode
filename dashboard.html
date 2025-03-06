@@ -128,6 +128,7 @@
     <script src="js/audioRecordingCompressionQR.js"></script>
     <script src="js/QRCodeUploadHandling.js"></script>
     <script src="js/tts.js"></script>
+    <script src="js/QRScanning.js"></script>
     <script src="js/ModeSwitching.js"></script>
     <script src="js/utils.js"></script>
     <script src="js/main.js"></script>
@@ -145,6 +146,7 @@
             initializeAudioModule();
             initializeRecordingControls();
             initializeTTS();
+            initializeScanner();
         }
     });
 
@@ -168,7 +170,7 @@
                     // Initialize upload functionalities if any
                     break;
                 case 'scan':
-                    // Initialize scan functionalities if any
+                    initializeScanner();
                     break;
             }
         });
