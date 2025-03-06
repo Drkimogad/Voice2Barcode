@@ -1,131 +1,71 @@
-const MAX_AUDIO_SIZE = 5 * 1024 * 1024; // 5MB
-const MAX_QR_IMAGE_SIZE = 2 * 1024 * 1024; // 2MB
-const VALID_CONTENT_TYPES = ['audio', 'text'];
-let activeObjectURLs = new Set();
+let scanner = null;
+let currentCameraIndex = 0;
+let cameras = [];
 
-function initializeQRUploadHandlers() {
-    const audioUpload = document.getElementById('audioUpload');
-    const qrUpload = document.getElementById('qrUpload');
-
-    const handlers = {
-        audio: handleAudioUpload,
-        qr: handleQRUpload
-    };
-
-    audioUpload.addEventListener('change', handlers.audio);
-    qrUpload.addEventListener('change', handlers.qr);
+function initializeScanner() {
+    const scanBtn = document.getElementById('scanBtn');
+    const switchCameraBtn = document.getElementById('switchCameraBtn');
+    
+    scanBtn.addEventListener('click', startScanner);
+    switchCameraBtn.addEventListener('click', switchCamera);
 
     return () => {
-        audioUpload.removeEventListener('change', handlers.audio);
-        qrUpload.removeEventListener('change', handlers.qr);
-        cleanupObjectURLs();
+        stopScanner();
+        scanBtn.removeEventListener('click', startScanner);
+        switchCameraBtn.removeEventListener('click', switchCamera);
     };
 }
 
-function cleanupObjectURLs() {
-    activeObjectURLs.forEach(url => URL.revokeObjectURL(url));
-    activeObjectURLs.clear();
-}
-
-async function handleAudioUpload(event) {
-    clearStatus();
-    const file = event.target.files[0];
-    
+async function startScanner() {
     try {
-        if (!file) throw new Error('No file selected');
-        if (!file.type.startsWith('audio/')) throw new Error('Invalid audio format');
-        if (file.size > MAX_AUDIO_SIZE) throw new Error(`File too large (max ${MAX_AUDIO_SIZE/1024/1024}MB)`);
+        cameras = await Instascan.Camera.getCameras();
+        if (cameras.length === 0) {
+            throw new Error('No cameras found');
+        }
 
-        const dataUrl = await readFileAsDataURL(file);
-        generateQRFromData({
-            type: 'audio',
-            data: dataUrl,
-            mimeType: file.type,
-            size: file.size
+        scanner = new Instascan.Scanner({
+            video: document.getElementById('cameraFeed'),
+            mirror: false,
+            backgroundScan: false
         });
-        updateStatus('Audio encoded in QR successfully', 'success');
+
+        scanner.addListener('scan', handleScan);
+        await scanner.start(cameras[currentCameraIndex]);
+
+        document.getElementById('cameraPreview').hidden = false;
+        document.getElementById('switchCameraBtn').hidden = cameras.length <= 1;
+        updateStatus('Scanning started', 'success');
     } catch (error) {
-        updateStatus(error.message, 'error');
+        updateStatus(`Scanner error: ${error.message}`, 'error');
     }
 }
 
-async function handleQRUpload(event) {
-    clearStatus();
-    const file = event.target.files[0];
-    
-    try {
-        if (!file) throw new Error('No file selected');
-        if (!file.type.startsWith('image/')) throw new Error('Invalid image format');
-        if (file.size > MAX_QR_IMAGE_SIZE) throw new Error(`Image too large (max ${MAX_QR_IMAGE_SIZE/1024/1024}MB)`);
-
-        const content = await decodeQRFromImage(file);
-        const data = validateQRContent(content);
-        displayScannedContent(data);
-    } catch (error) {
-        updateStatus(error.message, 'error');
+function stopScanner() {
+    if (scanner) {
+        scanner.stop();
+        scanner = null;
     }
+    document.getElementById('cameraPreview').hidden = true;
 }
 
-function validateQRContent(content) {
+function switchCamera() {
+    currentCameraIndex = (currentCameraIndex + 1) % cameras.length;
+    scanner.start(cameras[currentCameraIndex]);
+    updateStatus(`Switched to ${cameras[currentCameraIndex].name}`, 'info');
+}
+
+function handleScan(content) {
     try {
         const data = JSON.parse(content);
-        if (!VALID_CONTENT_TYPES.includes(data?.type)) throw new Error('Invalid content type');
-        if (!data?.data) throw new Error('Missing content data');
-        return data;
+        displayScannedContent(data);
+        document.getElementById('downloadBtn').disabled = false;
+        window.lastScannedData = data; // Store for download
     } catch (error) {
-        throw new Error(`Invalid QR content: ${error.message}`);
+        updateStatus('Invalid QR code content', 'error');
     }
 }
 
-async function decodeQRFromImage(file) {
-    return new Promise((resolve, reject) => {
-        const img = new Image();
-        const url = URL.createObjectURL(file);
-        activeObjectURLs.add(url);
-
-        img.onload = () => {
-            try {
-                const canvas = document.createElement('canvas');
-                const ctx = canvas.getContext('2d');
-                canvas.width = img.width;
-                canvas.height = img.height;
-                ctx.drawImage(img, 0, 0);
-
-                const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-                const code = jsQR(imageData.data, imageData.width, imageData.height);
-                
-                if (!code) reject(new Error('No QR code found'));
-                resolve(code.data);
-            } finally {
-                URL.revokeObjectURL(url);
-                activeObjectURLs.delete(url);
-            }
-        };
-
-        img.onerror = () => {
-            URL.revokeObjectURL(url);
-            activeObjectURLs.delete(url);
-            reject(new Error('Failed to load image'));
-        };
-
-        img.src = url;
-    });
-}
-
-function generateQRFromData(data) {
-    try {
-        const qrCodeCanvas = document.getElementById('qrcode');
-        qrCodeCanvas.innerHTML = '';
-        
-        QRCode.toCanvas(qrCodeCanvas, JSON.stringify(data), (error) => {
-            if (error) throw error;
-            document.getElementById('downloadQRCodeBtn').disabled = false;
-        });
-    } catch (error) {
-        throw new Error(`QR generation failed: ${error.message}`);
-    }
-}
-
+// Updated to match HTML structure
 function displayScannedContent(data) {
     const scannedContent = document.getElementById('scannedContent');
     const messageText = document.getElementById('messageText');
@@ -135,26 +75,49 @@ function displayScannedContent(data) {
     scannedAudio.innerHTML = '';
     messageText.textContent = '';
 
-    if (data.type === 'audio') {
+    if (data.type === 'text') {
+        messageText.textContent = data.data;
+    } else if (data.type === 'audio') {
         const audio = new Audio(data.data);
         audio.controls = true;
         scannedAudio.appendChild(audio);
-        messageText.textContent = `Audio (${(data.size/1024).toFixed(1)}KB)`;
-    } else if (data.type === 'text') {
-        messageText.textContent = data.data;
+        messageText.textContent = `Audio content (${data.mimeType})`;
+    } else {
+        updateStatus('Unsupported content type', 'error');
     }
-
-    updateStatus('Content decoded successfully', 'success');
 }
 
-// Utility Functions
-function readFileAsDataURL(file) {
-    return new Promise((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onload = () => resolve(reader.result);
-        reader.onerror = () => reject(new Error('File read failed'));
-        reader.readAsDataURL(file);
-    });
+function downloadDecodedContent() {
+    const data = window.lastScannedData;
+    if (!data) return;
+
+    try {
+        let blob, filename;
+        if (data.type === 'text') {
+            blob = new Blob([data.data], { type: 'text/plain' });
+            filename = 'decoded_text.txt';
+        } else if (data.type === 'audio') {
+            const byteString = atob(data.data.split(',')[1]);
+            const arrayBuffer = new ArrayBuffer(byteString.length);
+            const uintArray = new Uint8Array(arrayBuffer);
+            for (let i = 0; i < byteString.length; i++) {
+                uintArray[i] = byteString.charCodeAt(i);
+            }
+            blob = new Blob([arrayBuffer], { type: data.mimeType });
+            filename = `audio_${Date.now()}.${data.mimeType.split('/')[1]}`;
+        }
+
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+    } catch (error) {
+        updateStatus(`Download failed: ${error.message}`, 'error');
+    }
 }
 
 function updateStatus(message, type = 'info') {
@@ -164,9 +127,5 @@ function updateStatus(message, type = 'info') {
     if (type === 'success') setTimeout(() => statusElement.textContent = '', 5000);
 }
 
-function clearStatus() {
-    document.getElementById('status').textContent = '';
-}
-
-// Export functions
-window.initializeQRUploadHandlers = initializeQRUploadHandlers;
+window.initializeScanner = initializeScanner;
+window.downloadDecodedContent = downloadDecodedContent;
