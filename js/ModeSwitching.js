@@ -1,4 +1,3 @@
-// ModeSwitching.js - Production-Ready Version
 function initializeModeSwitching() {
     let cachedSections = null;
     let isSwitching = false;
