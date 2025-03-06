@@ -351,7 +351,7 @@ header.app-header h1 {
 
 .auth-form button:not(:disabled):hover {
   transform: translateY(-2px);
-  box-shadow: var(--shadow-md);
+  box-shadow: var (--shadow-md);
 }
 
 /* ===== Footer Styling ===== */
