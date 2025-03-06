@@ -10,7 +10,10 @@ async function initializeAudioModule() {
   try {
     // Do not initialize the microphone here
     console.log('Audio module initialized (microphone not accessed yet)');
-    return true;
+    return () => {
+      // Return cleanup function
+      cleanupAudioModule();
+    };
   } catch (error) {
     updateStatus(`Microphone access denied: ${error}`, 'error');
     throw error;
@@ -29,7 +32,11 @@ function initializeRecordingControls() {
     stopButton.addEventListener('click', stopRecording);
 
     console.log('Recording controls initialized');
-    return true;
+    return () => {
+      // Return cleanup function
+      startButton.removeEventListener('click', startRecording);
+      stopButton.removeEventListener('click', stopRecording);
+    };
   } catch (error) {
     updateStatus(`Control setup failed: ${error}`, 'error');
     throw error;
