@@ -1,5 +1,7 @@
-document.getElementById('signinForm').addEventListener('submit', function(event) {
+document.getElementById('signinForm').addEventListener('submit', async (event) => {
     event.preventDefault();
+    await handleSignIn();
+});
 
     const username = document.getElementById('signinUsername').value;
     const password = document.getElementById('signinPassword').value;
