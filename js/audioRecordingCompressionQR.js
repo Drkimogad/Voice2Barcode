@@ -26,7 +26,7 @@ function initializeRecordingControls() {
     const stopButton = document.getElementById('stopRecordingBtn');
 
     startButton.disabled = false;
-    stopButton.disabled = false;
+    stopButton.disabled = true;
 
     startButton.addEventListener('click', startRecording);
     stopButton.addEventListener('click', stopRecording);
@@ -49,7 +49,6 @@ async function startRecording() {
   try {
     const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
 
-    // Initialize OpusRecorder only when recording starts
     recorder = new Recorder({
       encoderPath: './libs/opus-recorder/src/encoderWorker.min.js',
       decoderPath: './libs/opus-recorder/src/decoderWorker.min.js',
@@ -66,6 +65,8 @@ async function startRecording() {
       const blob = new Blob(recordedChunks, { type: 'audio/ogg; codecs=opus' });
       await compressAndConvertToQRCode(blob);
       recordedChunks = [];
+      document.getElementById('stopRecordingBtn').disabled = true;
+      document.getElementById('startRecordingBtn').disabled = false;
     };
 
     cleanupAudioModule = () => {
@@ -75,6 +76,8 @@ async function startRecording() {
 
     recordedChunks = [];
     recorder.start();
+    document.getElementById('startRecordingBtn').disabled = true;
+    document.getElementById('stopRecordingBtn').disabled = false;
     updateStatus('Recording started...', 'info');
 
     setTimeout(() => {
