@@ -1,4 +1,3 @@
-// tts.js
 let synth = window.speechSynthesis;
 let voices = [];
 
@@ -85,6 +84,20 @@ function generateQRFromText(text, voiceName) {
         });
     } catch (error) {
         updateStatus(`QR generation failed: ${error.message}`, 'error');
+    }
+}
+
+function updateStatus(message, type = 'info') {
+    const statusElement = document.getElementById('status');
+    statusElement.textContent = message;
+    statusElement.className = `status-${type}`;
+    
+    // Auto-clear success messages after 5 seconds
+    if (type === 'success') {
+        setTimeout(() => {
+            statusElement.textContent = '';
+            statusElement.className = '';
+        }, 5000);
     }
 }
 
