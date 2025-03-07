@@ -312,7 +312,7 @@ header.app-header h1 {
   border: 0;
 }
 
-/* ===== Sign-In and Sign-Up Pages ===== */
+/* ===== Sign-In and Sign-Up Pages (UPDATED) ===== */
 .auth-container {
   max-width: 400px;
   margin: 4rem auto;
@@ -322,13 +322,12 @@ header.app-header h1 {
   box-shadow: var(--shadow-md);
 }
 
-.auth-header {
-  text-align: center;
-  margin-bottom: 2rem;
-}
-
-.auth-header h2 {
-  margin-bottom: 0.5rem;
+/* ===== Sign In Form Styles (UPDATED) ===== */
+#signinSection {
+  background: var(--surface-color);
+  padding: 2rem;
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow-md);
 }
 
 .auth-form {
@@ -351,30 +350,36 @@ header.app-header h1 {
 
 .auth-form button:not(:disabled):hover {
   transform: translateY(-2px);
-  box-shadow: var (--shadow-md);
+  box-shadow: var(--shadow-md);
 }
 
-/* ===== Footer Styling ===== */
-.footer {
+/* ===== Sign Up Form Styles (UPDATED) ===== */
+#signupSection {
   background: var(--surface-color);
-  padding: 1rem 2rem;
-  box-shadow: var(--shadow-sm);
+  padding: 2rem;
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow-md);
 }
 
-.footer p {
-  margin-bottom: 0.5rem;
-}
-
-.footer-links {
+.auth-form {
   display: flex;
+  flex-direction: column;
   gap: 1rem;
 }
 
-.footer-link {
-  color: var(--primary-color);
-  text-decoration: none;
+.auth-form input {
+  padding: 0.75rem 1rem;
+  border-radius: var(--border-radius);
+  border: 1px solid rgba(0, 0, 0, 0.1);
 }
 
-.footer-link:hover {
-  text-decoration: underline;
+.auth-form button {
+  background: var(--primary-color);
+  color: white;
+  font-weight: 600;
+}
+
+.auth-form button:not(:disabled):hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
 }
