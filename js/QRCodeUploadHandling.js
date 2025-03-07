@@ -1,39 +1,31 @@
 let scanner = null;
-let currentCameraIndex = 0;
-let cameras = [];
 
-function initializeScanner() {
+function initializeUploadScanner() {
     const scanBtn = document.getElementById('scanBtn');
-    const switchCameraBtn = document.getElementById('switchCameraBtn');
+    const uploadInput = document.getElementById('uploadInput');
     
-    scanBtn.addEventListener('click', startScanner);
-    switchCameraBtn.addEventListener('click', switchCamera);
+    scanBtn.addEventListener('click', startUploadScanner);
+    uploadInput.addEventListener('change', handleFileUpload);
 
     return () => {
         stopScanner();
-        scanBtn.removeEventListener('click', startScanner);
-        switchCameraBtn.removeEventListener('click', switchCamera);
+        scanBtn.removeEventListener('click', startUploadScanner);
+        uploadInput.removeEventListener('change', handleFileUpload);
     };
 }
 
-async function startScanner() {
+async function startUploadScanner() {
     try {
-        cameras = await Instascan.Camera.getCameras();
-        if (cameras.length === 0) {
-            throw new Error('No cameras found');
-        }
-
-        scanner = new Instascan.Scanner({
-            video: document.getElementById('cameraFeed'),
-            mirror: false,
-            backgroundScan: false
+        scanner = new Html5QrcodeScanner('cameraFeed', {
+            fps: 10,
+            qrbox: 250
         });
 
-        scanner.addListener('scan', handleScan);
-        await scanner.start(cameras[currentCameraIndex]);
+        scanner.render(handleScan, (error) => {
+            updateStatus(`Scanner error: ${error}`, 'error');
+        });
 
         document.getElementById('cameraPreview').hidden = false;
-        document.getElementById('switchCameraBtn').hidden = cameras.length <= 1;
         updateStatus('Scanning started', 'success');
     } catch (error) {
         updateStatus(`Scanner error: ${error.message}`, 'error');
@@ -42,16 +34,22 @@ async function startScanner() {
 
 function stopScanner() {
     if (scanner) {
-        scanner.stop();
+        scanner.clear();
         scanner = null;
     }
     document.getElementById('cameraPreview').hidden = true;
 }
 
-function switchCamera() {
-    currentCameraIndex = (currentCameraIndex + 1) % cameras.length;
-    scanner.start(cameras[currentCameraIndex]);
-    updateStatus(`Switched to ${cameras[currentCameraIndex].name}`, 'info');
+function handleFileUpload(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+        const content = e.target.result;
+        handleScan(content);
+    };
+    reader.readAsDataURL(file);
 }
 
 function handleScan(content) {
@@ -127,5 +125,5 @@ function updateStatus(message, type = 'info') {
     if (type === 'success') setTimeout(() => statusElement.textContent = '', 5000);
 }
 
-window.initializeScanner = initializeScanner;
+window.initializeUploadScanner = initializeUploadScanner;
 window.downloadDecodedContent = downloadDecodedContent;
