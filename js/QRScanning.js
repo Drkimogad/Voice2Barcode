@@ -1,3 +1,42 @@
+function initializeScanner() {
+    console.log("QR Scanner Initialized");
+
+    const scanButton = document.getElementById('scanBtn');
+    const videoElement = document.getElementById('cameraFeed');
+    const cameraPreview = document.getElementById('cameraPreview');
+    const switchCameraBtn = document.getElementById('switchCameraBtn');
+
+    if (!scanButton || !videoElement) {
+        console.error("Scanner UI elements missing!");
+        return;
+    }
+
+    scanButton.addEventListener('click', async () => {
+        try {
+            cameraPreview.hidden = false;
+            switchCameraBtn.hidden = false;
+            
+            const qrScanner = new Html5Qrcode("cameraFeed");
+            await qrScanner.start(
+                { facingMode: "environment" },
+                { fps: 10, qrbox: 250 },
+                (decodedText) => {
+                    console.log("QR Code scanned:", decodedText);
+                    handleScan(decodedText);
+                    qrScanner.stop();
+                    cameraPreview.hidden = true;
+                    switchCameraBtn.hidden = true;
+                },
+                (error) => {
+                    console.warn("Scanning error:", error);
+                }
+            );
+        } catch (error) {
+            console.error("Failed to start scanner:", error);
+        }
+    });
+}
+
 function handleScan(content) {
     try {
         // Attempt to parse the scanned content as JSON
