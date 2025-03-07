@@ -5,14 +5,17 @@ let cameras = [];
 function initializeScanner() {
     const scanBtn = document.getElementById('scanBtn');
     const switchCameraBtn = document.getElementById('switchCameraBtn');
-    
+    const uploadInput = document.getElementById('uploadInput');
+
     scanBtn.addEventListener('click', startScanner);
     switchCameraBtn.addEventListener('click', switchCamera);
+    uploadInput.addEventListener('change', handleFileUpload);
 
     return () => {
         stopScanner();
         scanBtn.removeEventListener('click', startScanner);
         switchCameraBtn.removeEventListener('click', switchCamera);
+        uploadInput.removeEventListener('change', handleFileUpload);
     };
 }
 
@@ -52,6 +55,18 @@ function switchCamera() {
     currentCameraIndex = (currentCameraIndex + 1) % cameras.length;
     scanner.start(cameras[currentCameraIndex]);
     updateStatus(`Switched to ${cameras[currentCameraIndex].name}`, 'info');
+}
+
+function handleFileUpload(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+        const content = e.target.result;
+        handleScan(content);
+    };
+    reader.readAsDataURL(file);
 }
 
 function handleScan(content) {
