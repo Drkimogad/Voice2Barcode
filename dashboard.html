@@ -4,16 +4,20 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Voice2Barcode Dashboard</title>
+    <meta http-equiv="Content-Security-Policy" 
+          content="default-src 'self';
+                   script-src 'self' https: 'unsafe-eval';
+                   style-src 'self' 'unsafe-inline' https://fonts.googleapis.com;
+                   img-src 'self' data:;
+                   font-src https://fonts.gstatic.com;
+                   connect-src 'self';
+                   media-src 'self' blob:;
+                   object-src 'none';
+                   base-uri 'none';
+                   form-action 'self'">
     <link rel="stylesheet" href="dashboard.css">
     <link rel="icon" href="https://drkimogad.github.io/Voice2Barcode/favicon.ico" type="image/x-icon">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
-    <!-- QR Code Libraries -->
-    <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.0/build/qrcode.min.js" async></script>
-    <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
-    <!-- OpusRecorder -->
-    <script src="https://drkimogad.github.io/Voice2Barcode/libs/opus-recorder/src/recorder.js"></script>
-    <!-- Html5-QRCode Library -->
-    <script src="https://unpkg.com/html5-qrcode"></script>
 </head>
 <body>
     <div class="container">
@@ -40,7 +44,6 @@
                         <button id="startRecordingBtn" class="btn record" aria-label="Start recording">🎤 Record</button>
                         <button id="stopRecordingBtn" class="btn stop" disabled aria-label="Stop recording">⏹ Stop</button>
                     </div>
-                    <div id="recordingIndicator" class="recording-indicator" aria-hidden="true"></div>
                     <div class="recording-timer">
                         <span id="timerDisplay">00:00</span>
                     </div>
@@ -53,12 +56,8 @@
                     <textarea id="textToConvert" placeholder="Enter text (max 200 characters)" 
                               maxlength="200" aria-label="Text input"></textarea>
                     <div class="voice-selection">
-                        <select id="maleVoiceSelect" class="voice-select" aria-label="Male voice">
-                            <option value="">Select Male Voice</option>
-                        </select>
-                        <select id="femaleVoiceSelect" class="voice-select" aria-label="Female voice">
-                            <option value="">Select Female Voice</option>
-                        </select>
+                        <select id="maleVoiceSelect" class="voice-select" aria-label="Male voice"></select>
+                        <select id="femaleVoiceSelect" class="voice-select" aria-label="Female voice"></select>
                     </div>
                     <button id="textConvertBtn" class="btn">Generate QR</button>
                 </div>
@@ -67,28 +66,29 @@
             <!-- Upload Section -->
             <section data-section="upload" class="mode-section" hidden>
                 <div class="input-section">
-                    <div class="upload-group">
-                        <input type="file" id="audioUpload" accept="audio/*" hidden>
-                        <label for="audioUpload" class="btn" aria-label="Upload audio">📂 Upload Audio</label>
-                        <input type="file" id="qrUpload" accept="image/*" hidden>
-                        <label for="qrUpload" class="btn" aria-label="Upload QR">📄 Upload QR</label>
+                    <input type="file" id="uploadInput" accept="image/*" hidden>
+                    <label for="uploadInput" class="btn" aria-label="Upload QR">📁 Upload File</label>
+                </div>
+            </section>
+
+            <!-- Scan Section -->
+            <section data-section="scan" class="mode-section" hidden>
+                <div class="input-section">
+                    <div id="cameraPreview" class="camera-preview" hidden>
+                        <video id="cameraFeed" autoplay playsinline muted></video>
                     </div>
+                    <button id="switchCameraBtn" class="btn" hidden aria-label="Switch camera">🔄 Switch</button>
                 </div>
             </section>
 
-            <!-- QR Display Section -->
-            <section class="qr-section">
-                <canvas id="qrcode" class="qrcode-container" aria-label="Generated QR Code"></canvas>
-                <button id="downloadQRCodeBtn" class="btn" disabled onclick="handleQRDownload()">⬇ Download QR</button>
-            </section>
-
-            <!-- Scanner Section -->
-            <section class="scanner-section">
-                <button id="scanBtn" class="btn scan" aria-label="Start scanner">🔍 Scan QR</button>
-                <div id="cameraPreview" class="camera-preview" hidden>
-                    <video id="cameraFeed" autoplay playsinline muted></video>
+            <!-- QR Display -->
+            <section class="qr-section" data-secure="true">
+                <div class="qrcode-wrapper">
+                    <canvas id="qrcode" class="qrcode-container" 
+                            aria-label="Secured QR Code" 
+                            data-encryption="AES-GCM-256"></canvas>
                 </div>
-                <button id="switchCameraBtn" class="btn" hidden aria-label="Switch camera">🔄 Switch</button>
+                <button id="downloadQRCodeBtn" class="btn" disabled>⬇ Download (AES)</button>
             </section>
 
             <!-- Results Section -->
@@ -96,85 +96,34 @@
                 <h2>Decoded Content</h2>
                 <p id="messageText" class="content-meta"></p>
                 <div id="scannedAudio" class="audio-player"></div>
-                <button id="downloadBtn" class="btn" disabled onclick="downloadDecodedContent()">⬇ Download</button>
+                <button id="downloadBtn" class="btn" disabled>⬇ Download</button>
             </section>
 
             <!-- Status Messages -->
             <div id="status" class="status-message" aria-live="polite" role="alert"></div>
+            <div id="aria-live-region" aria-live="polite" aria-atomic="true" class="sr-only"></div>
         </div>
 
         <!-- Loading Overlay -->
         <div id="loading-overlay" class="loading-overlay">
             <div class="loading-spinner"></div>
-            <p class="loading-text">Initializing...</p>
+            <p class="loading-text">Initializing Security Modules...</p>
         </div>
     </div>
 
     <footer class="footer" role="contentinfo">
         <div class="container">
             <p>© 2024 Voice2Barcode. All rights reserved.</p>
-            <nav class="footer-links">
-                <a href="#" class="footer-link">Privacy</a>
-                <a href="#" class="footer-link">Terms</a>
-                <a href="#" class="footer-link">GitHub</a>
-            </nav>
         </div>
     </footer>
 
     <!-- Dependencies -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.0/build/qrcode.min.js"></script>
+    <script src="https://unpkg.com/html5-qrcode"></script>
+    <script src="https://drkimogad.github.io/Voice2Barcode/libs/opus-recorder/src/recorder.js"></script>
 
     <!-- Core Application -->
-    <script src="js/app.js"></script>
-   
-    <script>
-    document.addEventListener('DOMContentLoaded', function() {
-        const loggedInUser = localStorage.getItem('loggedInUser');
-
-        if (!loggedInUser) {
-            // Redirect to signin if no user is logged in
-            window.location.href = 'signin.html';
-        } else {
-            // Continue to dashboard functionalities
-            console.log('Welcome ' + loggedInUser);
-            initializeAudioModule();
-            initializeRecordingControls();
-            initializeTTS();
-            initializeScanner();
-            initializeUpload(); // Placeholder for upload initialization
-        }
-    });
-
-    document.querySelectorAll('.mode-btn').forEach(button => {
-        button.addEventListener('click', () => {
-            const mode = button.getAttribute('data-mode');
-            document.querySelectorAll('.mode-section').forEach(section => {
-                section.hidden = true;
-            });
-            document.querySelector(`[data-section="${mode}"]`).hidden = false;
-            
-            switch (mode) {
-                case 'voice':
-                    initializeAudioModule();
-                    initializeRecordingControls();
-                    break;
-                case 'text':
-                    initializeTTS();
-                    break;
-                case 'upload':
-                    initializeUpload(); // Placeholder for upload initialization
-                    break;
-                case 'scan':
-                    initializeScanner();
-                    break;
-            }
-        });
-    });
-
-    function initializeUpload() {
-        // Placeholder for upload initialization
-        console.log('Upload mode initialized');
-    }
-</script>
+    <script type="module" src="js/app.js"></script>
 </body>
 </html>
