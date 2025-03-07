@@ -106,11 +106,19 @@ async function compressAndConvertToQRCode(blob) {
     const base64Data = await blobToBase64(blob);
     const compressedData = base64Data.slice(0, MAX_QR_DATA_LENGTH);
 
+    // Create structured data for the QR code
+    const qrData = {
+      type: 'audio',
+      data: compressedData, // base64 audio data
+      mimeType: 'audio/ogg', // specify mime type
+      timestamp: new Date().toISOString()
+    };
+
     updateStatus('Generating QR code...', 'info');
     const qrCodeCanvas = document.getElementById('qrcode');
     
     await new Promise((resolve, reject) => {
-      QRCode.toCanvas(qrCodeCanvas, compressedData, error => {
+      QRCode.toCanvas(qrCodeCanvas, JSON.stringify(qrData), error => {
         if (error) reject(error);
         else resolve();
       });
