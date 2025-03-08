@@ -563,13 +563,14 @@ function generateQRFromText(text, voiceName) {
 // ------------------
 // QR Modules (Upload/Scan)
 // ------------------
+// QR Modules
 function initializeQRUploadHandlers() {
     const uploadInput = document.getElementById('uploadInput');
     const scanBtn = document.getElementById('scanBtn');
     
     const handler = (event) => {
         const file = event.type === 'change' ? event.target.files[0] : null;
-        handleScan(file ? file : null);
+        handleScan(file);
     };
 
     uploadInput.addEventListener('change', handler);
@@ -582,7 +583,6 @@ function initializeQRUploadHandlers() {
 }
 
 function initializeScanner() {
-    /* Your original scanner implementation with security */
     const scanner = new Html5QrcodeScanner('cameraFeed', {
         fps: 10,
         qrbox: 250
@@ -592,43 +592,9 @@ function initializeScanner() {
     return () => scanner.clear();
 }
 
-// ------------------
-// Utility Functions
-// ------------------
-function updateStatus(message, type = 'info') {
-    const statusElement = document.getElementById('status');
-    statusElement.textContent = message;
-    statusElement.className = `status-${type}`;
-    
-    if (type === 'success') {
-        setTimeout(() => {
-            statusElement.textContent = '';
-            statusElement.className = '';
-        }, 5000);
-    }
-}
-
-async function performSecureCleanup() {
-    cleanupCallbacks.forEach(cleanup => {
-        try { cleanup(); } catch (error) { console.error('Cleanup error:', error); }
-    });
-    cleanupCallbacks.clear();
-    localStorage.removeItem('loggedInUser');
-    sessionStorage.clear();
-}
-
-function blobToBase64(blob) {
-    return new Promise((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onloadend = () => resolve(reader.result.split(',')[1]);
-        reader.onerror = reject;
-        reader.readAsDataURL(blob);
-    });
-}
-
-// ------------------
-// Event Handlers Setup
-// ------------------
+// ----------------------------
+// Event Handlers
+// ----------------------------
 function setupUIEventHandlers() {
     const secureHandlers = [
         ['#downloadQRCodeBtn', handleSecureQRDownload],
@@ -654,9 +620,7 @@ function setupUIEventHandlers() {
         };
 
         element.addEventListener('click', wrapper);
-        cleanupCallbacks.add(() => 
-            element.removeEventListener('click', wrapper)
-        );
+        cleanupCallbacks.add(() => element.removeEventListener('click', wrapper));
     });
 }
 
@@ -670,9 +634,10 @@ function createSecureAuthHandler() {
         }
     };
 }
-// ------------------
+
+// ----------------------------
 // Initialization
-// ------------------
+// ----------------------------
 document.addEventListener('DOMContentLoaded', () => {
     if (!localStorage.getItem('loggedInUser')) {
         window.location.replace(APP_CONFIG.authRedirect);
@@ -682,3 +647,99 @@ document.addEventListener('DOMContentLoaded', () => {
     initializeApp().catch(handleCriticalFailure);
     document.getElementById('logoutBtn').hidden = false;
 });
+
+// ----------------------------
+// Additional Utilities
+// ----------------------------
+function blobToBase64(blob) {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onloadend = () => resolve(reader.result.split(',')[1]);
+        reader.onerror = reject;
+        reader.readAsDataURL(blob);
+    });
+}
+
+function triggerSecureDownload(url, filename) {
+    const link = document.createElement('a');
+    link.download = filename;
+    link.href = url;
+    link.rel = 'noopener noreferrer';
+    document.body.appendChild(link);
+    link.click();
+    setTimeout(() => {
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+    }, 1000);
+}
+
+async function compressAndConvertToQRCode(blob) {
+    try {
+        updateStatus('Compressing audio...', 'info');
+        const base64Data = await blobToBase64(blob);
+        const qrData = {
+            type: 'audio',
+            data: base64Data.slice(0, 2953),
+            mimeType: 'audio/ogg',
+            timestamp: new Date().toISOString()
+        };
+
+        const qrCodeCanvas = document.getElementById('qrcode');
+        await new Promise((resolve, reject) => {
+            QRCode.toCanvas(qrCodeCanvas, JSON.stringify(qrData), error => {
+                if (error) reject(error);
+                else resolve();
+            });
+        });
+
+        qrCodeUrl = qrCodeCanvas.toDataURL('image/png');
+        updateStatus('QR code ready!', 'success');
+    } catch (error) {
+        updateStatus(`QR generation failed: ${error.message}`, 'error');
+    }
+}
+
+function generateQRFromText(text, voiceName) {
+    try {
+        const qrData = {
+            type: 'text',
+            data: text,
+            voice: voiceName,
+            timestamp: new Date().toISOString()
+        };
+
+        const qrCodeCanvas = document.getElementById('qrcode');
+        QRCode.toCanvas(qrCodeCanvas, JSON.stringify(qrData), (error) => {
+            if (error) throw error;
+            document.getElementById('downloadQRCodeBtn').disabled = false;
+            updateStatus('QR code generated!', 'success');
+        });
+    } catch (error) {
+        updateStatus(`QR generation failed: ${error.message}`, 'error');
+    }
+}
+
+function handleScan(content) {
+    try {
+        const data = JSON.parse(content);
+        displayScannedContent(data);
+        document.getElementById('downloadBtn').disabled = false;
+        window.lastScannedData = data;
+    } catch (error) {
+        updateStatus('Invalid QR code content', 'error');
+    }
+}
+
+function displayScannedContent(data) {
+    const scannedContent = document.getElementById('scannedContent');
+    const messageText = document.getElementById('messageText');
+    const scannedAudio = document.getElementById('scannedAudio');
+
+    scannedContent.hidden = false;
+    scannedAudio.innerHTML = '';
+    messageText.textContent = '';
+
+    if (data.type === 'text') {
+        messageText.textContent = data.data;
+    } else if (data.type === 'audio') {
+        const audio = new Audio(data.data);
