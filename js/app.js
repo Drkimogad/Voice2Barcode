@@ -9,8 +9,233 @@ const APP_CONFIG = {
     minPasswordEntropy: 80
 };
 
-class SecurityHandler { /* Previous implementation */ }
-class AppState { /* Previous implementation */ }
+class SecurityHandler {
+    static #CONFIG = {
+        keySize: 256/32,
+        iterations: 310000,
+        hasher: CryptoJS.algo.SHA512,
+        saltSize: 128/8,
+        maxDataAge: 1000 * 60 * 60 * 24 * 2,
+        minPasswordLength: 12,
+        passwordRegex: /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{12,}$/
+    };
+
+    static generateKey(password, salt) {
+        this.#validatePasswordComplexity(password);
+        return CryptoJS.PBKDF2(password, salt, this.#CONFIG);
+    }
+
+    static encrypt(data, key) {
+        try {
+            this.#validateKey(key);
+            const iv = CryptoJS.lib.WordArray.random(128/8);
+            const encrypted = CryptoJS.AES.encrypt(
+                JSON.stringify({
+                    ...data,
+                    timestamp: new Date().toISOString(),
+                    version: '2.1'
+                }),
+                key,
+                {
+                    iv: iv,
+                    mode: CryptoJS.mode.GCM,
+                    padding: CryptoJS.pad.Pkcs7
+                }
+            );
+            return this.#serializeEncryptedData(encrypted, iv);
+        } catch (error) {
+            this.#handleSecurityError('Encryption failure', error);
+        }
+    }
+
+    static decrypt(encryptedData, password) {
+        try {
+            const { ciphertext, iv, tag, salt } = this.#parseEncryptedData(encryptedData);
+            const key = this.generateKey(password, salt);
+            const decrypted = CryptoJS.AES.decrypt(
+                { ciphertext, iv, tag },
+                key,
+                { mode: CryptoJS.mode.GCM }
+            );
+            return this.#validateDecryptedPayload(
+                decrypted.toString(CryptoJS.enc.Utf8)
+            );
+        } catch (error) {
+            this.#handleSecurityError('Decryption failure', error);
+        }
+    }
+
+    // Private methods
+    static #validatePasswordComplexity(password) {
+        if (password.length < this.#CONFIG.minPasswordLength) {
+            throw new Error('Insufficient password length');
+        }
+        if (!this.#CONFIG.passwordRegex.test(password)) {
+            throw new Error('Password complexity requirements not met');
+        }
+    }
+
+    static #validateKey(key) {
+        if (!(key instanceof CryptoJS.lib.WordArray)) {
+            throw new Error('Invalid cryptographic material');
+        }
+    }
+
+    static #serializeEncryptedData(encrypted, iv) {
+        return {
+            ct: encrypted.ciphertext.toString(CryptoJS.enc.Base64),
+            iv: iv.toString(CryptoJS.enc.Base64),
+            tg: encrypted.tag.toString(CryptoJS.enc.Base64),
+            s: CryptoJS.lib.WordArray.random(this.#CONFIG.saltSize)
+                        .toString(CryptoJS.enc.Base64),
+            v: '2.1'
+        };
+    }
+
+    static #parseEncryptedData(data) {
+        const requiredFields = ['ct', 'iv', 'tg', 's', 'v'];
+        if (!requiredFields.every(f => data[f])) {
+            throw new Error('Invalid security envelope');
+        }
+        if (data.v !== '2.1') {
+            throw new Error('Unsupported security version');
+        }
+        return {
+            ciphertext: CryptoJS.enc.Base64.parse(data.ct),
+            iv: CryptoJS.enc.Base64.parse(data.iv),
+            tag: CryptoJS.enc.Base64.parse(data.tg),
+            salt: CryptoJS.enc.Base64.parse(data.s)
+        };
+    }
+
+    static #validateDecryptedPayload(payload) {
+        const data = JSON.parse(payload);
+        const age = Date.now() - new Date(data.timestamp).getTime();
+        if (age > this.#CONFIG.maxDataAge) {
+            throw new Error('Expired security token');
+        }
+        if (!['text', 'audio'].includes(data.type)) {
+            throw new Error('Invalid payload type');
+        }
+        if (typeof data.data !== 'string') {
+            throw new Error('Invalid payload format');
+        }
+        return data;
+    }
+
+    static #handleSecurityError(context, error) {
+        console.error(`Security Exception: ${context} - ${error.message}`);
+        throw new Error('Security processing failed');
+    }
+}
+
+class AppState {
+    static #instance;
+    currentMode = 'voice';
+    authToken = null;
+    secureSession = false;
+
+    constructor() {
+        if (AppState.#instance) return AppState.#instance;
+        AppState.#instance = this;
+        this.loadSession();
+    }
+
+    loadSession() {
+        this.authToken = localStorage.getItem('authToken');
+        const encryptedSession = localStorage.getItem('session');
+        if (encryptedSession && this.authToken) {
+            try {
+                this.secureSession = JSON.parse(
+                    CryptoJS.AES.decrypt(
+                        encryptedSession,
+                        this.authToken
+                    ).toString(CryptoJS.enc.Utf8)
+                );
+            } catch (error) {
+                this.clearSession();
+            }
+        }
+    }
+
+    async validateSession() {
+        if (!this.secureSession || !this.authToken) {
+            this.clearSession();
+            return false;
+        }
+        
+        try {
+            const response = await fetch('/api/validate-session', {
+                headers: {
+                    'Authorization': `Bearer ${this.authToken}`
+                }
+            });
+            return response.ok;
+        } catch (error) {
+            this.clearSession();
+            return false;
+        }
+    }
+
+    clearSession() {
+        localStorage.removeItem('authToken');
+        localStorage.removeItem('session');
+        this.authToken = null;
+        this.secureSession = false;
+    }
+}
+
+// ----------------------
+// Utility Functions
+// ----------------------
+function toggleLoading(visible) {
+    const loader = document.getElementById('loading-overlay');
+    if (loader) {
+        loader.style.display = visible ? 'flex' : 'none';
+        loader.setAttribute('aria-busy', visible.toString());
+    }
+}
+
+function updateStatus(message, type = 'info') {
+    const statusElement = document.getElementById('status');
+    statusElement.textContent = message;
+    statusElement.className = `status-${type}`;
+    
+    if (type === 'success') {
+        setTimeout(() => {
+            statusElement.textContent = '';
+            statusElement.className = '';
+        }, 5000);
+    }
+}
+
+async function performSecureCleanup() {
+    cleanupCallbacks.forEach(cleanup => {
+        try { cleanup(); } catch (error) { console.error('Cleanup error:', error); }
+    });
+    cleanupCallbacks.clear();
+    localStorage.removeItem('loggedInUser');
+    sessionStorage.clear();
+}
+
+function handleCriticalFailure(error) {
+    console.error('Boot Failure:', error);
+    updateStatus('System initialization failed. Please refresh.', 'error');
+    performSecureCleanup();
+    setTimeout(() => window.location.replace(APP_CONFIG.authRedirect), 5000);
+}
+
+function setupGlobalErrorHandling() {
+    window.addEventListener('error', ({ error }) => {
+        console.error('Runtime Error:', error);
+        updateStatus('Application instability detected', 'error');
+    });
+
+    window.addEventListener('unhandledrejection', ({ reason }) => {
+        console.error('Async Error:', reason);
+        updateStatus('Unexpected system error', 'error');
+    });
+}
 
 // ----------------------
 // Application Core Logic
@@ -36,7 +261,6 @@ async function initializeApp() {
         initializeModeSwitching();
         setupUIEventHandlers();
 
-        // Initialize last used mode
         const lastMode = localStorage.getItem('lastMode') || 'voice';
         await initializeMode(lastMode);
 
@@ -51,7 +275,7 @@ async function initializeApp() {
 }
 
 // ------------------
-// Mode Implementations
+// Mode Management
 // ------------------
 async function initializeMode(mode) {
     try {
@@ -84,6 +308,46 @@ async function initializeMode(mode) {
     } finally {
         toggleLoading(false);
     }
+}
+
+function initializeModeSwitching() {
+    const modes = {
+        voice: { 
+            init: () => initializeAudioModule().then(initializeRecordingControls),
+            section: document.querySelector('[data-section="voice"]')
+        },
+        text: {
+            init: initializeTTS,
+            section: document.querySelector('[data-section="text"]')
+        },
+        upload: {
+            init: () => initializeQRUploadHandlers(),
+            section: document.querySelector('[data-section="upload"]')
+        },
+        scan: {
+            init: initializeScanner,
+            section: document.querySelector('[data-section="scan"]')
+        }
+    };
+
+    document.querySelectorAll('.mode-btn').forEach(btn => {
+        btn.addEventListener('click', async ({ target }) => {
+            const mode = target.dataset.mode;
+            if (!modes[mode]) return;
+
+            Object.values(modes).forEach(({ section }) => 
+                section.hidden = true
+            );
+            modes[mode].section.hidden = false;
+            
+            try {
+                await modes[mode].init();
+                updateStatus(`${mode} mode activated`, 'success');
+            } catch (error) {
+                handleCriticalFailure(error);
+            }
+        });
+    });
 }
 
 // ------------------
@@ -129,25 +393,79 @@ function initializeRecordingControls() {
 }
 
 async function startRecording() { 
-    /* Your original implementation with security enhancements */
     try {
         const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-        recorder = new Recorder({ /* Your config */ });
+        recorder = new Recorder({
+            encoderPath: './libs/opus-recorder/src/encoderWorker.min.js',
+            decoderPath: './libs/opus-recorder/src/decoderWorker.min.js',
+            numberOfChannels: 1,
+            encoderSampleRate: 48000,
+            encoderBitRate: 64000,
+        });
 
         recorder.ondataavailable = (blob) => {
             recordedChunks.push(blob);
         };
 
         recorder.onstop = async () => {
-            const blob = new Blob(recordedChunks, { type: 'audio/ogg' });
+            const blob = new Blob(recordedChunks, { type: 'audio/ogg; codecs=opus' });
             await compressAndConvertToQRCode(blob);
+            recordedChunks = [];
+            document.getElementById('stopRecordingBtn').disabled = true;
+            document.getElementById('startRecordingBtn').disabled = false;
         };
 
-        cleanupAudioModule = () => stream.getTracks().forEach(t => t.stop());
+        cleanupAudioModule = () => stream.getTracks().forEach(track => track.stop());
         recorder.start();
+        document.getElementById('startRecordingBtn').disabled = true;
+        document.getElementById('stopRecordingBtn').disabled = false;
         updateStatus('Recording started...', 'info');
+
+        setTimeout(() => {
+            if (recorder.state === 'recording') {
+                stopRecording();
+                updateStatus('Recording stopped automatically', 'warning');
+            }
+        }, APP_CONFIG.recordingLimit);
     } catch (error) {
-        updateStatus(`Recording failed: ${error}`, 'error');
+        updateStatus(`Failed to start recording: ${error}`, 'error');
+    }
+}
+
+function stopRecording() {
+    if (recorder && recorder.state === 'recording') {
+        recorder.stop();
+        updateStatus('Recording stopped', 'success');
+    }
+}
+
+async function compressAndConvertToQRCode(blob) {
+    try {
+        updateStatus('Compressing audio...', 'info');
+        const base64Data = await blobToBase64(blob);
+        const compressedData = base64Data.slice(0, 2953);
+
+        const qrData = {
+            type: 'audio',
+            data: compressedData,
+            mimeType: 'audio/ogg',
+            timestamp: new Date().toISOString()
+        };
+
+        updateStatus('Generating QR code...', 'info');
+        const qrCodeCanvas = document.getElementById('qrcode');
+        
+        await new Promise((resolve, reject) => {
+            QRCode.toCanvas(qrCodeCanvas, JSON.stringify(qrData), error => {
+                if (error) reject(error);
+                else resolve();
+            });
+        });
+
+        qrCodeUrl = qrCodeCanvas.toDataURL();
+        updateStatus('QR code ready!', 'success');
+    } catch (error) {
+        updateStatus(`QR generation failed: ${error.message}`, 'error');
     }
 }
 
@@ -168,18 +486,77 @@ function initializeTTS() {
     return () => convertBtn.removeEventListener('click', handleTextConversion);
 }
 
+function populateVoiceSelects() {
+    const maleSelect = document.getElementById('maleVoiceSelect');
+    const femaleSelect = document.getElementById('femaleVoiceSelect');
+
+    maleSelect.innerHTML = '<option value="">Select Male Voice</option>';
+    femaleSelect.innerHTML = '<option value="">Select Female Voice</option>';
+
+    voices.forEach(voice => {
+        const option = document.createElement('option');
+        option.textContent = `${voice.name} (${voice.lang})`;
+        option.value = voice.name;
+        
+        const voiceGender = voice.voiceURI.toLowerCase().includes('male') ? 'male' : 
+                          voice.voiceURI.toLowerCase().includes('female') ? 'female' : 
+                          'unknown';
+
+        if (voiceGender === 'male') {
+            maleSelect.appendChild(option);
+        } else if (voiceGender === 'female') {
+            femaleSelect.appendChild(option);
+        }
+    });
+}
+
 function handleTextConversion() {
-    /* Your original implementation with security checks */
     try {
         const text = document.getElementById('textToConvert').value;
-        const voice = document.querySelector('.voice-select').value;
+        const maleVoice = document.getElementById('maleVoiceSelect').value;
+        const femaleVoice = document.getElementById('femaleVoiceSelect').value;
+        const selectedVoice = maleVoice || femaleVoice;
+
+        if (!text || !selectedVoice) {
+            updateStatus('Please enter text and select a voice', 'error');
+            return;
+        }
+
         const utterance = new SpeechSynthesisUtterance(text);
+        utterance.voice = voices.find(v => v.name === selectedVoice);
         
-        utterance.voice = voices.find(v => v.name === voice);
-        utterance.onend = () => generateQRFromText(text, voice);
+        utterance.onend = () => {
+            generateQRFromText(text, selectedVoice);
+        };
+
+        utterance.onerror = (error) => {
+            updateStatus(`TTS Error: ${error.error}`, 'error');
+        };
+
         synth.speak(utterance);
+        updateStatus('Converting text to speech...', 'info');
     } catch (error) {
         updateStatus(`TTS error: ${error}`, 'error');
+    }
+}
+
+function generateQRFromText(text, voiceName) {
+    try {
+        const qrData = {
+            type: 'text',
+            data: text,
+            voice: voiceName,
+            timestamp: new Date().toISOString()
+        };
+
+        const qrCodeCanvas = document.getElementById('qrcode');
+        QRCode.toCanvas(qrCodeCanvas, JSON.stringify(qrData), (error) => {
+            if (error) throw error;
+            document.getElementById('downloadQRCodeBtn').disabled = false;
+            updateStatus('QR code generated!', 'success');
+        });
+    } catch (error) {
+        updateStatus(`QR generation failed: ${error.message}`, 'error');
     }
 }
 
@@ -250,30 +627,49 @@ function blobToBase64(blob) {
 }
 
 // ------------------
-// Event Handlers
+// Event Handlers Setup
 // ------------------
-function handleSecureQRDownload() {
-    /* Your original implementation with security checks */
-    try {
-        const canvas = document.querySelector('#qrcode canvas');
-        const dataURL = canvas.toDataURL('image/png');
-        triggerSecureDownload(dataURL, `SecureQR-${Date.now()}.png`);
-    } catch (error) {
-        updateStatus(`Download failed: ${error}`, 'error');
-    }
+function setupUIEventHandlers() {
+    const secureHandlers = [
+        ['#downloadQRCodeBtn', handleSecureQRDownload],
+        ['#downloadBtn', handleContentExport],
+        ['#logoutBtn', createSecureAuthHandler()]
+    ];
+
+    secureHandlers.forEach(([selector, handler]) => {
+        const element = document.querySelector(selector);
+        if (!element) return;
+
+        const wrapper = async () => {
+            try {
+                const state = new AppState();
+                if (!(await state.validateSession())) {
+                    window.location.replace(APP_CONFIG.authRedirect);
+                    return;
+                }
+                handler();
+            } catch (error) {
+                handleCriticalFailure(error);
+            }
+        };
+
+        element.addEventListener('click', wrapper);
+        cleanupCallbacks.add(() => 
+            element.removeEventListener('click', wrapper)
+        );
+    });
 }
 
-function handleContentExport() {
-    /* Your original implementation with security checks */
-    try {
-        const content = getValidatedContent();
-        const blob = new Blob([content.data], { type: content.mimeType });
-        triggerSecureDownload(URL.createObjectURL(blob), `Export-${Date.now()}.${content.fileExt}`);
-    } catch (error) {
-        updateStatus(`Export failed: ${error}`, 'error');
-    }
+function createSecureAuthHandler() {
+    return async () => {
+        try {
+            await performSecureCleanup();
+            window.location.href = APP_CONFIG.authRedirect;
+        } catch (error) {
+            updateStatus('Logout failed. Please clear cookies.', 'error');
+        }
+    };
 }
-
 // ------------------
 // Initialization
 // ------------------
