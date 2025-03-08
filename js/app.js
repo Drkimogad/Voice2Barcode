@@ -1,6 +1,9 @@
 // ----------------------------
 // Core Configuration & Security
 // ----------------------------
+// ----------------------------
+// Core Configuration & Security
+// ----------------------------
 const APP_CONFIG = {
     authRedirect: 'signin.html',
     maxInitAttempts: 3,
@@ -22,7 +25,11 @@ class SecurityHandler {
 
     static generateKey(password, salt) {
         this.#validatePasswordComplexity(password);
-        return CryptoJS.PBKDF2(password, salt, this.#CONFIG);
+        return CryptoJS.PBKDF2(password, salt, {
+            keySize: this.#CONFIG.keySize,
+            iterations: this.#CONFIG.iterations,
+            hasher: this.#CONFIG.hasher
+        });
     }
 
     static encrypt(data, key) {
@@ -39,7 +46,7 @@ class SecurityHandler {
                 {
                     iv: iv,
                     mode: CryptoJS.mode.GCM,
-                    padding: CryptoJS.pad.Pkcs7
+                    padding: CryptoJS.pad.NoPadding
                 }
             );
             return this.#serializeEncryptedData(encrypted, iv);
@@ -48,10 +55,9 @@ class SecurityHandler {
         }
     }
 
-    static decrypt(encryptedData, password) {
+    static decrypt(encryptedData, key) {
         try {
-            const { ciphertext, iv, tag, salt } = this.#parseEncryptedData(encryptedData);
-            const key = this.generateKey(password, salt);
+            const { ciphertext, iv, tag } = this.#parseEncryptedData(encryptedData);
             const decrypted = CryptoJS.AES.decrypt(
                 { ciphertext, iv, tag },
                 key,
@@ -86,14 +92,12 @@ class SecurityHandler {
             ct: encrypted.ciphertext.toString(CryptoJS.enc.Base64),
             iv: iv.toString(CryptoJS.enc.Base64),
             tg: encrypted.tag.toString(CryptoJS.enc.Base64),
-            s: CryptoJS.lib.WordArray.random(this.#CONFIG.saltSize)
-                        .toString(CryptoJS.enc.Base64),
             v: '2.1'
         };
     }
 
     static #parseEncryptedData(data) {
-        const requiredFields = ['ct', 'iv', 'tg', 's', 'v'];
+        const requiredFields = ['ct', 'iv', 'tg', 'v'];
         if (!requiredFields.every(f => data[f])) {
             throw new Error('Invalid security envelope');
         }
@@ -103,8 +107,7 @@ class SecurityHandler {
         return {
             ciphertext: CryptoJS.enc.Base64.parse(data.ct),
             iv: CryptoJS.enc.Base64.parse(data.iv),
-            tag: CryptoJS.enc.Base64.parse(data.tg),
-            salt: CryptoJS.enc.Base64.parse(data.s)
+            tag: CryptoJS.enc.Base64.parse(data.tg)
         };
     }
 
@@ -143,13 +146,15 @@ class AppState {
 
     loadSession() {
         this.authToken = localStorage.getItem('authToken');
-        const encryptedSession = localStorage.getItem('session');
+        const encryptedSession = sessionStorage.getItem('session');
+        
         if (encryptedSession && this.authToken) {
             try {
                 this.secureSession = JSON.parse(
                     CryptoJS.AES.decrypt(
                         encryptedSession,
-                        this.authToken
+                        CryptoJS.enc.Utf8.parse(this.authToken),
+                        { mode: CryptoJS.mode.GCM }
                     ).toString(CryptoJS.enc.Utf8)
                 );
             } catch (error) {
@@ -166,9 +171,7 @@ class AppState {
         
         try {
             const response = await fetch('/api/validate-session', {
-                headers: {
-                    'Authorization': `Bearer ${this.authToken}`
-                }
+                headers: { 'Authorization': `Bearer ${this.authToken}` }
             });
             return response.ok;
         } catch (error) {
@@ -179,11 +182,16 @@ class AppState {
 
     clearSession() {
         localStorage.removeItem('authToken');
-        localStorage.removeItem('session');
+        sessionStorage.removeItem('session');
         this.authToken = null;
         this.secureSession = false;
     }
 }
+
+// ----------------------
+// Remaining Original Code
+// ----------------------
+// [Keep all other existing code from the original app.js unchanged]
 
 // ----------------------
 // Utility Functions
@@ -590,20 +598,28 @@ function createSecureAuthHandler() {
 // Initialization
 // ----------------------------
 document.addEventListener('DOMContentLoaded', () => {
-    console.log('DOM fully loaded. Checking authentication...');
+    console.log('DOM loaded. Checking authentication...');
+    
+    const state = new AppState();
+    
+    const checkAuth = async () => {
+        try {
+            if (!state.authToken) throw new Error('No auth token');
+            
+            const isValid = await state.validateSession();
+            if (!isValid) throw new Error('Invalid session');
 
-    const loggedInUser = localStorage.getItem('loggedInUser');
-    const authToken = localStorage.getItem('authToken');
+            console.log('Authentication valid. Initializing app...');
+            initializeApp().catch(handleCriticalFailure);
+            document.getElementById('logoutBtn').hidden = false;
+        } catch (error) {
+            console.log('Auth check failed:', error.message);
+            state.clearSession();
+            window.location.href = APP_CONFIG.authRedirect;
+        }
+    };
 
-    if (!loggedInUser || !authToken) {
-        console.log('User not authenticated. Redirecting to sign-in...');
-        window.location.href = APP_CONFIG.authRedirect;
-        return;
-    }
-
-    console.log('User authenticated. Initializing app...');
-    initializeApp().catch(handleCriticalFailure);
-    document.getElementById('logoutBtn').hidden = false;
+    checkAuth();
 });
 
 // ----------------------------
