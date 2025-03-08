@@ -590,11 +590,18 @@ function createSecureAuthHandler() {
 // Initialization
 // ----------------------------
 document.addEventListener('DOMContentLoaded', () => {
-    if (!localStorage.getItem('loggedInUser')) {
-        window.location.replace(APP_CONFIG.authRedirect);
+    console.log('DOM fully loaded. Checking authentication...');
+
+    const loggedInUser = localStorage.getItem('loggedInUser');
+    const authToken = localStorage.getItem('authToken');
+
+    if (!loggedInUser || !authToken) {
+        console.log('User not authenticated. Redirecting to sign-in...');
+        window.location.href = APP_CONFIG.authRedirect;
         return;
     }
 
+    console.log('User authenticated. Initializing app...');
     initializeApp().catch(handleCriticalFailure);
     document.getElementById('logoutBtn').hidden = false;
 });
