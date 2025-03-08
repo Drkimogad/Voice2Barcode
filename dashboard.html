@@ -15,7 +15,7 @@
                    object-src 'none';
                    base-uri 'none';
                    form-action 'self'">
-    <link rel="stylesheet" href="dashboard.css">
+    <link rel="stylesheet" href="dashboardstyles.css">
     <link rel="icon" href="https://drkimogad.github.io/Voice2Barcode/favicon.ico" type="image/x-icon">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
 </head>
@@ -125,5 +125,23 @@
 
     <!-- Core Application -->
     <script type="module" src="js/app.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            console.log('Dashboard loaded. Checking authentication...');
+            const loggedInUser = localStorage.getItem('loggedInUser');
+            const authToken = localStorage.getItem('authToken');
+
+            if (!loggedInUser || !authToken) {
+                console.log('User not authenticated. Redirecting to sign-in...');
+                window.location.href = 'signin.html';
+                return;
+            }
+
+            console.log('User authenticated. Initializing app...');
+            initializeApp().catch(error => {
+                console.error('Initialization failed:', error);
+            });
+        });
+    </script>
 </body>
 </html>
