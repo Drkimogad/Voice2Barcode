@@ -4,7 +4,18 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Sign In</title>
+    <meta http-equiv="Content-Security-Policy" 
+          content="default-src 'self';
+                   script-src 'self' https: 'unsafe-eval' 'nonce-EDNw53uP7r';
+                   style-src 'self' 'unsafe-inline';
+                   img-src 'self' data:;
+                   font-src 'self';
+                   connect-src 'self';
+                   form-action 'self';
+                   object-src 'none';
+                   base-uri 'none'">
     <link rel="stylesheet" href="authstyles.css">
+    <link rel="icon" href="https://drkimogad.github.io/Voice2Barcode/favicon.ico" type="image/x-icon">
 </head>
 <body>
     <div class="info-container">
@@ -18,10 +29,11 @@
         <h1>Sign In</h1>
         <div id="signinSection" class="section auth-container">
             <form id="signinForm" class="auth-form">
+                <div id="errorMessage" class="error-message" role="alert" aria-live="assertive"></div>
                 <label for="signinUsername">Username:</label>
-                <input type="text" id="signinUsername" required>
+                <input type="text" id="signinUsername" required autocomplete="username">
                 <label for="signinPassword">Password:</label>
-                <input type="password" id="signinPassword" required>
+                <input type="password" id="signinPassword" required autocomplete="current-password">
                 <button type="submit" class="btn">Sign In</button>
             </form>
             <p>Don't have an account? <a href="index.html">Sign Up</a></p>
@@ -32,6 +44,11 @@
             <p>© 2024 Voice2Barcode. All rights reserved.</p>
         </div>
     </footer>
-    <script src="js/signin.js"></script>
+
+    <!-- Security Dependencies -->
+    <script nonce="EDNw53uP7r" src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
+    
+    <!-- Application Script -->
+    <script nonce="EDNw53uP7r" src="js/signin.js" type="module"></script>
 </body>
 </html>
