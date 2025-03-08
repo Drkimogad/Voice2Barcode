@@ -1,14 +1,13 @@
-// signin.js
 'use strict';
 
 document.addEventListener('DOMContentLoaded', () => {
     const signinForm = document.getElementById('signinForm');
     const errorDisplay = document.getElementById('errorMessage');
 
-    signinForm?.addEventListener('submit', async (e) => {
+    signinForm?.addEventListener('submit', (e) => {
         e.preventDefault();
         errorDisplay.textContent = '';
-        
+
         const username = document.getElementById('signinUsername').value.trim();
         const password = document.getElementById('signinPassword').value;
 
@@ -18,29 +17,22 @@ document.addEventListener('DOMContentLoaded', () => {
                 throw new Error('Please fill in both fields');
             }
 
-            // 2. Server Authentication (Replace with your actual API endpoint)
-            const response = await fetch('/api/login', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({ username, password })
-            });
+            // 2. Hardcoded Credentials Check (Replace with your actual credentials)
+            const validUsername = 'testuser';
+            const validPassword = 'password123';
 
-            if (!response.ok) {
-                const error = await response.json();
-                throw new Error(error.message || 'Authentication failed');
+            if (username !== validUsername || password !== validPassword) {
+                throw new Error('Invalid username or password');
             }
 
             // 3. Secure Session Initialization
-            const { token } = await response.json();
             const salt = CryptoJS.lib.WordArray.random(128/8).toString();
-            const key = SecurityHandler.generateKey(password, salt);
+            const key = CryptoJS.PBKDF2(password, salt, { keySize: 256/32 });
 
             // 4. Secure Storage
             sessionStorage.setItem('encryptionKey', key.toString());
             sessionStorage.setItem('encryptionSalt', salt);
-            localStorage.setItem('authToken', token);
+            localStorage.setItem('authToken', 'dummy-token');
 
             // 5. Redirect with security headers
             window.location.href = 'dashboard.html';
