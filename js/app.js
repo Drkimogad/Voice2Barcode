@@ -1,5 +1,5 @@
 // ----------------------------
-// Core Configuration & Security
+// Core Configuration & Security (Fixed)
 // ----------------------------
 const APP_CONFIG = {
     authRedirect: 'signin.html',
@@ -10,7 +10,7 @@ const APP_CONFIG = {
 };
 
 class SecurityHandler {
-    static #CONFIG = {
+    static _CONFIG = {
         keySize: 256/32,
         iterations: 310000,
         hasher: CryptoJS.algo.SHA512,
@@ -21,17 +21,21 @@ class SecurityHandler {
     };
 
     static generateKey(password, salt) {
-        this.#validatePasswordComplexity(password);
+        this._validatePasswordComplexity(password);
         return CryptoJS.PBKDF2(
             password,
             CryptoJS.enc.Hex.parse(salt),
-            this.#CONFIG
+            {
+                keySize: this._CONFIG.keySize,
+                iterations: this._CONFIG.iterations,
+                hasher: this._CONFIG.hasher
+            }
         );
     }
 
     static encrypt(data, key) {
         try {
-            this.#validateKey(key);
+            this._validateKey(key);
             const iv = CryptoJS.lib.WordArray.random(128/8);
             const encrypted = CryptoJS.AES.encrypt(
                 JSON.stringify({
@@ -46,46 +50,101 @@ class SecurityHandler {
                     padding: CryptoJS.pad.NoPadding
                 }
             );
-            return this.#serializeEncryptedData(encrypted, iv);
+            return this._serializeEncryptedData(encrypted, iv);
         } catch (error) {
-            this.#handleSecurityError('Encryption failure', error);
+            this._handleSecurityError('Encryption failure', error);
         }
     }
 
     static decrypt(encryptedData, key) {
         try {
-            const { ciphertext, iv, tag } = this.#parseEncryptedData(encryptedData);
+            const { ciphertext, iv, tag } = this._parseEncryptedData(encryptedData);
             const decrypted = CryptoJS.AES.decrypt(
                 { ciphertext, iv, tag },
                 key,
                 { mode: CryptoJS.mode.GCM }
             );
-            return this.#validateDecryptedPayload(
+            return this._validateDecryptedPayload(
                 decrypted.toString(CryptoJS.enc.Utf8)
             );
         } catch (error) {
-            this.#handleSecurityError('Decryption failure', error);
+            this._handleSecurityError('Decryption failure', error);
         }
     }
 
-    // Private methods remain same as previous
-    static #validatePasswordComplexity(password) { /* ... */ }
-    static #validateKey(key) { /* ... */ }
-    static #serializeEncryptedData(encrypted, iv) { /* ... */ }
-    static #parseEncryptedData(data) { /* ... */ }
-    static #validateDecryptedPayload(payload) { /* ... */ }
-    static #handleSecurityError(context, error) { /* ... */ }
+    // Updated private methods with underscore convention
+    static _validatePasswordComplexity(password) {
+        if (password.length < this._CONFIG.minPasswordLength) {
+            throw new Error('Insufficient password length');
+        }
+        if (!this._CONFIG.passwordRegex.test(password)) {
+            throw new Error('Password complexity requirements not met');
+        }
+    }
+
+    static _validateKey(key) {
+        if (!(key instanceof CryptoJS.lib.WordArray)) {
+            throw new Error('Invalid cryptographic material');
+        }
+    }
+
+    static _serializeEncryptedData(encrypted, iv) {
+        return {
+            ct: encrypted.ciphertext.toString(CryptoJS.enc.Base64),
+            iv: iv.toString(CryptoJS.enc.Base64),
+            tg: encrypted.tag.toString(CryptoJS.enc.Base64),
+            v: '2.1'
+        };
+    }
+
+    static _parseEncryptedData(data) {
+        const requiredFields = ['ct', 'iv', 'tg', 'v'];
+        if (!requiredFields.every(f => data[f])) {
+            throw new Error('Invalid security envelope');
+        }
+        if (data.v !== '2.1') {
+            throw new Error('Unsupported security version');
+        }
+        return {
+            ciphertext: CryptoJS.enc.Base64.parse(data.ct),
+            iv: CryptoJS.enc.Base64.parse(data.iv),
+            tag: CryptoJS.enc.Base64.parse(data.tg)
+        };
+    }
+
+    static _validateDecryptedPayload(payload) {
+        const data = JSON.parse(payload);
+        const age = Date.now() - new Date(data.timestamp).getTime();
+        if (age > this._CONFIG.maxDataAge) {
+            throw new Error('Expired security token');
+        }
+        if (!['text', 'audio'].includes(data.type)) {
+            throw new Error('Invalid payload type');
+        }
+        if (typeof data.data !== 'string') {
+            throw new Error('Invalid payload format');
+        }
+        return data;
+    }
+
+    static _handleSecurityError(context, error) {
+        console.error(`Security Exception: ${context} - ${error.message}`);
+        throw new Error('Security processing failed');
+    }
 }
 
+// ----------------------
+// AppState Class (Fixed)
+// ----------------------
 class AppState {
-    static #instance;
+    static _instance;
     currentMode = 'voice';
     authToken = null;
     secureSession = null;
 
     constructor() {
-        if (AppState.#instance) return AppState.#instance;
-        AppState.#instance = this;
+        if (AppState._instance) return AppState._instance;
+        AppState._instance = this;
         this.loadSession();
     }
 
@@ -95,17 +154,21 @@ class AppState {
             const encryptionKey = sessionStorage.getItem('encryptionKey');
             const salt = sessionStorage.getItem('encryptionSalt');
 
+            console.log('Session load attempt:', { 
+                authToken: !!this.authToken,
+                encryptionKey: !!encryptionKey,
+                salt: !!salt
+            });
+
             if (!this.authToken || !encryptionKey || !salt) {
+                console.warn('Missing session components');
                 this.clearSession();
                 return;
             }
 
-            const key = SecurityHandler.generateKey(
-                encryptionKey,
-                salt
-            );
-
+            const key = SecurityHandler.generateKey(encryptionKey, salt);
             const encryptedSession = localStorage.getItem('session');
+
             if (encryptedSession) {
                 this.secureSession = JSON.parse(
                     CryptoJS.AES.decrypt(
@@ -114,6 +177,7 @@ class AppState {
                         { mode: CryptoJS.mode.GCM }
                     ).toString(CryptoJS.enc.Utf8)
                 );
+                console.log('Session decrypted successfully');
             }
         } catch (error) {
             console.error('Session load error:', error);
@@ -122,7 +186,10 @@ class AppState {
     }
 
     async validateSession() {
-        if (!this.authToken || !this.secureSession) return false;
+        if (!this.authToken || !this.secureSession) {
+            console.warn('Validation failed: Missing auth components');
+            return false;
+        }
 
         try {
             const response = await fetch('/api/validate', {
@@ -130,12 +197,15 @@ class AppState {
             });
             
             if (!response.ok) {
+                console.warn('Server validation failed:', response.status);
                 if (response.status === 401) this.clearSession();
                 return false;
             }
             
             const age = Date.now() - new Date(this.secureSession.timestamp).getTime();
-            return age < SecurityHandler.#CONFIG.maxDataAge;
+            const valid = age < SecurityHandler._CONFIG.maxDataAge;
+            console.log(`Session age check: ${age}ms < ${SecurityHandler._CONFIG.maxDataAge}ms = ${valid}`);
+            return valid;
         } catch (error) {
             console.error('Session validation error:', error);
             return false;
@@ -143,6 +213,7 @@ class AppState {
     }
 
     clearSession() {
+        console.log('Clearing all session data');
         localStorage.removeItem('authToken');
         localStorage.removeItem('session');
         sessionStorage.removeItem('encryptionKey');
@@ -553,41 +624,38 @@ function createSecureAuthHandler() {
 }
 
 // ----------------------
-// Initialization Flow
+// Initialization Flow (Fixed)
 // ----------------------
 document.addEventListener('DOMContentLoaded', async () => {
-    console.log('Initializing application...');
-    const state = new AppState();
+    console.log('DOM loaded. Starting auth check...');
+    
+    // Programmatic event handlers
+    document.getElementById('logoutBtn')?.addEventListener('click', () => {
+        new AppState().clearSession();
+        window.location.href = APP_CONFIG.authRedirect;
+    });
 
     try {
+        const state = new AppState();
+        console.log('Initial auth state:', {
+            authToken: !!state.authToken,
+            session: !!state.secureSession
+        });
+
         const isValid = await state.validateSession();
         console.log('Session validation result:', isValid);
 
         if (!isValid) {
+            console.warn('Invalid session, redirecting...');
             state.clearSession();
             window.location.href = APP_CONFIG.authRedirect;
             return;
         }
 
-        // Main app initialization
-        const initializeApp = async () => {
-            toggleLoading(true);
-            setupGlobalErrorHandling();
-            initializeModeSwitching();
-            setupUIEventHandlers();
-            
-            const lastMode = localStorage.getItem('lastMode') || 'voice';
-            await initializeMode(lastMode);
-            
-            document.dispatchEvent(new CustomEvent('app-ready'));
-            updateStatus('System operational', 'success');
-            toggleLoading(false);
-        };
-
         await initializeApp();
         document.getElementById('logoutBtn').hidden = false;
     } catch (error) {
-        console.error('Critical initialization error:', error);
+        console.error('Boot failure:', error);
         handleCriticalFailure(error);
     }
 });
