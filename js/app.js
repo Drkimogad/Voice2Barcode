@@ -396,8 +396,8 @@ async function startRecording() {
     try {
         const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
         recorder = new Recorder({
-            encoderPath: './libs/opus-recorder/src/encoderWorker.min.js',
-            decoderPath: './libs/opus-recorder/src/decoderWorker.min.js',
+            encoderPath: 'https://drkimogad.github.io/Voice2Barcode/libs/opus-recorder/src/encoderWorker.min.js',
+            decoderPath: 'https://drkimogad.github.io/Voice2Barcode/libs/opus-recorder/src/decoderWorker.min.js',
             numberOfChannels: 1,
             encoderSampleRate: 48000,
             encoderBitRate: 64000,
