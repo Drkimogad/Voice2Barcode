@@ -511,26 +511,6 @@ function handleTextConversion() {
     }
 }
 
-function generateQRFromText(text, voiceName) {
-    try {
-        const qrData = {
-            type: 'text',
-            data: text,
-            voice: voiceName,
-            timestamp: new Date().toISOString()
-        };
-
-        const qrCodeCanvas = document.getElementById('qrcode');
-        QRCode.toCanvas(qrCodeCanvas, JSON.stringify(qrData), (error) => {
-            if (error) throw error;
-            document.getElementById('downloadQRCodeBtn').disabled = false;
-            updateStatus('QR code generated!', 'success');
-        });
-    } catch (error) {
-        updateStatus(`QR generation failed: ${error.message}`, 'error');
-    }
-}
-
 // ------------------
 // QR Modules (Upload/Scan)
 // ------------------
