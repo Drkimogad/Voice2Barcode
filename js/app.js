@@ -743,3 +743,33 @@ function displayScannedContent(data) {
         messageText.textContent = data.data;
     } else if (data.type === 'audio') {
         const audio = new Audio(data.data);
+        audio.controls = true;
+        scannedAudio.appendChild(audio);
+        messageText.textContent = `Audio content (${data.mimeType})`;
+    } else {
+        updateStatus('Unsupported content type', 'error');
+    }
+}
+
+function getValidatedContent() {
+    const textContent = document.getElementById('messageText')?.textContent;
+    const audioElement = document.getElementById('scannedAudio')?.querySelector('audio');
+    
+    if (audioElement) {
+        return {
+            data: audioElement.src,
+            mimeType: 'audio/webm',
+            fileExt: 'webm'
+        };
+    }
+    
+    if (textContent) {
+        return {
+            data: textContent,
+            mimeType: 'text/plain',
+            fileExt: 'txt'
+        };
+    }
+    
+    throw new Error('No exportable content found');
+}
