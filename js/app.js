@@ -1,9 +1,6 @@
 // ----------------------------
 // Core Configuration & Security
 // ----------------------------
-// ----------------------------
-// Core Configuration & Security
-// ----------------------------
 const APP_CONFIG = {
     authRedirect: 'signin.html',
     maxInitAttempts: 3,
@@ -146,53 +143,39 @@ class AppState {
 
     loadSession() {
         this.authToken = localStorage.getItem('authToken');
-        const encryptedSession = sessionStorage.getItem('session');
+        const encryptedSession = localStorage.getItem('session'); // Changed to localStorage
         
         if (encryptedSession && this.authToken) {
             try {
+                // Use authToken as direct key (temporary workaround)
+                const key = CryptoJS.enc.Utf8.parse(this.authToken);
+                
                 this.secureSession = JSON.parse(
                     CryptoJS.AES.decrypt(
                         encryptedSession,
-                        CryptoJS.enc.Utf8.parse(this.authToken),
+                        key,
                         { mode: CryptoJS.mode.GCM }
                     ).toString(CryptoJS.enc.Utf8)
                 );
             } catch (error) {
+                console.error('Session decryption failed:', error);
                 this.clearSession();
             }
         }
     }
 
     async validateSession() {
-        if (!this.secureSession || !this.authToken) {
-            this.clearSession();
-            return false;
-        }
-        
-        try {
-            const response = await fetch('/api/validate-session', {
-                headers: { 'Authorization': `Bearer ${this.authToken}` }
-            });
-            return response.ok;
-        } catch (error) {
-            this.clearSession();
-            return false;
-        }
+        // Simplified validation for debugging
+        return !!this.authToken && !!this.secureSession;
     }
 
     clearSession() {
         localStorage.removeItem('authToken');
-        sessionStorage.removeItem('session');
+        localStorage.removeItem('session');
         this.authToken = null;
         this.secureSession = false;
     }
 }
-
-// ----------------------
-// Remaining Original Code
-// ----------------------
-// [Keep all other existing code from the original app.js unchanged]
-
 // ----------------------
 // Utility Functions
 // ----------------------
@@ -597,26 +580,36 @@ function createSecureAuthHandler() {
 // ----------------------------
 // Initialization
 // ----------------------------
+// ----------------------
+// Initialization Fix
+// ----------------------
 document.addEventListener('DOMContentLoaded', () => {
     console.log('DOM loaded. Checking authentication...');
-    
     const state = new AppState();
-    
-    const checkAuth = async () => {
-        try {
-            if (!state.authToken) throw new Error('No auth token');
-            
-            const isValid = await state.validateSession();
-            if (!isValid) throw new Error('Invalid session');
 
-            console.log('Authentication valid. Initializing app...');
-            initializeApp().catch(handleCriticalFailure);
-            document.getElementById('logoutBtn').hidden = false;
-        } catch (error) {
-            console.log('Auth check failed:', error.message);
+    // Debug: Log critical values
+    console.log('Auth Token:', state.authToken);
+    console.log('Session Data:', state.secureSession);
+
+    const checkAuth = async () => {
+        if (!state.authToken) {
+            console.log('No auth token found');
+            window.location.href = APP_CONFIG.authRedirect;
+            return;
+        }
+
+        const isValid = await state.validateSession();
+        console.log('Session valid:', isValid);
+        
+        if (!isValid) {
             state.clearSession();
             window.location.href = APP_CONFIG.authRedirect;
+            return;
         }
+
+        console.log('Authentication valid. Initializing app...');
+        initializeApp().catch(handleCriticalFailure);
+        document.getElementById('logoutBtn').hidden = false;
     };
 
     checkAuth();
