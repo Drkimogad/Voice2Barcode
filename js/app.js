@@ -439,35 +439,6 @@ function stopRecording() {
     }
 }
 
-async function compressAndConvertToQRCode(blob) {
-    try {
-        updateStatus('Compressing audio...', 'info');
-        const base64Data = await blobToBase64(blob);
-        const compressedData = base64Data.slice(0, 2953);
-
-        const qrData = {
-            type: 'audio',
-            data: compressedData,
-            mimeType: 'audio/ogg',
-            timestamp: new Date().toISOString()
-        };
-
-        updateStatus('Generating QR code...', 'info');
-        const qrCodeCanvas = document.getElementById('qrcode');
-        
-        await new Promise((resolve, reject) => {
-            QRCode.toCanvas(qrCodeCanvas, JSON.stringify(qrData), error => {
-                if (error) reject(error);
-                else resolve();
-            });
-        });
-
-        qrCodeUrl = qrCodeCanvas.toDataURL();
-        updateStatus('QR code ready!', 'success');
-    } catch (error) {
-        updateStatus(`QR generation failed: ${error.message}`, 'error');
-    }
-}
 
 // ------------------
 // TTS Module (Text Mode)
