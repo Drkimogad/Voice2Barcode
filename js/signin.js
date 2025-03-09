@@ -12,12 +12,12 @@ document.addEventListener('DOMContentLoaded', () => {
         const password = document.getElementById('signinPassword').value;
 
         try {
-            // 1. Client-Side Validation
+            // Client-Side Validation
             if (!username || !password) {
                 throw new Error('Please fill in both fields');
             }
 
-            // 2. Hardcoded Credentials Check (Replace with your actual credentials)
+            // Hardcoded Credentials Check (Replace with actual authentication logic)
             const validUsername = 'testuser';
             const validPassword = 'password123';
 
@@ -25,18 +25,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 throw new Error('Invalid username or password');
             }
 
-            // 3. Secure Session Initialization
-            const salt = CryptoJS.lib.WordArray.random(128/8).toString();
-            const key = CryptoJS.PBKDF2(password, salt, { keySize: 256/32 });
-
-            // 4. Secure Storage
-            sessionStorage.setItem('encryptionKey', key.toString());
-            sessionStorage.setItem('encryptionSalt', salt);
+            // Store authentication status
             localStorage.setItem('authToken', 'dummy-token');
 
-            // 5. Redirect with security headers
-            window.location.href = 'dashboard.html';
-
+            // Redirect to dashboard
+            window.location.replace('dashboard.html');
         } catch (error) {
             errorDisplay.textContent = error.message;
             console.error('SignIn Error:', error);
@@ -46,9 +39,6 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 function performSecurityCleanup() {
-    // Clear sensitive data on failure
-    sessionStorage.removeItem('encryptionKey');
-    sessionStorage.removeItem('encryptionSalt');
-    localStorage.removeItem('authToken');
+    // Clear password field on failure
     document.getElementById('signinPassword').value = '';
 }
