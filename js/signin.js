@@ -27,6 +27,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
             // Store authentication status
             localStorage.setItem('authToken', 'dummy-token');
+            console.log('Auth Token:', localStorage.getItem('authToken'));
 
             // Redirect to dashboard
             window.location.replace('dashboard.html');
