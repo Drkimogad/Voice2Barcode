@@ -30,6 +30,7 @@ document.addEventListener('DOMContentLoaded', () => {
             console.log('Auth Token:', localStorage.getItem('authToken'));
 
             // Redirect to dashboard
+            console.log('Redirecting to dashboard...');
             window.location.replace('dashboard.html');
         } catch (error) {
             errorDisplay.textContent = error.message;
