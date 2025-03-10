@@ -1,23 +1,34 @@
-document.getElementById('signupForm').addEventListener('submit', function(event) {
-    event.preventDefault();
+'use strict';
 
-    const username = document.getElementById('username').value;
-    const password = document.getElementById('password').value;
+document.addEventListener('DOMContentLoaded', () => {
+    const signupForm = document.getElementById('signupForm');
+    const errorDisplay = document.getElementById('errorMessage');
 
-    if (!username || !password) {
-        alert('Please fill in both fields');
-        return;
-    }
+    signupForm?.addEventListener('submit', (e) => {
+        e.preventDefault();
+        errorDisplay.textContent = '';
 
-    // Check if the username already exists
-    if (localStorage.getItem(username)) {
-        alert('Username already exists. Please choose another.');
-        return;
-    }
+        const username = document.getElementById('signupUsername').value.trim();
+        const email = document.getElementById('signupEmail').value.trim();
+        const password = document.getElementById('signupPassword').value;
 
-    // Store username and password in localStorage (simple for testing, but should be hashed in production)
-    localStorage.setItem(username, password);
+        try {
+            // Basic validation
+            if (!username || !email || !password) throw new Error('All fields are required');
 
-    alert('Sign-up successful! You can now sign in.');
-    window.location.href = 'signin.html'; // Redirect to the sign-in page after successful sign-up
+            // Save a dummy token (replace with real token from backend later)
+            localStorage.setItem('authToken', 'dummy-token');
+
+            // Redirect to dashboard
+            window.location.href = 'dashboard.html';
+        } catch (error) {
+            errorDisplay.textContent = error.message;
+            performSecurityCleanup();
+        }
+    });
 });
+
+// Clear sensitive data on failure
+function performSecurityCleanup() {
+    document.getElementById('signupPassword').value = '';
+}
