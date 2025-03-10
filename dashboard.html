@@ -117,6 +117,17 @@
         }
     });
 </script>
+ </script>
+    document.addEventListener('DOMContentLoaded', () => {
+    if (!localStorage.getItem('authToken')) {
+        console.warn('No authToken found! Redirecting to signin.');
+        window.location.href = 'signin.html';
+    } else {
+        console.log('Authenticated! Welcome to Dashboard.');
+        document.getElementById('logoutBtn').hidden = false;  // Show logout button
+    }
+});
+</script>
 
     <!-- Dependencies -->
     <script nonce="EDNw53uP7r" src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
