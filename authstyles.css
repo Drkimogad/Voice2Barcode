@@ -17,87 +17,189 @@
   --spacing-unit: 1rem;
 }
 
+/* ===== Base Styles ===== */
 body {
-    font-family: Arial, sans-serif;
-    background-color: var(--bg-color);
-    color: var(--text-color);
-    margin: 0;
-    padding: 0;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
-    height: 100vh;
+  font-family: Arial, sans-serif;
+  background-color: var(--bg-color);
+  color: var(--text-color);
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  padding: var(--spacing-unit);
 }
 
 .container {
-    background-color: var(--surface-color);
-    padding: var(--spacing-unit);
-    border-radius: var(--border-radius);
-    box-shadow: var(--shadow-md);
-    width: 100%;
-    max-width: 400px;
-    text-align: center;
+  background-color: var(--surface-color);
+  padding: var(--spacing-unit);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow-md);
+  width: 100%;
+  max-width: 400px;
+  text-align: center;
 }
 
 h1 {
-    font-size: 24px;
-    margin-bottom: var(--spacing-unit);
+  font-size: 24px;
+  margin-bottom: var(--spacing-unit);
 }
 
 label {
-    display: block;
-    margin: var(--spacing-unit) 0 var(--spacing-unit) 0;
-    text-align: left;
+  display: block;
+  margin: var(--spacing-unit) 0 var(--spacing-unit) 0;
+  text-align: left;
 }
 
-input[type="text"], input[type="password"] {
-    width: 100%;
-    padding: var(--spacing-unit);
-    margin-bottom: var(--spacing-unit);
-    border: 1px solid #ccc;
-    border-radius: var(--border-radius);
-    box-shadow: var(--shadow-sm);
+input[type="text"],
+input[type="password"],
+input[type="email"] {
+  width: 100%;
+  padding: var(--spacing-unit);
+  margin-bottom: var(--spacing-unit);
+  border: 1px solid #ccc;
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow-sm);
+  font-size: 16px;
 }
 
 button.btn {
-    width: 100%;
-    padding: var(--spacing-unit);
-    background-color: var(--primary-color);
-    color: #fff;
-    border: none;
-    border-radius: var(--border-radius);
-    cursor: pointer;
-    transition: background-color var(--transition);
+  width: 100%;
+  padding: var(--spacing-unit);
+  background-color: var(--primary-color);
+  color: #fff;
+  border: none;
+  border-radius: var(--border-radius);
+  cursor: pointer;
+  transition: background-color var(--transition);
+  font-size: 16px;
 }
 
 button.btn:hover {
-    background-color: #651fff;
+  background-color: #651fff;
 }
 
 .info-container {
-    margin-bottom: var(--spacing-unit);
-    padding: var(--spacing-unit);
-    background-color: var(--surface-color);
-    border-radius: var(--border-radius);
-    box-shadow: var(--shadow-sm);
+  margin-bottom: var(--spacing-unit);
+  padding: var(--spacing-unit);
+  background-color: var(--surface-color);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow-sm);
+  font-size: 14px;
+  line-height: 1.5;
 }
 
 .footer {
-    margin-top: var(--spacing-unit);
-    text-align: center;
+  margin-top: var(--spacing-unit);
+  text-align: center;
 }
 
 .footer p {
-    margin: 0;
-    color: #777;
+  margin: 0;
+  color: #777;
+  font-size: 14px;
 }
 
 a {
-    color: var(--primary-color);
-    text-decoration: none;
+  color: var(--primary-color);
+  text-decoration: none;
 }
 
 a:hover {
-    text-decoration: underline;
+  text-decoration: underline;
+}
+
+/* ===== Responsive Design ===== */
+
+/* Mobile Devices (Portrait) */
+@media (max-width: 480px) {
+  body {
+    padding: calc(var(--spacing-unit) * 0.5);
+  }
+
+  .container {
+    padding: calc(var(--spacing-unit) * 0.75);
+  }
+
+  h1 {
+    font-size: 20px;
+  }
+
+  input[type="text"],
+  input[type="password"],
+  input[type="email"] {
+    font-size: 14px;
+  }
+
+  button.btn {
+    font-size: 14px;
+  }
+
+  .info-container {
+    font-size: 12px;
+  }
+
+  .footer p {
+    font-size: 12px;
+  }
+}
+
+/* Tablets and Small Screens */
+@media (min-width: 481px) and (max-width: 768px) {
+  .container {
+    max-width: 90%;
+  }
+
+  h1 {
+    font-size: 22px;
+  }
+
+  input[type="text"],
+  input[type="password"],
+  input[type="email"] {
+    font-size: 15px;
+  }
+
+  button.btn {
+    font-size: 15px;
+  }
+
+  .info-container {
+    font-size: 13px;
+  }
+
+  .footer p {
+    font-size: 13px;
+  }
+}
+
+/* Large Screens (Desktop) */
+@media (min-width: 769px) {
+  .container {
+    max-width: 400px;
+  }
+
+  h1 {
+    font-size: 24px;
+  }
+
+  input[type="text"],
+  input[type="password"],
+  input[type="email"] {
+    font-size: 16px;
+  }
+
+  button.btn {
+    font-size: 16px;
+  }
+
+  .info-container {
+    font-size: 14px;
+  }
+
+  .footer p {
+    font-size: 14px;
+  }
 }
