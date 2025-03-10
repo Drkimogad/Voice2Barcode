@@ -11,10 +11,10 @@ const APP_CONFIG = {
 
 class SecurityHandler {
     static _CONFIG = {
-        keySize: 256/32,
+        keySize: 256 / 32,
         iterations: 310000,
         hasher: CryptoJS.algo.SHA512,
-        saltSize: 128/8,
+        saltSize: 128 / 8,
         maxDataAge: 1000 * 60 * 60 * 24 * 2,
         minPasswordLength: 12,
         passwordRegex: /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{12,}$/
@@ -36,7 +36,7 @@ class SecurityHandler {
     static encrypt(data, key) {
         try {
             this._validateKey(key);
-            const iv = CryptoJS.lib.WordArray.random(128/8);
+            const iv = CryptoJS.lib.WordArray.random(128 / 8);
             const encrypted = CryptoJS.AES.encrypt(
                 JSON.stringify({
                     ...data,
@@ -154,7 +154,7 @@ class AppState {
             const encryptionKey = sessionStorage.getItem('encryptionKey');
             const salt = sessionStorage.getItem('encryptionSalt');
 
-            console.log('Session load attempt:', { 
+            console.log('Session load attempt:', {
                 authToken: !!this.authToken,
                 encryptionKey: !!encryptionKey,
                 salt: !!salt
@@ -195,13 +195,13 @@ class AppState {
             const response = await fetch('/api/validate', {
                 headers: { 'Authorization': `Bearer ${this.authToken}` }
             });
-            
+
             if (!response.ok) {
                 console.warn('Server validation failed:', response.status);
                 if (response.status === 401) this.clearSession();
                 return false;
             }
-            
+
             const age = Date.now() - new Date(this.secureSession.timestamp).getTime();
             const valid = age < SecurityHandler._CONFIG.maxDataAge;
             console.log(`Session age check: ${age}ms < ${SecurityHandler._CONFIG.maxDataAge}ms = ${valid}`);
@@ -222,6 +222,7 @@ class AppState {
         this.secureSession = null;
     }
 }
+
 // ----------------------
 // Utility Functions
 // ----------------------
@@ -237,7 +238,7 @@ function updateStatus(message, type = 'info') {
     const statusElement = document.getElementById('status');
     statusElement.textContent = message;
     statusElement.className = `status-${type}`;
-    
+
     if (type === 'success') {
         setTimeout(() => {
             statusElement.textContent = '';
@@ -288,7 +289,7 @@ async function initializeApp() {
     try {
         toggleLoading(true);
         const state = new AppState();
-        
+
         if (!(await state.validateSession())) {
             window.location.replace(APP_CONFIG.authRedirect);
             return;
@@ -337,7 +338,7 @@ async function initializeMode(mode) {
             default:
                 throw new Error(`Unknown mode: ${mode}`);
         }
-        
+
         localStorage.setItem('lastMode', mode);
         updateStatus(`${mode} mode initialized`, 'success');
     } catch (error) {
@@ -349,7 +350,7 @@ async function initializeMode(mode) {
 
 function initializeModeSwitching() {
     const modes = {
-        voice: { 
+        voice: {
             init: () => initializeAudioModule().then(initializeRecordingControls),
             section: document.querySelector('[data-section="voice"]')
         },
@@ -372,11 +373,11 @@ function initializeModeSwitching() {
             const mode = target.dataset.mode;
             if (!modes[mode]) return;
 
-            Object.values(modes).forEach(({ section }) => 
+            Object.values(modes).forEach(({ section }) =>
                 section.hidden = true
             );
             modes[mode].section.hidden = false;
-            
+
             try {
                 await modes[mode].init();
                 updateStatus(`${mode} mode activated`, 'success');
@@ -429,7 +430,7 @@ function initializeRecordingControls() {
     }
 }
 
-async function startRecording() { 
+async function startRecording() {
     try {
         const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
         recorder = new Recorder({
@@ -476,7 +477,6 @@ function stopRecording() {
     }
 }
 
-
 // ------------------
 // TTS Module (Text Mode)
 // ------------------
@@ -505,10 +505,10 @@ function populateVoiceSelects() {
         const option = document.createElement('option');
         option.textContent = `${voice.name} (${voice.lang})`;
         option.value = voice.name;
-        
-        const voiceGender = voice.voiceURI.toLowerCase().includes('male') ? 'male' : 
-                          voice.voiceURI.toLowerCase().includes('female') ? 'female' : 
-                          'unknown';
+
+        const voiceGender = voice.voiceURI.toLowerCase().includes('male') ? 'male' :
+            voice.voiceURI.toLowerCase().includes('female') ? 'female' :
+                'unknown';
 
         if (voiceGender === 'male') {
             maleSelect.appendChild(option);
@@ -532,7 +532,7 @@ function handleTextConversion() {
 
         const utterance = new SpeechSynthesisUtterance(text);
         utterance.voice = voices.find(v => v.name === selectedVoice);
-        
+
         utterance.onend = () => {
             generateQRFromText(text, selectedVoice);
         };
@@ -551,11 +551,10 @@ function handleTextConversion() {
 // ------------------
 // QR Modules (Upload/Scan)
 // ------------------
-// QR Modules
 function initializeQRUploadHandlers() {
     const uploadInput = document.getElementById('uploadInput');
     const scanBtn = document.getElementById('scanBtn');
-    
+
     const handler = (event) => {
         const file = event.type === 'change' ? event.target.files[0] : null;
         handleScan(file);
@@ -563,7 +562,7 @@ function initializeQRUploadHandlers() {
 
     uploadInput.addEventListener('change', handler);
     scanBtn.addEventListener('click', handler);
-    
+
     return () => {
         uploadInput.removeEventListener('change', handler);
         scanBtn.removeEventListener('click', handler);
@@ -628,7 +627,7 @@ function createSecureAuthHandler() {
 // ----------------------
 document.addEventListener('DOMContentLoaded', async () => {
     console.log('DOM loaded. Starting auth check...');
-    
+
     // Programmatic event handlers
     document.getElementById('logoutBtn')?.addEventListener('click', () => {
         new AppState().clearSession();
@@ -766,7 +765,7 @@ function displayScannedContent(data) {
 function getValidatedContent() {
     const textContent = document.getElementById('messageText')?.textContent;
     const audioElement = document.getElementById('scannedAudio')?.querySelector('audio');
-    
+
     if (audioElement) {
         return {
             data: audioElement.src,
@@ -774,7 +773,7 @@ function getValidatedContent() {
             fileExt: 'webm'
         };
     }
-    
+
     if (textContent) {
         return {
             data: textContent,
@@ -782,6 +781,6 @@ function getValidatedContent() {
             fileExt: 'txt'
         };
     }
-    
+
     throw new Error('No exportable content found');
 }
