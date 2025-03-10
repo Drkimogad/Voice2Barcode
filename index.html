@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Sign Up</title>
     <link rel="stylesheet" href="authstyles.css">
+    <link rel="icon" href="https://drkimogad.github.io/Voice2Barcode/favicon.ico" type="image/x-icon">
 </head>
 <body>
     <div class="info-container">
@@ -12,16 +13,19 @@
            Convert your treasured audio and text messages into distinctive QR codes, 
            preserving the voices of your loved ones. Just scan a code to hear their laughter and stories, 
            bringing those timeless moments back to life. 
-           Create and share these special connections, because some memories are meant to be heard..</p>
+           Create and share these special connections, because some memories are meant to be heard.</p>
     </div>
     <div class="container">
-        <h1>Create Account</h1>
-        <div id="signupSection" class="section">
-            <form id="signupForm">
-                <label for="username">Username:</label>
-                <input type="text" id="username" required>
-                <label for="password">Password:</label>
-                <input type="password" id="password" required>
+        <h1>Sign Up</h1>
+        <div id="signupSection" class="section auth-container">
+            <form id="signupForm" class="auth-form">
+                <div id="errorMessage" class="error-message" role="alert" aria-live="assertive"></div>
+                <label for="signupUsername">Username:</label>
+                <input type="text" id="signupUsername" required autocomplete="username">
+                <label for="signupEmail">Email:</label>
+                <input type="email" id="signupEmail" required autocomplete="email">
+                <label for="signupPassword">Password:</label>
+                <input type="password" id="signupPassword" required autocomplete="new-password">
                 <button type="submit" class="btn">Sign Up</button>
             </form>
             <p>Already have an account? <a href="signin.html">Sign In</a></p>
@@ -32,6 +36,8 @@
             <p>© 2024 Voice2Barcode. All rights reserved.</p>
         </div>
     </footer>
+
+    <!-- Script for Sign-Up -->
     <script src="js/signup.js"></script>
 </body>
 </html>
