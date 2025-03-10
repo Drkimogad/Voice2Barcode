@@ -2,7 +2,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const signinForm = document.getElementById('signinForm');
     const errorDisplay = document.getElementById('errorMessage');
 
-    signinForm?.addEventListener('submit', async (e) => {
+    signinForm?.addEventListener('submit', (e) => {
         e.preventDefault();
         errorDisplay.textContent = '';
 
@@ -13,35 +13,26 @@ document.addEventListener('DOMContentLoaded', () => {
             // Basic validation
             if (!username || !password) throw new Error('All fields are required');
 
-            // Simulate API call (replace with real backend integration)
-            const response = await simulateLoginAPI(username, password);
+            // Hardcoded credentials (replace with your logic if needed)
+            const validUsername = 'testuser';
+            const validPassword = 'password123';
 
-            if (!response.success) throw new Error(response.message);
+            if (username !== validUsername || password !== validPassword) {
+                throw new Error('Invalid username or password');
+            }
 
-            // Save token and redirect
-            localStorage.setItem('authToken', response.token);
+            // Save token in localStorage
+            localStorage.setItem('authToken', 'dummy-token');
             console.log('Token saved:', localStorage.getItem('authToken')); // Debugging
-            window.location.href = 'dashboard.html'; // Use href instead of replace
+
+            // Redirect to dashboard
+            window.location.href = 'dashboard.html';
         } catch (error) {
             errorDisplay.textContent = error.message;
             performSecurityCleanup();
         }
     });
 });
-
-// Simulate API call (replace with actual backend integration)
-async function simulateLoginAPI(username, password) {
-    return new Promise((resolve) => {
-        setTimeout(() => {
-            // Replace this with your backend logic
-            if (username === 'testuser' && password === 'password123') {
-                resolve({ success: true, token: 'dummy-token', message: 'Login successful' });
-            } else {
-                resolve({ success: false, message: 'Invalid username or password' });
-            }
-        }, 500); // Simulate network delay
-    });
-}
 
 // Clear sensitive data on failure
 function performSecurityCleanup() {
