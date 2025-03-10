@@ -105,29 +105,6 @@
             <p>© 2024 Voice2Barcode. All rights reserved.</p>
         </div>
     </footer>
-<script>
-    document.addEventListener('DOMContentLoaded', () => {
-        const token = localStorage.getItem('authToken');
-        console.log('Checking authToken:', token);
-
-        if (!token) {
-            alert('No authToken! Redirection is disabled for debugging.');
-        } else {
-            console.log('AuthToken found. Continuing...');
-        }
-    });
-</script>
- </script>
-    document.addEventListener('DOMContentLoaded', () => {
-    if (!localStorage.getItem('authToken')) {
-        console.warn('No authToken found! Redirecting to signin.');
-        window.location.href = 'signin.html';
-    } else {
-        console.log('Authenticated! Welcome to Dashboard.');
-        document.getElementById('logoutBtn').hidden = false;  // Show logout button
-    }
-});
-</script>
 
     <!-- Dependencies -->
     <script nonce="EDNw53uP7r" src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
@@ -137,5 +114,23 @@
 
     <!-- Core Application -->
     <script src="js/app.js"></script>
+
+    <!-- Authentication Check Script -->
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            console.log('Dashboard script loaded! Checking authToken...');
+            
+            const token = localStorage.getItem('authToken');
+            console.log('Current authToken:', token);
+
+            if (!token) {
+                console.warn('No authToken found! Redirecting to signin.html');
+                window.location.href = 'signin.html';
+            } else {
+                console.log('Authenticated! Showing dashboard.');
+                document.getElementById('logoutBtn').hidden = false;  // Show logout button
+            }
+        });
+    </script>
 </body>
 </html>
