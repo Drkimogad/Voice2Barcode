@@ -90,44 +90,71 @@ async function compressAudioBlob(blob) {
     showCompressionProgress();
     updateStatus('Compressing audio...', 'silver');
     
-    // If already small enough, return as-is
     if (blob.size <= 30000) {
         console.log('✅ Already small enough, skipping compression');
-        hideCompressionProgress(); // ← ADD THIS
+        hideCompressionProgress();
         return blob;
     }
     
     try {
-        console.log('🔄 Applying audio compression...');
-        // Convert to lower quality audio
-        const audioContext = new AudioContext();
-        const arrayBuffer = await blob.arrayBuffer();
-        const audioBuffer = await audioContext.decodeAudioData(arrayBuffer);
+        console.log('🔄 Re-encoding with Opus low bitrate...');
         
-        // Create new buffer with lower sample rate
-        const offlineContext = new OfflineAudioContext(
-            1, // mono
-            audioBuffer.duration * 11025, // 11.025 kHz (half of 22.05kHz)
-            11025
-        );
+        // Convert to low-bitrate Opus
+        const opusBlob = await reencodeWithOpus(blob);
+        console.log('📦 Opus compressed size:', opusBlob.size, 'bytes');
         
-        const source = offlineContext.createBufferSource();
-        source.buffer = audioBuffer;
-        source.connect(offlineContext.destination);
-        source.start();
-        
-        const renderedBuffer = await offlineContext.startRendering();
-        
-        // Convert back to blob
-        const wavBlob = await audioBufferToWav(renderedBuffer);
         hideCompressionProgress();
-        return wavBlob;
+        return opusBlob;
         
     } catch (error) {
-        console.warn('Compression failed, using original:', error);
-        hideCompressionProgress(); // ← ADD THIS IN ERROR CASE TOO
-        return blob; // Fallback to original
+        console.warn('Opus compression failed, using original:', error);
+        hideCompressionProgress();
+        return blob;
     }
+}
+
+async function reencodeWithOpus(blob) {
+    return new Promise((resolve, reject) => {
+        // Create audio context from blob
+        const audioContext = new AudioContext();
+        const fileReader = new FileReader();
+        
+        fileReader.onload = async function() {
+            try {
+                const audioBuffer = await audioContext.decodeAudioData(this.result);
+                
+                // Use Opus-recorder to re-encode at low bitrate
+                const recorder = new Recorder({
+                    encoderBitRate: 16000, // Low bitrate for speech (16kbps)
+                    encoderSampleRate: 16000, // Lower sample rate
+                    numberOfChannels: 1, // Mono
+                    encoderPath: 'libs/opus-recorder/encoderWorker.min.js'
+                });
+                
+                // Create a new stream for recording
+                const destination = recorder.createScriptProcessorNode();
+                
+                recorder.start().then(() => {
+                    // Play through recorder to capture
+                    const source = audioContext.createBufferSource();
+                    source.buffer = audioBuffer;
+                    source.connect(destination);
+                    source.start();
+                    
+                    source.onended = () => {
+                        recorder.stop().then((opusBlob) => {
+                            resolve(opusBlob);
+                        }).catch(reject);
+                    };
+                }).catch(reject);
+                
+            } catch (error) {
+                reject(error);
+            }
+        };
+        
+        fileReader.readAsArrayBuffer(blob);
+    });
 }
 
 // AMR CONVERSION FUNCTION
