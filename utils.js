@@ -86,17 +86,19 @@ function blobToBase64(blob) {
 
 // Add AUDIO compression function
 async function compressAudioBlob(blob) {
+    console.log('🔧 Compression started - Original size:', blob.size, 'bytes');
     showCompressionProgress();
     updateStatus('Compressing audio...', 'silver');
-
-    updateStatus('Compressing audio...', 'info');
     
     // If already small enough, return as-is
-    if (blob.size <= 30000) { // 30KB target
+    if (blob.size <= 30000) {
+        console.log('✅ Already small enough, skipping compression');
+        hideCompressionProgress(); // ← ADD THIS
         return blob;
     }
     
     try {
+        console.log('🔄 Applying audio compression...');
         // Convert to lower quality audio
         const audioContext = new AudioContext();
         const arrayBuffer = await blob.arrayBuffer();
@@ -123,6 +125,7 @@ async function compressAudioBlob(blob) {
         
     } catch (error) {
         console.warn('Compression failed, using original:', error);
+        hideCompressionProgress(); // ← ADD THIS IN ERROR CASE TOO
         return blob; // Fallback to original
     }
 }
@@ -170,6 +173,8 @@ function audioBufferToWav(buffer) {
 
 //validate audio quality
 async function validateAudioQuality(blob) {
+        console.log('🔍 Validating audio - Size:', blob.size, 'bytes');
+
     return new Promise((resolve) => {
         if (!blob || blob.size < 2000) { // At least 2KB
             resolve(false);
