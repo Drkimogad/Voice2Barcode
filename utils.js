@@ -86,42 +86,35 @@ function blobToBase64(blob) {
 
 // Add AUDIO compression function
 async function compressAudioBlob(blob) {
-        console.log('🔧 Compression started - Original size:', blob.size, 'bytes');
-    console.log('📚 Opus-recorder available:', typeof Recorder !== 'undefined');
-if (typeof Recorder === 'undefined') {
-        console.error('❌ Opus-recorder not loaded!');
-        return blob;
-    }
-
-  console.log('🔧 Compression started - Original size:', blob.size, 'bytes');
+    console.log('🔧 Compression started - Original size:', blob.size, 'bytes');
     showCompressionProgress();
+    updateStatus('Compressing audio...', 'silver');
     
     if (blob.size <= 30000) {
-        console.log('✅ Already small enough');
+        console.log('✅ Already small enough, skipping compression');
         hideCompressionProgress();
         return blob;
     }
     
     try {
-        console.log('🔄 Simple Opus re-encoding...');
+        console.log('🔄 Compressing with Opus...');
         
-        // Just use the original recording but with lower quality settings
-        // The WebM is already Opus-encoded, we just need smaller settings
-        const stream = await blobToStream(blob);
-        const recorder = new Recorder({
-            encoderBitRate: 8000,  // Very low bitrate for speech
-            encoderSampleRate: 8000,
-            numberOfChannels: 1,
-            encoderPath: 'https://drkimogad.github.io/Voice2Barcode/libs/opus-recorder/encoderWorker.min.js'
-        });
+        // Use your existing reencodeWithOpus function
+        const compressedBlob = await reencodeWithOpus(blob);
+        console.log('📦 Opus compressed size:', compressedBlob.size, 'bytes');
         
-        // ... recording logic
+        hideCompressionProgress();
+        return compressedBlob;
         
     } catch (error) {
-        console.warn('Compression failed:', error);
-        return blob;
+        console.warn('Opus compression failed:', error);
+        updateStatus('Compression failed, using original audio', 'warning');
+        hideCompressionProgress();
+        return blob; // Fallback to original
     }
 }
+
+
 
 async function reencodeWithOpus(blob) {
     return new Promise((resolve, reject) => {
@@ -167,41 +160,13 @@ async function reencodeWithOpus(blob) {
     });
 }
 
-// AMR CONVERSION FUNCTION
-async function compressAudioBlob(blob) {
-    console.log('🔧 Compression started - Original size:', blob.size, 'bytes');
-    showCompressionProgress();
-    updateStatus('Compressing audio...', 'silver');
-    
-    if (blob.size <= 30000) {
-        console.log('✅ Already small enough, skipping compression');
-        hideCompressionProgress();
-        return blob;
-    }
-    
-    try {
-        console.log('🔄 Converting to AMR...');
-        
-        // Convert WebM to AMR using a library or service
-        const amrBlob = await convertToAMR(blob);
-        console.log('📦 AMR compressed size:', amrBlob.size, 'bytes');
-        
-        hideCompressionProgress();
-        return amrBlob;
-        
-    } catch (error) {
-        console.warn('AMR compression failed, using original:', error);
-        hideCompressionProgress();
-        return blob;
-    }
-}
-
 //validate audio quality
 async function validateAudioQuality(blob) {
-        console.log('🔍 Validating audio - Size:', blob.size, 'bytes');
+    console.log('🔍 Validating audio - Size:', blob.size, 'bytes');
 
     return new Promise((resolve) => {
         if (!blob || blob.size < 2000) { // At least 2KB
+            console.log('❌ Audio too small or invalid');
             resolve(false);
             return;
         }
@@ -209,14 +174,25 @@ async function validateAudioQuality(blob) {
         // Quick playback test
         const audio = new Audio();
         audio.src = URL.createObjectURL(blob);
+        
         audio.onloadeddata = () => {
+            console.log('✅ Audio validation passed - can play');
             URL.revokeObjectURL(audio.src);
             resolve(true);
         };
-        audio.onerror = () => resolve(false);
         
-        // Timeout fallback
-        setTimeout(() => resolve(true), 1000);
+        audio.onerror = () => {
+            console.log('❌ Audio validation failed - cannot play');
+            URL.revokeObjectURL(audio.src);
+            resolve(false);
+        };
+        
+        // Timeout fallback - if it takes too long, assume it's valid
+        setTimeout(() => {
+            console.log('⏰ Audio validation timeout, assuming valid');
+            URL.revokeObjectURL(audio.src);
+            resolve(true);
+        }, 2000); // Increased to 2 seconds for safety
     });
 }
 
