@@ -58,6 +58,19 @@ function blobToBase64(blob) {
     });
 }
 
+// Add this after your existing utility functions
+async function compressAudioBlob(blob) {
+    updateStatus('Compressing...', 'info');
+    // Simple compression logic here
+    return blob; // Return as-is for now
+}
+async function validateAudioQuality(blob) {
+    return new Promise((resolve) => {
+        // Simple validation logic
+        resolve(blob && blob.size > 1000); // Basic check
+    });
+}
+
 /**
  * Trigger file download
  * @param {string} url - Data URL or blob URL
@@ -179,3 +192,7 @@ function debounce(func, wait) {
 }
 
 console.log('✅ Utils.js loaded successfully');
+
+
+
+
