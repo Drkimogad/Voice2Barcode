@@ -11,12 +11,26 @@ function updateStatus(message, type = 'info') {
     const statusElement = document.getElementById('status');
     if (!statusElement) return;
 
+    // Map your new color types to existing styles
+    const typeMap = {
+        'silver': 'info',      // Silver-Metallic for processing
+        'brick': 'warning',    // Brick for warnings
+        'charcoal': 'success', // Charcoal for success
+        'cream': 'info',       // Cream for normal info
+        'info': 'info',        // Keep existing
+        'success': 'success',  // Keep existing  
+        'warning': 'warning',  // Keep existing
+        'error': 'error'       // Keep existing
+    };
+
+    const mappedType = typeMap[type] || 'info';
+    
     statusElement.textContent = message;
-    statusElement.className = `status-message status-${type}`;
+    statusElement.className = `status-message status-${mappedType}`;
     statusElement.style.display = 'block';
 
     // Auto-hide success messages after 5 seconds
-    if (type === 'success') {
+    if (mappedType === 'success') {
         setTimeout(() => {
             statusElement.textContent = '';
             statusElement.className = 'status-message';
@@ -41,6 +55,18 @@ function toggleLoading(visible, text = 'Processing...') {
     loader.setAttribute('aria-busy', visible.toString());
 }
 
+// Add this to your toggleLoading function or near it:
+function showCompressionProgress() {
+    const statusElement = document.querySelector('.status-message');
+    statusElement.classList.add('compression-loading');
+    statusElement.classList.add('status-silver');
+}
+
+function hideCompressionProgress() {
+    const statusElement = document.querySelector('.status-message');
+    statusElement.classList.remove('compression-loading');
+}
+
 /**
  * Convert Blob to Base64 string
  * @param {Blob} blob - Blob to convert
@@ -60,6 +86,9 @@ function blobToBase64(blob) {
 
 // Add AUDIO compression function
 async function compressAudioBlob(blob) {
+    showCompressionProgress();
+    updateStatus('Compressing audio...', 'silver');
+
     updateStatus('Compressing audio...', 'info');
     
     // If already small enough, return as-is
@@ -89,6 +118,7 @@ async function compressAudioBlob(blob) {
         
         // Convert back to blob
         const wavBlob = await audioBufferToWav(renderedBuffer);
+        hideCompressionProgress();
         return wavBlob;
         
     } catch (error) {
