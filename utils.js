@@ -86,31 +86,28 @@ function blobToBase64(blob) {
 
 // Add AUDIO compression function
 async function compressAudioBlob(blob) {
-    console.log('🔧 Compression started - Original size:', blob.size, 'bytes');
-    showCompressionProgress();
-    updateStatus('Compressing audio...', 'silver');
+    updateStatus('Starting compression...', 'silver');
     
     if (blob.size <= 30000) {
-        console.log('✅ Already small enough, skipping compression');
-        hideCompressionProgress();
+        updateStatus('Audio size is good', 'success');
         return blob;
     }
     
     try {
-        console.log('🔄 Compressing with Opus...');
-        
-        // Use your existing reencodeWithOpus function
+        updateStatus('Compressing with Opus...', 'silver');
         const compressedBlob = await reencodeWithOpus(blob);
-        console.log('📦 Opus compressed size:', compressedBlob.size, 'bytes');
         
-        hideCompressionProgress();
+        if (compressedBlob.size <= 30000) {
+            updateStatus('Compression successful!', 'success');
+        } else {
+            updateStatus('Compressed but still large', 'warning');
+        }
+        
         return compressedBlob;
         
     } catch (error) {
-        console.warn('Opus compression failed:', error);
-        updateStatus('Compression failed, using original audio', 'warning');
-        hideCompressionProgress();
-        return blob; // Fallback to original
+        updateStatus('Compression failed', 'error');
+        return blob;
     }
 }
 
@@ -162,37 +159,35 @@ async function reencodeWithOpus(blob) {
 
 //validate audio quality
 async function validateAudioQuality(blob) {
-    console.log('🔍 Validating audio - Size:', blob.size, 'bytes');
-
+    updateStatus('Validating audio...', 'silver');
+    
     return new Promise((resolve) => {
-        if (!blob || blob.size < 2000) { // At least 2KB
-            console.log('❌ Audio too small or invalid');
+        if (!blob || blob.size < 2000) {
+            updateStatus('Audio too small', 'error');
             resolve(false);
             return;
         }
         
-        // Quick playback test
         const audio = new Audio();
         audio.src = URL.createObjectURL(blob);
         
         audio.onloadeddata = () => {
-            console.log('✅ Audio validation passed - can play');
             URL.revokeObjectURL(audio.src);
+            updateStatus('Audio quality good', 'success');
             resolve(true);
         };
         
         audio.onerror = () => {
-            console.log('❌ Audio validation failed - cannot play');
             URL.revokeObjectURL(audio.src);
+            updateStatus('Audio cannot play', 'error');
             resolve(false);
         };
         
-        // Timeout fallback - if it takes too long, assume it's valid
         setTimeout(() => {
-            console.log('⏰ Audio validation timeout, assuming valid');
             URL.revokeObjectURL(audio.src);
+            updateStatus('Audio validation complete', 'info');
             resolve(true);
-        }, 2000); // Increased to 2 seconds for safety
+        }, 2000);
     });
 }
 
