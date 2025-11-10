@@ -139,7 +139,16 @@ function initVoiceMode() {
 async function startRecording() {
     try {
         // Request microphone access
-        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+       // const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        const stream = await navigator.mediaDevices.getUserMedia({ 
+        audio: {
+        sampleRate: 8000,      // Low sample rate
+        channelCount: 1,       // Mono
+        sampleSize: 8,         // Low bit depth
+        echoCancellation: true,
+        noiseSuppression: true
+       } 
+       });
         
         // Create MediaRecorder
         mediaRecorder = new MediaRecorder(stream);
