@@ -1,205 +1,229 @@
-/* ===== Modern CSS Variables ===== */
-:root {
-  --primary-color: #7C4DFF;
-  --secondary-color: #FFAB00;
-  --danger-color: #FF5252;
-  --success-color: #00C853;
-  --warning-color: #FF9100;
-  --text-color: #2D3436;
-  --bg-color: #F5F6FA;
-  --surface-color: #FFFFFF;
-  --border-radius: 12px;
-  --transition: cubic-bezier(0.4, 0, 0.2, 1) 0.3s;
-  --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.08);
-  --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.12);
-  --gradient-primary: linear-gradient(135deg, #7C4DFF 0%, #651FFF 100%);
-  --gradient-secondary: linear-gradient(135deg, #FFAB00 0%, #FF6D00 100%);
-  --spacing-unit: 1rem;
+/* ========================================
+   AUTHENTICATION STYLES
+   Color Scheme: Cream, Silver-Metallic, Brick, Charcoal
+   ======================================== */
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
 }
 
-/* ===== Base Styles ===== */
 body {
-  font-family: Arial, sans-serif;
-  background-color: var(--bg-color);
-  color: var(--text-color);
-  margin: 0;
-  padding: 0;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  align-items: center;
-  min-height: 100vh;
-  padding: var(--spacing-unit);
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+    background: linear-gradient(135deg, #FAFAFA 0%, #F5F5DC 100%);
+    color: #1a1a1a;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    line-height: 1.6;
 }
 
-.container {
-  background-color: var(--surface-color);
-  padding: var(--spacing-unit);
-  border-radius: var(--border-radius);
-  box-shadow: var(--shadow-md);
-  width: 100%;
-  max-width: 400px;
-  text-align: center;
-}
-
-h1 {
-  font-size: 24px;
-  margin-bottom: var(--spacing-unit);
-}
-
-label {
-  display: block;
-  margin: var(--spacing-unit) 0 var(--spacing-unit) 0;
-  text-align: left;
-}
-
-input[type="text"],
-input[type="password"],
-input[type="email"] {
-  width: 100%;
-  padding: var(--spacing-unit);
-  margin-bottom: var(--spacing-unit);
-  border: 1px solid #ccc;
-  border-radius: var(--border-radius);
-  box-shadow: var(--shadow-sm);
-  font-size: 16px;
-}
-
-button.btn {
-  width: 100%;
-  padding: var(--spacing-unit);
-  background-color: var(--primary-color);
-  color: #fff;
-  border: none;
-  border-radius: var(--border-radius);
-  cursor: pointer;
-  transition: background-color var(--transition);
-  font-size: 16px;
-}
-
-button.btn:hover {
-  background-color: #651fff;
-}
-
+/* Info Banner */
 .info-container {
-  margin-bottom: var(--spacing-unit);
-  padding: var(--spacing-unit);
-  background-color: var(--surface-color);
-  border-radius: var(--border-radius);
-  box-shadow: var(--shadow-sm);
-  font-size: 14px;
-  line-height: 1.5;
+    background: linear-gradient(135deg, #C0C0C0 0%, #D3D3D3 100%);
+    padding: 20px 30px;
+    text-align: center;
+    border-bottom: 3px solid #CB4154;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
+.info-container p {
+    color: #1a1a1a;
+    font-size: 16px;
+    max-width: 900px;
+    margin: 0 auto;
+    font-weight: 500;
+    line-height: 1.8;
+}
+
+/* Container */
+.container {
+    width: 100%;
+    max-width: 500px;
+    margin: 40px auto;
+    padding: 20px;
+    flex: 1;
+}
+
+/* Auth Container */
+.auth-view {
+    background: #FFFFFF;
+    border-radius: 12px;
+    padding: 40px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+    border: 2px solid #36454F;
+}
+
+.auth-view h1 {
+    color: #1a1a1a;
+    font-size: 32px;
+    font-weight: 600;
+    margin-bottom: 30px;
+    text-align: center;
+    letter-spacing: -0.5px;
+}
+
+/* Auth Form */
+.auth-form {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.auth-form label {
+    color: #1a1a1a;
+    font-weight: 500;
+    font-size: 14px;
+    margin-bottom: 6px;
+    display: block;
+}
+
+.auth-form input {
+    width: 100%;
+    padding: 14px 16px;
+    border: 2px solid #C0C0C0;
+    border-radius: 8px;
+    font-size: 15px;
+    background: #FAFAFA;
+    color: #1a1a1a;
+    transition: all 0.3s ease;
+    font-family: inherit;
+}
+
+.auth-form input:focus {
+    outline: none;
+    border-color: #CB4154;
+    background: #FFFFFF;
+    box-shadow: 0 0 0 3px rgba(203, 65, 84, 0.1);
+}
+
+.auth-form input::placeholder {
+    color: #999;
+}
+
+/* Buttons */
+.btn {
+    padding: 14px 24px;
+    border: none;
+    border-radius: 8px;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    font-family: inherit;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.auth-form .btn {
+    background: linear-gradient(135deg, #CB4154 0%, #B22222 100%);
+    color: #FFFFFF;
+    border: 2px solid #CB4154;
+}
+
+.auth-form .btn:hover {
+    background: linear-gradient(135deg, #B22222 0%, #8B0000 100%);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(203, 65, 84, 0.3);
+}
+
+.auth-form .btn:active {
+    transform: translateY(0);
+}
+
+/* Error Message */
+.error-message {
+    background: #FFE5E5;
+    color: #B22222;
+    padding: 12px 16px;
+    border-radius: 6px;
+    border-left: 4px solid #CB4154;
+    font-size: 14px;
+    font-weight: 500;
+    display: none;
+}
+
+.error-message:not(:empty) {
+    display: block;
+}
+
+/* Toggle Links */
+.auth-view p {
+    text-align: center;
+    margin-top: 20px;
+    color: #1a1a1a;
+    font-size: 14px;
+}
+
+.auth-view p a {
+    color: #CB4154;
+    text-decoration: none;
+    font-weight: 600;
+    transition: color 0.3s ease;
+}
+
+.auth-view p a:hover {
+    color: #B22222;
+    text-decoration: underline;
+}
+
+/* Footer */
 .footer {
-  margin-top: var(--spacing-unit);
-  text-align: center;
+    background: linear-gradient(135deg, #36454F 0%, #3B3B3B 100%);
+    color: #FFFFFF;
+    text-align: center;
+    padding: 20px;
+    margin-top: auto;
+    border-top: 3px solid #CB4154;
 }
 
 .footer p {
-  margin: 0;
-  color: #777;
-  font-size: 14px;
+    margin: 0;
+    font-size: 14px;
+    opacity: 0.9;
 }
 
-a {
-  color: var(--primary-color);
-  text-decoration: none;
+/* Responsive Design */
+@media (max-width: 768px) {
+    .container {
+        padding: 15px;
+        margin: 20px auto;
+    }
+    
+    .auth-view {
+        padding: 30px 20px;
+    }
+    
+    .auth-view h1 {
+        font-size: 26px;
+    }
+    
+    .info-container {
+        padding: 15px 20px;
+    }
+    
+    .info-container p {
+        font-size: 14px;
+    }
 }
 
-a:hover {
-  text-decoration: underline;
-}
-
-/* ===== Responsive Design ===== */
-
-/* Mobile Devices (Portrait) */
 @media (max-width: 480px) {
-  body {
-    padding: calc(var(--spacing-unit) * 0.5);
-  }
-
-  .container {
-    padding: calc(var(--spacing-unit) * 0.75);
-  }
-
-  h1 {
-    font-size: 20px;
-  }
-
-  input[type="text"],
-  input[type="password"],
-  input[type="email"] {
-    font-size: 14px;
-  }
-
-  button.btn {
-    font-size: 14px;
-  }
-
-  .info-container {
-    font-size: 12px;
-  }
-
-  .footer p {
-    font-size: 12px;
-  }
-}
-
-/* Tablets and Small Screens */
-@media (min-width: 481px) and (max-width: 768px) {
-  .container {
-    max-width: 90%;
-  }
-
-  h1 {
-    font-size: 22px;
-  }
-
-  input[type="text"],
-  input[type="password"],
-  input[type="email"] {
-    font-size: 15px;
-  }
-
-  button.btn {
-    font-size: 15px;
-  }
-
-  .info-container {
-    font-size: 13px;
-  }
-
-  .footer p {
-    font-size: 13px;
-  }
-}
-
-/* Large Screens (Desktop) */
-@media (min-width: 769px) {
-  .container {
-    max-width: 400px;
-  }
-
-  h1 {
-    font-size: 24px;
-  }
-
-  input[type="text"],
-  input[type="password"],
-  input[type="email"] {
-    font-size: 16px;
-  }
-
-  button.btn {
-    font-size: 16px;
-  }
-
-  .info-container {
-    font-size: 14px;
-  }
-
-  .footer p {
-    font-size: 14px;
-  }
+    .auth-view {
+        padding: 25px 15px;
+    }
+    
+    .auth-view h1 {
+        font-size: 24px;
+    }
+    
+    .auth-form input {
+        padding: 12px 14px;
+    }
+    
+    .btn {
+        padding: 12px 20px;
+        font-size: 14px;
+    }
 }
