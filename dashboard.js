@@ -157,9 +157,11 @@ async function startRecording() {
             
             // Create audio blob
             const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
-                // === ADD RIGHT HERE ===
-          updateStatus('Compressing audio...', 'info');
+                console.log('🎵 Raw recording size:', audioBlob.size, 'bytes');
+
           const compressedBlob = await compressAudioBlob(audioBlob);
+                console.log('📦 Compressed size:', compressedBlob.size, 'bytes');
+
             
             // Generate QR code
          await generateQRFromAudio(compressedBlob); // Change to use compressedBlob
