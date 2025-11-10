@@ -3,7 +3,7 @@
 // ========================================
 
 const DASHBOARD_CONFIG = {
-    MAX_RECORDING_TIME: 60, // seconds
+    MAX_RECORDING_TIME: 10, // seconds
     MAX_TEXT_LENGTH: 200,
     QR_SIZE: 300,
     QR_ERROR_CORRECTION: 'H'
