@@ -86,29 +86,39 @@ function blobToBase64(blob) {
 
 // Add AUDIO compression function
 async function compressAudioBlob(blob) {
-    console.log('🔧 Compression started - Original size:', blob.size, 'bytes');
+        console.log('🔧 Compression started - Original size:', blob.size, 'bytes');
+    console.log('📚 Opus-recorder available:', typeof Recorder !== 'undefined');
+if (typeof Recorder === 'undefined') {
+        console.error('❌ Opus-recorder not loaded!');
+        return blob;
+    }
+
+  console.log('🔧 Compression started - Original size:', blob.size, 'bytes');
     showCompressionProgress();
-    updateStatus('Compressing audio...', 'silver');
     
     if (blob.size <= 30000) {
-        console.log('✅ Already small enough, skipping compression');
+        console.log('✅ Already small enough');
         hideCompressionProgress();
         return blob;
     }
     
     try {
-        console.log('🔄 Re-encoding with Opus low bitrate...');
+        console.log('🔄 Simple Opus re-encoding...');
         
-        // Convert to low-bitrate Opus
-        const opusBlob = await reencodeWithOpus(blob);
-        console.log('📦 Opus compressed size:', opusBlob.size, 'bytes');
+        // Just use the original recording but with lower quality settings
+        // The WebM is already Opus-encoded, we just need smaller settings
+        const stream = await blobToStream(blob);
+        const recorder = new Recorder({
+            encoderBitRate: 8000,  // Very low bitrate for speech
+            encoderSampleRate: 8000,
+            numberOfChannels: 1,
+            encoderPath: 'https://drkimogad.github.io/Voice2Barcode/libs/opus-recorder/encoderWorker.min.js'
+        });
         
-        hideCompressionProgress();
-        return opusBlob;
+        // ... recording logic
         
     } catch (error) {
-        console.warn('Opus compression failed, using original:', error);
-        hideCompressionProgress();
+        console.warn('Compression failed:', error);
         return blob;
     }
 }
