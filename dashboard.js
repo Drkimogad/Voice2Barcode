@@ -157,9 +157,12 @@ async function startRecording() {
             
             // Create audio blob
             const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
+                // === ADD RIGHT HERE ===
+          updateStatus('Compressing audio...', 'info');
+          const compressedBlob = await compressAudioBlob(audioBlob);
             
             // Generate QR code
-            await generateQRFromAudio(audioBlob);
+         await generateQRFromAudio(compressedBlob); // Change to use compressedBlob
             
             // Reset
             audioChunks = [];
@@ -218,6 +221,12 @@ function updateRecordingTimer() {
 
 async function generateQRFromAudio(audioBlob) {
     try {
+        // === ADD AT THE VERY BEGINNING ===
+        toggleLoading(true, 'Validating audio quality...');
+        if (!await validateAudioQuality(audioBlob)) {
+            throw new Error('Audio quality check failed');
+        }
+        
         toggleLoading(true, 'Generating QR code...');
         
         // Convert to base64
@@ -247,11 +256,15 @@ async function generateQRFromAudio(audioBlob) {
         
         updateStatus('QR code generated successfully!', 'success');
         
-    } catch (error) {
-        handleError('QR generation failed', error);
-    } finally {
-        toggleLoading(false);
-    }
+} catch (error) {
+    handleError('QR generation failed', error);
+    
+    // === ADD FALLBACK RIGHT HERE ===
+    updateStatus('Audio too large for QR - Use Upload mode instead', 'warning');
+    
+} finally {
+    toggleLoading(false);
+}
 }
 
 // ========================================
