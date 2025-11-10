@@ -470,3 +470,42 @@ textarea:focus {
         page-break-inside: avoid;
     }
 }
+
+
+
+/* Status Colors */
+.status-silver {
+    background: #C0C0C0 !important;
+    color: #2F2F2F !important;
+    border: 1px solid #A0A0A0 !important;
+}
+
+.status-brick {
+    background: #BB5A5A !important;
+    color: #F8F4F0 !important;
+    border: 1px solid #A54A4A !important;
+}
+
+.status-charcoal {
+    background: #36454F !important;
+    color: #F8F4F0 !important;
+    border: 1px solid #2C3A44 !important;
+}
+
+.status-cream {
+    background: #F8F4F0 !important;
+    color: #2F2F2F !important;
+    border: 1px solid #E8E4E0 !important;
+}
+
+/* Compression Loading Animation */
+.compression-loading {
+    background: linear-gradient(90deg, #F8F4F0, #C0C0C0, #F8F4F0) !important;
+    background-size: 200% 100% !important;
+    animation: shimmer 1.5s infinite !important;
+}
+
+@keyframes shimmer {
+    0% { background-position: -200% 0; }
+    100% { background-position: 200% 0; }
+}
