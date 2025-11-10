@@ -58,16 +58,105 @@ function blobToBase64(blob) {
     });
 }
 
-// Add this after your existing utility functions
+// Add AUDIO compression function
 async function compressAudioBlob(blob) {
-    updateStatus('Compressing...', 'info');
-    // Simple compression logic here
-    return blob; // Return as-is for now
+    updateStatus('Compressing audio...', 'info');
+    
+    // If already small enough, return as-is
+    if (blob.size <= 30000) { // 30KB target
+        return blob;
+    }
+    
+    try {
+        // Convert to lower quality audio
+        const audioContext = new AudioContext();
+        const arrayBuffer = await blob.arrayBuffer();
+        const audioBuffer = await audioContext.decodeAudioData(arrayBuffer);
+        
+        // Create new buffer with lower sample rate
+        const offlineContext = new OfflineAudioContext(
+            1, // mono
+            audioBuffer.duration * 11025, // 11.025 kHz (half of 22.05kHz)
+            11025
+        );
+        
+        const source = offlineContext.createBufferSource();
+        source.buffer = audioBuffer;
+        source.connect(offlineContext.destination);
+        source.start();
+        
+        const renderedBuffer = await offlineContext.startRendering();
+        
+        // Convert back to blob
+        const wavBlob = await audioBufferToWav(renderedBuffer);
+        return wavBlob;
+        
+    } catch (error) {
+        console.warn('Compression failed, using original:', error);
+        return blob; // Fallback to original
+    }
 }
+
+// add audio to wave converter
+function audioBufferToWav(buffer) {
+    return new Promise((resolve) => {
+        const length = buffer.length;
+        const wavBuffer = new ArrayBuffer(44 + length * 2);
+        const view = new DataView(wavBuffer);
+        
+        // Write WAV header
+        const writeString = (offset, string) => {
+            for (let i = 0; i < string.length; i++) {
+                view.setUint8(offset + i, string.charCodeAt(i));
+            }
+        };
+        
+        writeString(0, 'RIFF');
+        view.setUint32(4, 36 + length * 2, true);
+        writeString(8, 'WAVE');
+        writeString(12, 'fmt ');
+        view.setUint32(16, 16, true);
+        view.setUint16(20, 1, true);
+        view.setUint16(22, 1, true);
+        view.setUint32(24, 11025, true);
+        view.setUint32(28, 11025 * 2, true);
+        view.setUint16(32, 2, true);
+        view.setUint16(34, 16, true);
+        writeString(36, 'data');
+        view.setUint32(40, length * 2, true);
+        
+        // Write audio data
+        const samples = buffer.getChannelData(0);
+        let offset = 44;
+        for (let i = 0; i < length; i++) {
+            const sample = Math.max(-1, Math.min(1, samples[i]));
+            view.setInt16(offset, sample < 0 ? sample * 0x8000 : sample * 0x7FFF, true);
+            offset += 2;
+        }
+        
+        resolve(new Blob([wavBuffer], { type: 'audio/wav' }));
+    });
+}
+
+//validate audio quality
 async function validateAudioQuality(blob) {
     return new Promise((resolve) => {
-        // Simple validation logic
-        resolve(blob && blob.size > 1000); // Basic check
+        if (!blob || blob.size < 2000) { // At least 2KB
+            resolve(false);
+            return;
+        }
+        
+        // Quick playback test
+        const audio = new Audio();
+        audio.src = URL.createObjectURL(blob);
+        audio.onloadeddata = () => {
+            URL.revokeObjectURL(audio.src);
+            resolve(true);
+        };
+        audio.onerror = () => resolve(false);
+        
+        // Timeout fallback
+        setTimeout(() => resolve(true), 1000);
     });
 }
 
