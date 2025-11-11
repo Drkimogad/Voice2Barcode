@@ -271,12 +271,7 @@ async function generateQRFromAudio(audioBlob) {
         
         // Convert to base64
         const base64Audio = await blobToBase64(audioBlob);
-                console.log('📊 Base64 data length:', base64Audio.length);
-        
-        if (base64Audio.length > 2800) {
-    console.log('❌ Too large for QR:', base64Audio.length, 'chars');
-    throw new Error(`Audio too large (${base64Audio.length} chars). Reduce quality or duration.`);
-}      
+                console.log('📊 Base64 data length:', base64Audio.length);     
         
         // Create QR data
 const qrData = {
