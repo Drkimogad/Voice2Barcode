@@ -398,7 +398,7 @@ async function generateQRFromDocumentId(documentId) {
         toggleLoading(true, 'Generating QR code...');
         
         // Create URL for your domain - we'll use memoryinqr.com for now
-        const qrContent = `https://memoryinqr.com/view.html?id=${documentId}`;
+     const qrContent = `https://drkimogad.github.io/MemoryinQR/view.html?id=${documentId}`;   // REPLACE LATER FOR FIREBASE DEPLOYMENT 
         
         // Store document ID for download reference
         lastQRData = {
