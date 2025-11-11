@@ -7,68 +7,8 @@ const AUTH_CONFIG = {
     USER_KEY: 'currentUser'
 };
 
-/**
- * Initialize authentication system
- */
-function initAuth() {
-    console.log('🔐 Initializing Firebase authentication...');
-    
-    // Firebase auth state listener
-    firebase.auth().onAuthStateChanged((user) => {
-        if (user) {
-            // User is signed in
-            console.log('✅ User logged in:', user.email);
-            showDashboard();
-        } else {
-            // User is signed out
-            console.log('🔒 User logged out');
-            showAuth();
-        }
-    });
-    
-    // Setup event listeners
-    setupAuthListeners();
-}
 
-/**
- * Setup authentication event listeners
- */
-function setupAuthListeners() {
-    // Sign Up Form
-    const signupForm = document.getElementById('signupForm');
-    if (signupForm) {
-        signupForm.addEventListener('submit', handleSignup);
-    }
-    
-    // Sign In Form
-    const signinForm = document.getElementById('signinForm');
-    if (signinForm) {
-        signinForm.addEventListener('submit', handleSignin);
-    }
-    
-    // Toggle between signup and signin
-    const showSigninBtn = document.getElementById('showSignin');
-    if (showSigninBtn) {
-        showSigninBtn.addEventListener('click', (e) => {
-            e.preventDefault();
-            toggleAuthView('signin');
-        });
-    }
-    
-    const showSignupBtn = document.getElementById('showSignup');
-    if (showSignupBtn) {
-        showSignupBtn.addEventListener('click', (e) => {
-            e.preventDefault();
-            toggleAuthView('signup');
-        });
-    }
-    
-    // Logout button
-    const logoutBtn = document.getElementById('logoutBtn');
-    if (logoutBtn) {
-        logoutBtn.addEventListener('click', handleLogout);
-    }
-}
+
 
 /**
  * Handle user signup with Firebase
@@ -239,6 +179,13 @@ function showDashboard() {
         initDashboard();
     }
 }
+/**
+ * Validate email format
+ */
+function isValidEmail(email) {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailRegex.test(email);
+}
 
 /**
  * Toggle between signup and signin views
@@ -261,6 +208,70 @@ function toggleAuthView(view) {
     }
 }
 
+
+/**
+ * Setup authentication event listeners
+ */
+function setupAuthListeners() {
+    // Sign Up Form
+    const signupForm = document.getElementById('signupForm');
+    if (signupForm) {
+        signupForm.addEventListener('submit', handleSignup);
+    }
+    
+    // Sign In Form
+    const signinForm = document.getElementById('signinForm');
+    if (signinForm) {
+        signinForm.addEventListener('submit', handleSignin);
+    }
+    
+    // Toggle between signup and signin
+    const showSigninBtn = document.getElementById('showSignin');
+    if (showSigninBtn) {
+        showSigninBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            toggleAuthView('signin');
+        });
+    }
+    
+    const showSignupBtn = document.getElementById('showSignup');
+    if (showSignupBtn) {
+        showSignupBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            toggleAuthView('signup');
+        });
+    }
+    
+    // Logout button
+    const logoutBtn = document.getElementById('logoutBtn');
+    if (logoutBtn) {
+        logoutBtn.addEventListener('click', handleLogout);
+    }
+}
+
+
+/**
+ * Initialize authentication system
+ */
+function initAuth() {
+    console.log('🔐 Initializing Firebase authentication...');
+    
+    // Firebase auth state listener
+    firebase.auth().onAuthStateChanged((user) => {
+        if (user) {
+            // User is signed in
+            console.log('✅ User logged in:', user.email);
+            showDashboard();
+        } else {
+            // User is signed out
+            console.log('🔒 User logged out');
+            showAuth();
+        }
+    });
+    
+    // Setup event listeners
+    setupAuthListeners();
+}
 
 // Initialize auth when DOM is ready
 if (document.readyState === 'loading') {
