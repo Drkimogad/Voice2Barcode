@@ -258,16 +258,21 @@ function updateRecordingTimer() {
 
 async function generateQRFromAudio(audioBlob) {
     try {
+                console.log('🎯 generateQRFromAudio called - Blob size:', audioBlob.size);
+
         // === ADD AT THE VERY BEGINNING ===
         toggleLoading(true, 'Validating audio quality...');
         if (!await validateAudioQuality(audioBlob)) {
             throw new Error('Audio quality check failed');
         }
-        
+
+                console.log('🔄 Starting QR generation...');
         toggleLoading(true, 'Generating QR code...');
         
         // Convert to base64
         const base64Audio = await blobToBase64(audioBlob);
+                console.log('📊 Base64 data length:', base64Audio.length);
+
         
         // Create QR data
         const qrData = {
@@ -277,25 +282,29 @@ async function generateQRFromAudio(audioBlob) {
             timestamp: getTimestamp(),
             duration: Math.floor((Date.now() - recordingStartTime) / 1000)
         };
-        
+                console.log('📦 QR data size:', JSON.stringify(qrData).length, 'characters');
+
         // Store for download
         lastQRData = qrData;
         
         // Generate QR code
         const canvas = document.getElementById('qrcode');
+                console.log('🎨 Generating QR canvas...');
+
         await QRCode.toCanvas(canvas, JSON.stringify(qrData), {
             width: DASHBOARD_CONFIG.QR_SIZE,
             errorCorrectionLevel: DASHBOARD_CONFIG.QR_ERROR_CORRECTION
         });
-        
+
+                console.log('✅ QR code generated successfully!');
         // Enable download button
         document.getElementById('downloadQRCodeBtn').disabled = false;
         
         updateStatus('QR code generated successfully!', 'success');
         
 } catch (error) {
+                console.error('❌ QR generation error:', error);
     handleError('QR generation failed', error);
-    
     // === ADD FALLBACK RIGHT HERE ===
     updateStatus('Audio too large for QR - Use Upload mode instead', 'warning');
     
