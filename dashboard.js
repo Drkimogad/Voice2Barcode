@@ -275,13 +275,11 @@ async function generateQRFromAudio(audioBlob) {
 
         
         // Create QR data
-        const qrData = {
-            type: 'audio',
-            data: base64Audio,
-            mimeType: audioBlob.type,
-            timestamp: getTimestamp(),
-            duration: Math.floor((Date.now() - recordingStartTime) / 1000)
-        };
+const qrData = {
+    t: 'audio',          // type
+    d: base64Audio,      // data  
+    l: Math.floor((Date.now() - recordingStartTime) / 1000) // length
+};
                 console.log('📦 QR data size:', JSON.stringify(qrData).length, 'characters');
 
         // Store for download
