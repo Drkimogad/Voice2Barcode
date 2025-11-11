@@ -259,6 +259,43 @@ async function generateQRFromUrl(url) {
 // TEXT MODE
 // ========================================
 
+// ========================================
+// FIRESTORE FUNCTIONS
+// ========================================
+
+/**
+ * Save message to Firestore and return document ID
+ * @param {object} messageData - Message data to save
+ * @returns {string} Document ID
+ */
+async function saveMessageToFirestore(messageData) {
+    try {
+        const db = firebase.firestore();
+        const user = firebase.auth().currentUser;
+        
+        if (!user) {
+            throw new Error('User must be logged in to save messages');
+        }
+        
+        const docRef = await db.collection('messages').add({
+            type: messageData.type,
+            content: messageData.content,
+            theme: messageData.theme,
+            title: messageData.title,
+            createdBy: user.uid,
+            createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+            views: 0
+        });
+        
+        console.log('✅ Message saved to Firestore with ID:', docRef.id);
+        return docRef.id;
+        
+    } catch (error) {
+        console.error('❌ Error saving to Firestore:', error);
+        throw error;
+    }
+}
+
 function initTextMode() {
     const convertBtn = document.getElementById('textConvertBtn');
     convertBtn.onclick = handleTextConversion;
@@ -277,31 +314,45 @@ async function handleTextConversion() {
             return;
         }
         
-        // Generate QR code
-        await generateQRFromText(text);
+        // Detect theme and title
+        const themeData = detectThemeAndTitle('text', text);
+        
+        // Save to Firestore and get document ID
+        const messageData = {
+            type: 'text',
+            content: text,
+            theme: themeData.theme,
+            title: themeData.title
+        };
+        
+        const documentId = await saveMessageToFirestore(messageData);
+        
+        // Generate QR code with domain URL
+        await generateQRFromDocumentId(documentId);
         
     } catch (error) {
         handleError('Text conversion failed', error);
     }
 }
 
-async function generateQRFromText(text) {
+// Replace the old generateQRFromText function
+async function generateQRFromDocumentId(documentId) {
     try {
         toggleLoading(true, 'Generating QR code...');
         
-        // Create QR data
-        const qrData = {
-            type: 'text',
-            data: text,
+        // Create URL for your domain - we'll use memoryinqr.com for now
+        const qrContent = `https://memoryinqr.com/view.html?id=${documentId}`;
+        
+        // Store document ID for download reference
+        lastQRData = {
+            documentId: documentId,
+            type: 'firestore',
             timestamp: getTimestamp()
         };
         
-        // Store for download
-        lastQRData = qrData;
-        
-        // Generate QR code
+        // Generate QR code with the URL
         const canvas = document.getElementById('qrcode');
-        await QRCode.toCanvas(canvas, JSON.stringify(qrData), {
+        await QRCode.toCanvas(canvas, qrContent, {
             width: DASHBOARD_CONFIG.QR_SIZE,
             errorCorrectionLevel: DASHBOARD_CONFIG.QR_ERROR_CORRECTION
         });
@@ -317,6 +368,222 @@ async function generateQRFromText(text) {
         toggleLoading(false);
     }
 }
+
+// ========================================
+// TEXT MODE - MODIFIED FOR FIRESTORE
+// ========================================
+
+async function handleTextConversion() {
+    try {
+        const text = document.getElementById('textToConvert').value.trim();      
+        if (!text) {
+            updateStatus('Please enter some text', 'error');
+            return;
+        }
+        
+        if (text.length > DASHBOARD_CONFIG.MAX_TEXT_LENGTH) {
+            updateStatus(`Text too long (max ${DASHBOARD_CONFIG.MAX_TEXT_LENGTH} characters)`, 'error');
+            return;
+        }
+        
+        // Detect theme and title
+        const themeData = detectThemeAndTitle('text', text);
+        
+        // Save to Firestore and get document ID
+        const messageData = {
+            type: 'text',
+            content: text,
+            theme: themeData.theme,
+            title: themeData.title
+        };
+        
+        const documentId = await saveMessageToFirestore(messageData);
+        
+        // Generate QR code with domain URL
+        await generateQRFromDocumentId(documentId);
+        
+    } catch (error) {
+        handleError('Text conversion failed', error);
+    }
+}
+
+// Replace the old generateQRFromText function
+async function generateQRFromDocumentId(documentId) {
+    try {
+        toggleLoading(true, 'Generating QR code...');
+        
+        // Create URL for your domain - we'll use memoryinqr.com for now
+        const qrContent = `https://memoryinqr.com/view.html?id=${documentId}`;
+        
+        // Store document ID for download reference
+        lastQRData = {
+            documentId: documentId,
+            type: 'firestore',
+            timestamp: getTimestamp()
+        };
+        
+        // Generate QR code with the URL
+        const canvas = document.getElementById('qrcode');
+        await QRCode.toCanvas(canvas, qrContent, {
+            width: DASHBOARD_CONFIG.QR_SIZE,
+            errorCorrectionLevel: DASHBOARD_CONFIG.QR_ERROR_CORRECTION
+        });
+        
+        // Enable download button
+        document.getElementById('downloadQRCodeBtn').disabled = false;
+        
+        updateStatus('QR code generated successfully!', 'success');
+        
+    } catch (error) {
+        handleError('QR generation failed', error);
+    } finally {
+        toggleLoading(false);
+    }
+}
+
+// Helper function to detect theme and title
+/**
+ * Detect theme and title based on content (full implementation)
+ * @param {string} type - Content type ('text' or 'url')
+ * @param {string} content - The actual content
+ * @returns {object} theme and title
+ */
+function detectThemeAndTitle(type, content) {
+    const contentLower = content.toLowerCase();
+    let theme = 'default';
+    let title = 'Memory Card';
+    
+    if (type === 'text') {
+        // 🎂 BIRTHDAY & CELEBRATIONS
+        if (contentLower.includes('birthday') || contentLower.includes('happy birthday') || 
+            contentLower.includes('bday') || contentLower.match(/\b\d{1,2}\s?(year|yr)s? old\b/)) {
+            theme = 'birthday';
+            title = 'Birthday Wishes';
+        }
+        // 💍 WEDDING & MARRIAGE
+        else if (contentLower.includes('wedding') || contentLower.includes('marriage') || 
+                 contentLower.includes('married') || contentLower.includes('honeymoon') ||
+                 contentLower.includes('bridal') || contentLower.includes('groom') ||
+                 contentLower.includes('bride') || contentLower.includes('matrimony')) {
+            theme = 'wedding';
+            title = 'Wedding Celebration';
+        }
+        // 💑 ENGAGEMENT
+        else if (contentLower.includes('engagement') || contentLower.includes('engaged') || 
+                 contentLower.includes('proposal') || contentLower.includes('ring')) {
+            theme = 'engagement';
+            title = 'Engagement';
+        }
+        // 👶 BABY & PREGNANCY
+        else if (contentLower.includes('baby') || contentLower.includes('pregnancy') || 
+                 contentLower.includes('pregnant') || contentLower.includes('newborn') ||
+                 contentLower.includes('shower') || contentLower.includes('gender reveal') ||
+                 contentLower.includes('due date') || contentLower.includes('maternity')) {
+            theme = 'baby';
+            title = 'Baby Celebration';
+        }
+        // 🎓 GRADUATION & EDUCATION
+        else if (contentLower.includes('graduation') || contentLower.includes('graduate') || 
+                 contentLower.includes('diploma') || contentLower.includes('degree') ||
+                 contentLower.includes('congratulations grad') || contentLower.includes('alumni') ||
+                 contentLower.includes('passed') || contentLower.includes('exam')) {
+            theme = 'graduation';
+            title = 'Graduation';
+        }
+        // 🏠 NEW HOME & RELOCATION
+        else if (contentLower.includes('new home') || contentLower.includes('new house') || 
+                 contentLower.includes('relocation') || contentLower.includes('moving') ||
+                 contentLower.includes('housewarming') || contentLower.includes('new place') ||
+                 contentLower.includes('address change') || contentLower.includes('neighborhood')) {
+            theme = 'newhome';
+            title = 'New Home';
+        }
+        // 💼 NEW JOB & CAREER
+        else if (contentLower.includes('new job') || contentLower.includes('promotion') || 
+                 contentLower.includes('congratulations on the job') || contentLower.includes('career') ||
+                 contentLower.includes('hired') || contentLower.includes('interview') ||
+                 contentLower.includes('offer letter') || contentLower.includes('first day')) {
+            theme = 'newjob';
+            title = 'New Job';
+        }
+        // 💝 ANNIVERSARY
+        else if (contentLower.includes('anniversary') || contentLower.includes('years together') || 
+                 contentLower.match(/\b\d{1,2}\s?(year|yr)s?\s?(together|anniversary)\b/)) {
+            theme = 'anniversary';
+            title = 'Anniversary';
+        }
+        // ❤️ LOVE & ROMANCE
+        else if (contentLower.includes('love you') || contentLower.includes('miss you') || 
+                 contentLower.includes('thinking of you') || contentLower.includes('my heart') ||
+                 contentLower.includes('soulmate') || contentLower.includes('valentine')) {
+            theme = 'love';
+            title = 'Love Message';
+        }
+        // 🙏 GRATITUDE & THANKS
+        else if (contentLower.includes('thank you') || contentLower.includes('thanks') || 
+                 contentLower.includes('grateful') || contentLower.includes('appreciate')) {
+            theme = 'gratitude';
+            title = 'Thank You';
+        }
+    } else if (type === 'url') {
+        theme = 'website';
+        title = 'Website Link';
+    }
+    
+    return { theme, title };
+}
+
+
+// ========================================
+// LINKS MODE - MODIFIED FOR FIRESTORE
+// ========================================
+
+/**
+ * Handle URL to QR conversion (Firestore version)
+ */
+async function handleLinkConversion() {
+    try {
+        const urlInput = document.getElementById('urlInput');
+        const url = urlInput.value.trim();
+        
+        if (!url) {
+            updateStatus('Please enter a website URL', 'error');
+            urlInput.focus();
+            return;
+        }
+        
+        if (!isValidUrl(url)) {
+            updateStatus('Please enter a valid website URL', 'error');
+            urlInput.focus();
+            return;
+        }
+        
+        // Ensure URL has protocol
+        const fullUrl = url.startsWith('http') ? url : `https://${url}`;
+        
+        // Detect theme and title for URL
+        const themeData = detectThemeAndTitle('url', fullUrl);
+        
+        // Save to Firestore and get document ID
+        const messageData = {
+            type: 'url',
+            content: fullUrl,
+            theme: themeData.theme,
+            title: themeData.title
+        };
+        
+        const documentId = await saveMessageToFirestore(messageData);
+        
+        // Generate QR code with domain URL
+        await generateQRFromDocumentId(documentId);
+        
+    } catch (error) {
+        handleError('URL conversion failed', error);
+    }
+}
+
+// Remove the old generateQRFromUrl function since we're using generateQRFromDocumentId now
+
 
 // ========================================
 // UPLOAD MODE
