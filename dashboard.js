@@ -96,10 +96,7 @@ function switchToMode(mode) {
  * Cleanup mode resources
  */
 function cleanupMode() {
-    // Stop recording if active
-    if (mediaRecorder && mediaRecorder.state === 'recording') {
-        mediaRecorder.stop();
-    }
+
     
     // Stop timer
     if (recordingTimer) {
