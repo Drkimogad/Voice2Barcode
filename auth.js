@@ -130,7 +130,7 @@ async function handleSignin(e) {
         const password = document.getElementById('signinPassword').value;
         
         // Validation
-        if (!username || !password) {
+        if (!email || !password) {
             throw new Error('All fields are required');
         }
         // REPLACE localStorage check with Firebase Auth
