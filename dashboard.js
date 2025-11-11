@@ -1,7 +1,6 @@
 // ========================================
 // DASHBOARD MODULE
 // ========================================
-
 const DASHBOARD_CONFIG = {
     MAX_TEXT_LENGTH: 200,
     QR_SIZE: 300,
