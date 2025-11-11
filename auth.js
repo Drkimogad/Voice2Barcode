@@ -1,219 +1,33 @@
 // ========================================
-// AUTHENTICATION MODULE - PRODUCTION READY
+// AUTHENTICATION MODULE
 // ========================================
 
 const AUTH_CONFIG = {
     TOKEN_KEY: 'authToken',
-    USER_KEY: 'currentUser'
+    USER_KEY: 'currentUser',
+    USERS_KEY: 'registeredUsers'
 };
 
-// Debug state tracking
-let authDebug = {
-    initCalled: false,
-    authStateChangedFired: false,
-    showDashboardCalled: false,
-    showAuthCalled: false
-};
-
-
-
-
 /**
- * Handle user signup with Firebase
+ * Initialize authentication system
  */
-async function handleSignup(e) {
-    e.preventDefault();
+function initAuth() {
+    console.log('🔐 Initializing authentication...');
     
-    const errorDisplay = document.getElementById('signupError');
-    errorDisplay.textContent = '';
+    // Check if user is already authenticated
+    const token = localStorage.getItem(AUTH_CONFIG.TOKEN_KEY);
     
-    try {
-        const email = document.getElementById('signupEmail').value.trim();
-        const password = document.getElementById('signupPassword').value;
-        
-        // Validation
-        if (!email || !password) {
-            throw new Error('All fields are required');
-        }
-        
-        if (!isValidEmail(email)) {
-            throw new Error('Please enter a valid email address');
-        }
-        
-        if (password.length < 6) {
-            throw new Error('Password must be at least 6 characters');
-        }
-        
-        // Create user with Firebase Auth
-        const userCredential = await firebase.auth().createUserWithEmailAndPassword(email, password);
-        console.log('✅ User registered:', email);
-        
-        // Clear form and show success
-        document.getElementById('signupForm').reset();
-        updateStatus('Account created successfully!', 'success');
-        
-    } catch (error) {
-        console.error('Signup error:', error);
-        errorDisplay.textContent = error.message;
-    }
-}
-
-/**
- * Handle user signin with Firebase
- */
-async function handleSignin(e) {
-    e.preventDefault();
-    
-    const errorDisplay = document.getElementById('signinError');
-    errorDisplay.textContent = '';
-    
-    try {
-        const email = document.getElementById('signinEmail').value.trim();
-        const password = document.getElementById('signinPassword').value;
-        
-        if (!email || !password) {
-            throw new Error('All fields are required');
-        }
-        
-        // Sign in with Firebase Auth
-        const userCredential = await firebase.auth().signInWithEmailAndPassword(email, password);
-        console.log('✅ User logged in:', email);
-        
-        // Clear form
-        document.getElementById('signinForm').reset();
-        updateStatus('Welcome back!', 'success');
-        
-    } catch (error) {
-        console.error('Signin error:', error);
-        errorDisplay.textContent = error.message;
-        document.getElementById('signinPassword').value = '';
-    }
-}
-
-/**
- * Handle user logout
- */
-async function handleLogout() {
-    try {
-        await firebase.auth().signOut();
-        console.log('✅ User logged out');
-        updateStatus('Logged out successfully', 'success');
-    } catch (error) {
-        console.error('Logout error:', error);
-        updateStatus('Logout failed', 'error');
-    }
-}
-
-/**
- * Get current logged in user
- */
-function getCurrentUser() {
-    return firebase.auth().currentUser;
-}
-
-/**
- * Check if user is authenticated
- */
-function isAuthenticated() {
-    return !!firebase.auth().currentUser;
-}
-
-/**
- * Show authentication section
- */
-/**
- * Enhanced showAuth with comprehensive checks
- */
-function showAuth() {
-    console.group('🔑 SHOW AUTH');
-    authDebug.showAuthCalled = true;
-    
-    document.getElementById('authSection').style.display = 'block';
-    document.getElementById('dashboardSection').style.display = 'none';
-    document.getElementById('infoBanner').style.display = 'block';
-    
-    // Verify auth elements
-    const authEl = document.getElementById('authSection');
-    console.log('🎯 Auth Element:', authEl);
-    console.log('👀 Auth Display:', authEl.style.display);
-    
-    toggleAuthView('signup');
-    console.groupEnd();
-}
-
-
-/**
- * Show dashboard section
- */
-/**
- * Enhanced showDashboard with layout debugging
- */
-function showDashboard() {
-    console.group('📊 SHOW DASHBOARD');
-    authDebug.showDashboardCalled = true;
-    
-    // Hide auth, show dashboard
-    document.getElementById('authSection').style.display = 'none';
-    document.getElementById('dashboardSection').style.display = 'block';
-    document.getElementById('infoBanner').style.display = 'none';
-    
-    // Verify DOM elements exist
-    const dashboardEl = document.getElementById('dashboardSection');
-    console.log('🎯 Dashboard Element:', dashboardEl);
-    console.log('👀 Dashboard Display:', dashboardEl.style.display);
-    console.log('📏 Dashboard Dimensions:', dashboardEl.offsetWidth, 'x', dashboardEl.offsetHeight);
-    
-    // Check for links section specifically
-    const linksSection = document.querySelector('[data-section="links"]');
-    console.log('🔗 Links Section:', linksSection);
-    console.log('👀 Links Display:', linksSection?.style.display);
-    console.log('📏 Links Dimensions:', linksSection?.offsetWidth, 'x', linksSection?.offsetHeight);
-    
-    // Initialize dashboard with error handling
-    if (typeof initDashboard === 'function') {
-        console.log('🚀 Initializing dashboard...');
-        try {
-            initDashboard();
-            console.log('✅ Dashboard initialized successfully');
-        } catch (error) {
-            console.error('❌ Dashboard initialization failed:', error);
-        }
+    if (token) {
+        // User is logged in, show dashboard
+        showDashboard();
     } else {
-        console.error('❌ initDashboard function not found!');
+        // User not logged in, show auth section
+        showAuth();
     }
     
-    console.groupEnd();
+    // Setup event listeners
+    setupAuthListeners();
 }
-
-/**
- * Validate email format
- */
-function isValidEmail(email) {
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    return emailRegex.test(email);
-}
-
-/**
- * Toggle between signup and signin views
- * @param {string} view - 'signup' or 'signin'
- */
-function toggleAuthView(view) {
-    const signupContainer = document.getElementById('signupContainer');
-    const signinContainer = document.getElementById('signinContainer');
-    
-    if (view === 'signup') {
-        signupContainer.style.display = 'block';
-        signinContainer.style.display = 'none';
-        // Clear errors
-        document.getElementById('signupError').textContent = '';
-    } else {
-        signupContainer.style.display = 'none';
-        signinContainer.style.display = 'block';
-        // Clear errors
-        document.getElementById('signinError').textContent = '';
-    }
-}
-
 
 /**
  * Setup authentication event listeners
@@ -255,68 +69,247 @@ function setupAuthListeners() {
     }
 }
 
-
 /**
- * Enhanced initialization with comprehensive logging
+ * Handle user signup
+ * @param {Event} e - Form submit event
  */
-function initAuth() {
-    console.group('🔐 AUTH INITIALIZATION');
-    console.log('📋 DOM Ready State:', document.readyState);
-    console.log('🏗️ Firebase App:', typeof firebase !== 'undefined' ? 'Loaded' : 'MISSING');
-    console.log('🔑 Firebase Auth:', typeof firebase.auth !== 'undefined' ? 'Loaded' : 'MISSING');
+function handleSignup(e) {
+    e.preventDefault();
     
-    authDebug.initCalled = true;
-
-    // Firebase auth state listener with enhanced logging
-    firebase.auth().onAuthStateChanged((user) => {
-        console.group('🔄 AUTH STATE CHANGE');
-        console.log('👤 User Object:', user);
-        console.log('📧 User Email:', user?.email);
-        console.log('🆔 User UID:', user?.uid);
+    const errorDisplay = document.getElementById('signupError');
+    errorDisplay.textContent = '';
+    
+    try {
+        // Get form values
+        const username = document.getElementById('signupUsername').value.trim();
+        const email = document.getElementById('signupEmail').value.trim();
+        const password = document.getElementById('signupPassword').value;
         
-        authDebug.authStateChangedFired = true;
-
-        if (user) {
-            console.log('✅ AUTHENTICATED - Showing dashboard');
-            showDashboard();
-        } else {
-            console.log('🔒 NOT AUTHENTICATED - Showing auth form');
-            showAuth();
+        // Validation
+        if (!username || !email || !password) {
+            throw new Error('All fields are required');
         }
-        console.groupEnd();
-    });
-
-    setupAuthListeners();
-    console.groupEnd();
+        
+        if (username.length < 3) {
+            throw new Error('Username must be at least 3 characters');
+        }
+        
+        if (!isValidEmail(email)) {
+            throw new Error('Please enter a valid email address');
+        }
+        
+        if (password.length < 6) {
+            throw new Error('Password must be at least 6 characters');
+        }
+        
+        // Get existing users
+        const users = getRegisteredUsers();
+        
+        // Check if username already exists
+        if (users.find(u => u.username === username)) {
+            throw new Error('Username already exists');
+        }
+        
+        // Check if email already exists
+        if (users.find(u => u.email === email)) {
+            throw new Error('Email already registered');
+        }
+        
+        // Create new user
+        const newUser = {
+            id: generateId(),
+            username,
+            email,
+            password, // In production, this should be hashed!
+            createdAt: getTimestamp()
+        };
+        
+        // Save user
+        users.push(newUser);
+        localStorage.setItem(AUTH_CONFIG.USERS_KEY, JSON.stringify(users));
+        
+        // Clear form
+        document.getElementById('signupForm').reset();
+        
+        // Show success and switch to signin
+        updateStatus('Account created successfully! Please sign in.', 'success');
+        setTimeout(() => toggleAuthView('signin'), 1500);
+        
+        console.log('✅ User registered:', username);
+        
+    } catch (error) {
+        errorDisplay.textContent = error.message;
+        console.error('Signup error:', error);
+    }
 }
-
 
 /**
- * Debug function to check current state
+ * Handle user signin
+ * @param {Event} e - Form submit event
  */
-function debugAuthState() {
-    console.group('🐛 AUTH DEBUG REPORT');
-    console.log('🔧 Init Called:', authDebug.initCalled);
-    console.log('🔄 Auth State Changed:', authDebug.authStateChangedFired);
-    console.log('📊 Show Dashboard Called:', authDebug.showDashboardCalled);
-    console.log('🔑 Show Auth Called:', authDebug.showAuthCalled);
-    console.log('👤 Current User:', getCurrentUser());
-    console.log('🔐 Is Authenticated:', isAuthenticated());
-    console.log('🏗️ Dashboard Element Display:', document.getElementById('dashboardSection')?.style.display);
-    console.log('🔗 Links Section Display:', document.querySelector('[data-section="links"]')?.style.display);
-    console.groupEnd();
+function handleSignin(e) {
+    e.preventDefault();
+    
+    const errorDisplay = document.getElementById('signinError');
+    errorDisplay.textContent = '';
+    
+    try {
+        // Get form values
+        const username = document.getElementById('signinUsername').value.trim();
+        const password = document.getElementById('signinPassword').value;
+        
+        // Validation
+        if (!username || !password) {
+            throw new Error('All fields are required');
+        }
+        
+        // Get registered users
+        const users = getRegisteredUsers();
+        
+        // Find user
+        const user = users.find(u => u.username === username && u.password === password);
+        
+        if (!user) {
+            throw new Error('Invalid username or password');
+        }
+        
+        // Create session
+        const token = generateToken(user);
+        localStorage.setItem(AUTH_CONFIG.TOKEN_KEY, token);
+        localStorage.setItem(AUTH_CONFIG.USER_KEY, JSON.stringify({
+            id: user.id,
+            username: user.username,
+            email: user.email
+        }));
+        
+        // Clear form
+        document.getElementById('signinForm').reset();
+        
+        // Show dashboard
+        updateStatus('Welcome back, ' + user.username + '!', 'success');
+        showDashboard();
+        
+        console.log('✅ User logged in:', username);
+        
+    } catch (error) {
+        errorDisplay.textContent = error.message;
+        document.getElementById('signinPassword').value = '';
+        console.error('Signin error:', error);
+    }
 }
 
-// Enhanced DOM ready check
+/**
+ * Handle user logout
+ */
+function handleLogout() {
+    try {
+        // Clear session
+        localStorage.removeItem(AUTH_CONFIG.TOKEN_KEY);
+        localStorage.removeItem(AUTH_CONFIG.USER_KEY);
+        
+        // Show auth section
+        showAuth();
+        
+        updateStatus('Logged out successfully', 'success');
+        console.log('✅ User logged out');
+        
+    } catch (error) {
+        console.error('Logout error:', error);
+        updateStatus('Logout failed', 'error');
+    }
+}
+
+/**
+ * Generate authentication token
+ * @param {object} user - User object
+ * @returns {string} Token
+ */
+function generateToken(user) {
+    return btoa(JSON.stringify({
+        userId: user.id,
+        username: user.username,
+        timestamp: Date.now()
+    }));
+}
+
+/**
+ * Get registered users from localStorage
+ * @returns {Array} Array of user objects
+ */
+function getRegisteredUsers() {
+    const usersJson = localStorage.getItem(AUTH_CONFIG.USERS_KEY);
+    return usersJson ? JSON.parse(usersJson) : [];
+}
+
+/**
+ * Get current logged in user
+ * @returns {object|null} User object or null
+ */
+function getCurrentUser() {
+    const userJson = localStorage.getItem(AUTH_CONFIG.USER_KEY);
+    return userJson ? JSON.parse(userJson) : null;
+}
+
+/**
+ * Check if user is authenticated
+ * @returns {boolean} True if authenticated
+ */
+function isAuthenticated() {
+    return !!localStorage.getItem(AUTH_CONFIG.TOKEN_KEY);
+}
+
+/**
+ * Show authentication section
+ */
+function showAuth() {
+    document.getElementById('authSection').style.display = 'block';
+    document.getElementById('dashboardSection').style.display = 'none';
+    document.getElementById('infoBanner').style.display = 'block';
+    
+    // Show signup by default
+    toggleAuthView('signup');
+}
+
+/**
+ * Show dashboard section
+ */
+function showDashboard() {
+    document.getElementById('authSection').style.display = 'none';
+    document.getElementById('dashboardSection').style.display = 'block';
+    document.getElementById('infoBanner').style.display = 'none';
+    
+    // Initialize dashboard if function exists
+    if (typeof initDashboard === 'function') {
+        initDashboard();
+    }
+}
+
+/**
+ * Toggle between signup and signin views
+ * @param {string} view - 'signup' or 'signin'
+ */
+function toggleAuthView(view) {
+    const signupContainer = document.getElementById('signupContainer');
+    const signinContainer = document.getElementById('signinContainer');
+    
+    if (view === 'signup') {
+        signupContainer.style.display = 'block';
+        signinContainer.style.display = 'none';
+        // Clear errors
+        document.getElementById('signupError').textContent = '';
+    } else {
+        signupContainer.style.display = 'none';
+        signinContainer.style.display = 'block';
+        // Clear errors
+        document.getElementById('signinError').textContent = '';
+    }
+}
+
+// Initialize auth when DOM is ready
 if (document.readyState === 'loading') {
-    console.log('⏳ DOM Loading - Waiting for DOMContentLoaded');
-    document.addEventListener('DOMContentLoaded', () => {
-        console.log('🎉 DOM Content Loaded - Initializing Auth');
-        initAuth();
-    });
+    document.addEventListener('DOMContentLoaded', initAuth);
 } else {
-    console.log('⚡ DOM Ready - Initializing Auth Immediately');
     initAuth();
 }
 
-console.log('✅ Firebase Auth.js loaded successfully');
+console.log('✅ Auth.js loaded successfully');
