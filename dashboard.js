@@ -831,6 +831,11 @@ function formatCardDate(date) {
  * @param {string} type - Content type ('text' or 'url')
  * @param {string} content - The actual content
  */
+/**
+ * Apply visual theme to card based on content
+ * @param {string} type - Content type ('text' or 'url')
+ * @param {string} content - The actual content
+ */
 function applyCardTheme(type, content) {
     const card = document.getElementById('qrCard');
     
@@ -839,18 +844,68 @@ function applyCardTheme(type, content) {
     
     // Default theme
     let theme = 'default';
-    
-    // Detect content type for themes
     const contentLower = content.toLowerCase();
     
     if (type === 'text') {
-        if (contentLower.includes('birthday') || contentLower.includes('happy')) {
+        // 🎂 BIRTHDAY & CELEBRATIONS
+        if (contentLower.includes('birthday') || contentLower.includes('happy birthday') || 
+            contentLower.includes('bday') || contentLower.match(/\b\d{1,2}\s?(year|yr)s? old\b/)) {
             theme = 'birthday';
-        } else if (contentLower.includes('anniversary') || contentLower.includes('congrat')) {
+        }
+        // 💍 WEDDING & MARRIAGE
+        else if (contentLower.includes('wedding') || contentLower.includes('marriage') || 
+                 contentLower.includes('married') || contentLower.includes('honeymoon') ||
+                 contentLower.includes('bridal') || contentLower.includes('groom') ||
+                 contentLower.includes('bride') || contentLower.includes('matrimony')) {
+            theme = 'wedding';
+        }
+        // 💑 ENGAGEMENT
+        else if (contentLower.includes('engagement') || contentLower.includes('engaged') || 
+                 contentLower.includes('proposal') || contentLower.includes('ring')) {
+            theme = 'engagement';
+        }
+        // 👶 BABY & PREGNANCY
+        else if (contentLower.includes('baby') || contentLower.includes('pregnancy') || 
+                 contentLower.includes('pregnant') || contentLower.includes('newborn') ||
+                 contentLower.includes('shower') || contentLower.includes('gender reveal') ||
+                 contentLower.includes('due date') || contentLower.includes('maternity')) {
+            theme = 'baby';
+        }
+        // 🎓 GRADUATION & EDUCATION
+        else if (contentLower.includes('graduation') || contentLower.includes('graduate') || 
+                 contentLower.includes('diploma') || contentLower.includes('degree') ||
+                 contentLower.includes('congratulations grad') || contentLower.includes('alumni') ||
+                 contentLower.includes('passed') || contentLower.includes('exam')) {
+            theme = 'graduation';
+        }
+        // 🏠 NEW HOME & RELOCATION
+        else if (contentLower.includes('new home') || contentLower.includes('new house') || 
+                 contentLower.includes('relocation') || contentLower.includes('moving') ||
+                 contentLower.includes('housewarming') || contentLower.includes('new place') ||
+                 contentLower.includes('address change') || contentLower.includes('neighborhood')) {
+            theme = 'newhome';
+        }
+        // 💼 NEW JOB & CAREER
+        else if (contentLower.includes('new job') || contentLower.includes('promotion') || 
+                 contentLower.includes('congratulations on the job') || contentLower.includes('career') ||
+                 contentLower.includes('hired') || contentLower.includes('interview') ||
+                 contentLower.includes('offer letter') || contentLower.includes('first day')) {
+            theme = 'newjob';
+        }
+        // 💝 ANNIVERSARY
+        else if (contentLower.includes('anniversary') || contentLower.includes('years together') || 
+                 contentLower.match(/\b\d{1,2}\s?(year|yr)s?\s?(together|anniversary)\b/)) {
             theme = 'anniversary';
-        } else if (contentLower.includes('love') || contentLower.includes('miss you')) {
+        }
+        // ❤️ LOVE & ROMANCE
+        else if (contentLower.includes('love you') || contentLower.includes('miss you') || 
+                 contentLower.includes('thinking of you') || contentLower.includes('my heart') ||
+                 contentLower.includes('soulmate') || contentLower.includes('valentine')) {
             theme = 'love';
-        } else if (contentLower.includes('thank')) {
+        }
+        // 🙏 GRATITUDE & THANKS
+        else if (contentLower.includes('thank you') || contentLower.includes('thanks') || 
+                 contentLower.includes('grateful') || contentLower.includes('appreciate')) {
             theme = 'gratitude';
         }
     } else if (type === 'url') {
@@ -859,7 +914,41 @@ function applyCardTheme(type, content) {
     
     // Apply theme class
     card.classList.add(`card-theme-${theme}`);
+    
+    // Update card icon and title based on theme
+    updateCardHeader(theme);
 }
+
+/**
+ * Update card icon and title based on theme
+ * @param {string} theme - Detected theme
+ */
+function updateCardHeader(theme) {
+    const cardIcon = document.querySelector('.card-icon');
+    const cardTitle = document.querySelector('.card-title');
+    
+    const themeConfig = {
+        birthday: { icon: '🎂', title: 'Birthday Wishes' },
+        wedding: { icon: '💒', title: 'Wedding Celebration' },
+        engagement: { icon: '💍', title: 'Engagement' },
+        baby: { icon: '👶', title: 'Baby Celebration' },
+        graduation: { icon: '🎓', title: 'Graduation' },
+        newhome: { icon: '🏠', title: 'New Home' },
+        newjob: { icon: '💼', title: 'New Job' },
+        anniversary: { icon: '💝', title: 'Anniversary' },
+        love: { icon: '❤️', title: 'Love Message' },
+        gratitude: { icon: '🙏', title: 'Thank You' },
+        website: { icon: '🌐', title: 'Website Link' },
+        default: { icon: '🎁', title: 'Memory Card' }
+    };
+    
+    const config = themeConfig[theme] || themeConfig.default;
+    cardIcon.textContent = config.icon;
+    cardTitle.textContent = config.title;
+}
+
+
+
 
 /**
  * Setup print card functionality
@@ -869,15 +958,6 @@ function setupPrintButton() {
     printBtn.onclick = printCard;
 }
 
-/**
- * Print the card
- */
-/**
- * Print the card
- */
-/**
- * Print the card - CLEAN VERSION WITHOUT QR CODE
- */
 /**
  * Print the card - WITH DYNAMIC TITLES
  */
