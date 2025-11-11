@@ -23,7 +23,7 @@ function initDashboard() {
     setupModeSwitching();
     
     // Initialize text mode by default
-    switchToMode('text');
+    switchToMode('links');
     
     // Setup global handlers
     setupGlobalHandlers();
