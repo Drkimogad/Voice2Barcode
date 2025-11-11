@@ -273,6 +273,62 @@
         } else {
             loadMessage(messageId);
         }
+            // Add this after Firebase initialization
+console.log('🔍 Checking Firebase access...');
+
+// Test Firestore connection
+async function testFirestore() {
+    try {
+        const db = firebase.firestore();
+        // Try to read a test document
+        const testDoc = await db.collection('messages').doc('test').get();
+        console.log('✅ Firestore connection successful');
+        return true;
+    } catch (error) {
+        console.error('❌ Firestore connection failed:', error);
+        return false;
+    }
+}
+
+// Update your loadMessage function to handle permissions
+async function loadMessage(messageId) {
+    try {
+        console.log('📥 Loading message:', messageId);
+        
+        const db = firebase.firestore();
+        const docRef = db.collection('messages').doc(messageId);
+        const doc = await docRef.get();
+        
+        if (!doc.exists) {
+            showError('Message not found or no longer available');
+            return;
+        }
+        
+        const messageData = doc.data();
+        console.log('✅ Message loaded:', messageData);
+        displayMessage(messageData);
+        
+        // Try to update views (might fail without auth, that's OK)
+        try {
+            await docRef.update({
+                views: firebase.firestore.FieldValue.increment(1)
+            });
+        } catch (viewsError) {
+            console.log('⚠️ Could not update views (normal for public access)');
+        }
+        
+    } catch (error) {
+        console.error('❌ Error loading message:', error);
+        
+        if (error.code === 'permission-denied') {
+            showError('Access denied. Please check Firestore rules.');
+        } else if (error.code === 'not-found') {
+            showError('Message not found.');
+        } else {
+            showError('Failed to load message: ' + error.message);
+        }
+    }
+}
 
         async function loadMessage(messageId) {
             try {
