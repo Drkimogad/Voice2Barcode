@@ -4,6 +4,11 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Memory Card - MemoryinQR</title>
+    
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+    
     <style>
         /* Your Color Scheme */
         :root {
@@ -38,5 +43,22 @@
     
     <div id="loadingMessage">Loading your memory card...</div>
     <div id="errorMessage" style="display: none;"></div>
+
+    <script>
+        // Firebase configuration (same as your main app)
+        const firebaseConfig = {
+            apiKey: "AIzaSyAcHV1_wbQjAojF9rBZHZ9Sg2LOYcPqde8",
+            authDomain: "memoryinqr-96de6.firebaseapp.com",
+            projectId: "memoryinqr-96de6",
+            storageBucket: "memoryinqr-96de6.firebasestorage.app",
+            messagingSenderId: "36040892781",
+            appId: "1:36040892781:web:50fce09a86be7fb4e3ba64",
+            measurementId: "G-56LX7EKM6E"
+        };
+        
+        // Initialize Firebase
+        firebase.initializeApp(firebaseConfig);
+        console.log('🔥 Firebase initialized for card viewer');
+    </script>
 </body>
 </html>
