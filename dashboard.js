@@ -333,51 +333,37 @@ async function handleFileUpload(event) {
     
     try {
         toggleLoading(true, 'Decoding QR code...');
+        console.log('📁 File selected:', file.name, file.type, file.size);
         
         // Update filename display
         document.getElementById('uploadFileName').textContent = `File: ${file.name}`;
         
-        // Create image element
-        const img = new Image();
-        const imageUrl = URL.createObjectURL(file);
+        // Use html5-qrcode library to decode
+        console.log('🔍 Starting QR decoding...');
+        const html5QrCodeScanner = new Html5Qrcode('qrReader');
         
-        img.onload = async () => {
-            try {
-                // Create canvas to read image data
-                const canvas = document.createElement('canvas');
-                canvas.width = img.width;
-                canvas.height = img.height;
-                const ctx = canvas.getContext('2d');
-                ctx.drawImage(img, 0, 0);
-                
-                // Use html5-qrcode library to decode
-                const html5QrCodeScanner = new Html5Qrcode('qrReader');
-                const qrCodeMessage = await html5QrCodeScanner.scanFile(file, true);
-                
-                // Parse and display content
-                displayDecodedContent(qrCodeMessage);
-                
-                URL.revokeObjectURL(imageUrl);
-                
-            } catch (error) {
-                handleError('QR code decoding failed', error);
-                updateStatus('Could not read QR code from image', 'error');
-            } finally {
-                toggleLoading(false);
-            }
-        };
-        
-        img.onerror = () => {
-            toggleLoading(false);
-            updateStatus('Could not load image file', 'error');
-            URL.revokeObjectURL(imageUrl);
-        };
-        
-        img.src = imageUrl;
+        try {
+            const qrCodeMessage = await html5QrCodeScanner.scanFile(file, true);
+            console.log('✅ QR decoded successfully:', qrCodeMessage);
+            
+            // Display the decoded content
+            displayDecodedContent(qrCodeMessage);
+            
+        } catch (decodeError) {
+            console.error('❌ QR decoding failed:', decodeError);
+            updateStatus('Could not read QR code from image', 'error');
+            
+            // Try alternative decoding method
+            console.log('🔄 Trying alternative decoding...');
+            await tryAlternativeDecoding(file);
+        }
         
     } catch (error) {
-        toggleLoading(false);
+        console.error('❌ File upload failed:', error);
         handleError('File upload failed', error);
+        updateStatus('Upload failed', 'error');
+    } finally {
+        toggleLoading(false);
     }
 }
 
@@ -398,6 +384,8 @@ async function startQRScanner() {
             return;
         }
         
+        console.log('📷 Starting QR scanner...');
+        
         // Create scanner instance
         html5QrCode = new Html5Qrcode('qrReader');
         
@@ -410,20 +398,23 @@ async function startQRScanner() {
             },
             (decodedText) => {
                 // Success callback
+                console.log('✅ Scanner decoded:', decodedText);
                 displayDecodedContent(decodedText);
                 stopQRScanner();
             },
             (errorMessage) => {
-                // Error callback (called frequently, so don't show)
-                // console.log(errorMessage);
+                // Error callback - don't show every error, just log
+                console.log('📹 Scanner error:', errorMessage);
             }
         );
         
+        console.log('🎥 Scanner started successfully');
         updateStatus('Scanning... Point camera at QR code', 'info');
         document.getElementById('stopScanBtn').style.display = 'block';
         document.getElementById('stopScanBtn').onclick = stopQRScanner;
         
     } catch (error) {
+        console.error('❌ Scanner initialization failed:', error);
         handleError('Scanner initialization failed', error);
         updateStatus('Camera access denied or not available', 'error');
     }
@@ -443,34 +434,83 @@ function stopQRScanner() {
 // ========================================
 // CONTENT DISPLAY & DOWNLOAD
 // ========================================
+/**
+ * Alternative QR decoding method
+ */
+async function tryAlternativeDecoding(file) {
+    return new Promise((resolve) => {
+        const img = new Image();
+        const imageUrl = URL.createObjectURL(file);
+        
+        img.onload = async () => {
+            try {
+                console.log('🖼️ Image loaded, dimensions:', img.width, 'x', img.height);
+                
+                // Create canvas for manual processing
+                const canvas = document.createElement('canvas');
+                canvas.width = img.width;
+                canvas.height = img.height;
+                const ctx = canvas.getContext('2d');
+                ctx.drawImage(img, 0, 0);
+                
+                console.log('🎨 Canvas created, trying direct decoding...');
+                
+                // Try using the scanner with canvas
+                const html5QrCode = new Html5Qrcode('qrReader');
+                const qrCodeMessage = await html5QrCode.scanFileV2(file);
+                
+                console.log('✅ Alternative decoding successful:', qrCodeMessage);
+                displayDecodedContent(qrCodeMessage);
+                resolve();
+                
+            } catch (error) {
+                console.error('❌ Alternative decoding failed:', error);
+                updateStatus('No QR code found in image', 'error');
+                resolve();
+            } finally {
+                URL.revokeObjectURL(imageUrl);
+            }
+        };
+        
+        img.onerror = () => {
+            console.error('❌ Could not load image');
+            URL.revokeObjectURL(imageUrl);
+            updateStatus('Invalid image file', 'error');
+            resolve();
+        };
+        
+        img.src = imageUrl;
+    });
+}
+
+
+
 
 function displayDecodedContent(qrContent) {
+    console.log('📄 Displaying decoded content:', qrContent);
+    
     try {
         // Check if it's a direct URL (not JSON)
         if (qrContent.startsWith('http')) {
-            // It's a direct URL QR code
-            displayUrlContent(qrContent);
+            console.log('🔗 Detected direct URL');
+            displayUrlCard(qrContent);
             return;
         }
         
-        // Parse QR data (for JSON content)
+        // Try to parse as JSON
+        console.log('📋 Trying to parse as JSON...');
         const data = JSON.parse(qrContent);
-        
-        const scannedContent = document.getElementById('scannedContent');
-        const messageText = document.getElementById('messageText');
-        const scannedAudio = document.getElementById('scannedAudio');
-        
-        scannedContent.style.display = 'block';
-        scannedAudio.innerHTML = '';
-        messageText.textContent = '';
+        console.log('✅ JSON parsed successfully:', data);
         
         if (data.type === 'text') {
-            // Display text
-            messageText.textContent = data.data;
-            
+            console.log('📝 Displaying text card');
+            displayTextCard(data);
         } else if (data.type === 'url') {
-            // Display URL content
-            displayUrlContent(data.data);
+            console.log('🌐 Displaying URL card');
+            displayUrlCard(data.data);
+        } else {
+            console.log('❌ Unknown data type:', data.type);
+            updateStatus('Unknown QR code format', 'error');
         }
         
         // Store for download
@@ -482,14 +522,49 @@ function displayDecodedContent(qrContent) {
         updateStatus('Content decoded successfully!', 'success');
         
     } catch (error) {
+        console.error('❌ Content display failed:', error);
+        
         // If JSON parsing fails, check if it's a direct URL
         if (qrContent.startsWith('http')) {
-            displayUrlContent(qrContent);
+            console.log('🔗 Fallback: Detected as direct URL');
+            displayUrlCard(qrContent);
         } else {
-            handleError('Content display failed', error);
-            updateStatus('Invalid QR code format', 'error');
+            console.log('❌ Not a URL either, showing raw content');
+            // Show raw content for debugging
+            displayRawContent(qrContent);
         }
     }
+}
+
+/**
+ * Display raw content when format is unknown
+ */
+function displayRawContent(rawContent) {
+    const scannedContent = document.getElementById('scannedContent');
+    const cardDate = document.getElementById('cardDate');
+    const cardMessageText = document.getElementById('cardMessageText');
+    const urlContainer = document.getElementById('urlContainer');
+    
+    // Show the card
+    scannedContent.style.display = 'block';
+    
+    // Set card date
+    cardDate.textContent = formatCardDate(new Date());
+    
+    // Show raw content
+    cardMessageText.textContent = rawContent;
+    cardMessageText.style.display = 'block';
+    
+    // Hide URL container
+    urlContainer.style.display = 'none';
+    
+    // Generate QR code for the card display
+    generateCardQRCode(rawContent);
+    
+    // Setup print functionality
+    setupPrintButton();
+    
+    updateStatus('Raw content displayed', 'info');
 }
 
 /**
