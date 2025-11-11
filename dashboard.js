@@ -152,7 +152,7 @@ async function startRecording() {
         
         // Create MediaRecorder WITH low quality options
         const options = {
-            audioBitsPerSecond: 3000, // Very low bitrate for speech
+            audioBitsPerSecond: 2000, // Very low bitrate for speech
             mimeType: 'audio/webm;codecs=opus' // Force Opus codec
         };
         
