@@ -3,7 +3,7 @@
 // ========================================
 
 const DASHBOARD_CONFIG = {
-    MAX_RECORDING_TIME: 5, // seconds
+    MAX_RECORDING_TIME: 7, // seconds
     MAX_TEXT_LENGTH: 200,
     QR_SIZE: 300,
     QR_ERROR_CORRECTION: 'H'
@@ -215,7 +215,7 @@ async function startRecording() {
         
         // Start timer
         updateRecordingTimer();
-        recordingTimer = setInterval(updateRecordingTimer, 500);
+        recordingTimer = setInterval(updateRecordingTimer, 700);
         
         updateStatus('Recording... Speak now!', 'info');
         
@@ -225,7 +225,7 @@ async function startRecording() {
                 stopRecording();
                 updateStatus('Recording stopped (max time reached)', 'warning');
             }
-        }, DASHBOARD_CONFIG.MAX_RECORDING_TIME * 500); // 7SECONDS
+        }, DASHBOARD_CONFIG.MAX_RECORDING_TIME * 700); // 7SECONDS
         
     } catch (error) {
         handleError('Recording start failed', error);
@@ -252,7 +252,7 @@ function stopRecording() {
 }
 
 function updateRecordingTimer() {
-    const elapsed = Math.floor((Date.now() - recordingStartTime) / 500);
+    const elapsed = Math.floor((Date.now() - recordingStartTime) / 700);
     document.getElementById('timerDisplay').textContent = formatTime(elapsed);
 }
 
@@ -282,7 +282,7 @@ async function generateQRFromAudio(audioBlob) {
 const qrData = {
     t: 'audio',          // type
     d: base64Audio,      // data  
-    l: Math.floor((Date.now() - recordingStartTime) / 500) // length 5 seconds
+    l: Math.floor((Date.now() - recordingStartTime) / 700) // length 5 seconds
 };
                 console.log('📦 QR data size:', JSON.stringify(qrData).length, 'characters');
 
