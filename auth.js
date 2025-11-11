@@ -1,10 +1,18 @@
 // ========================================
-// AUTHENTICATION MODULE - FIREBASE VERSION
+// AUTHENTICATION MODULE - PRODUCTION READY
 // ========================================
 
 const AUTH_CONFIG = {
     TOKEN_KEY: 'authToken',
     USER_KEY: 'currentUser'
+};
+
+// Debug state tracking
+let authDebug = {
+    initCalled: false,
+    authStateChangedFired: false,
+    showDashboardCalled: false,
+    showAuthCalled: false
 };
 
 
@@ -113,28 +121,70 @@ function isAuthenticated() {
 /**
  * Show authentication section
  */
+/**
+ * Enhanced showAuth with comprehensive checks
+ */
 function showAuth() {
+    console.group('🔑 SHOW AUTH');
+    authDebug.showAuthCalled = true;
+    
     document.getElementById('authSection').style.display = 'block';
     document.getElementById('dashboardSection').style.display = 'none';
     document.getElementById('infoBanner').style.display = 'block';
     
-    // Show signup by default
+    // Verify auth elements
+    const authEl = document.getElementById('authSection');
+    console.log('🎯 Auth Element:', authEl);
+    console.log('👀 Auth Display:', authEl.style.display);
+    
     toggleAuthView('signup');
+    console.groupEnd();
 }
+
 
 /**
  * Show dashboard section
  */
+/**
+ * Enhanced showDashboard with layout debugging
+ */
 function showDashboard() {
+    console.group('📊 SHOW DASHBOARD');
+    authDebug.showDashboardCalled = true;
+    
+    // Hide auth, show dashboard
     document.getElementById('authSection').style.display = 'none';
     document.getElementById('dashboardSection').style.display = 'block';
     document.getElementById('infoBanner').style.display = 'none';
     
-    // Initialize dashboard if function exists
+    // Verify DOM elements exist
+    const dashboardEl = document.getElementById('dashboardSection');
+    console.log('🎯 Dashboard Element:', dashboardEl);
+    console.log('👀 Dashboard Display:', dashboardEl.style.display);
+    console.log('📏 Dashboard Dimensions:', dashboardEl.offsetWidth, 'x', dashboardEl.offsetHeight);
+    
+    // Check for links section specifically
+    const linksSection = document.querySelector('[data-section="links"]');
+    console.log('🔗 Links Section:', linksSection);
+    console.log('👀 Links Display:', linksSection?.style.display);
+    console.log('📏 Links Dimensions:', linksSection?.offsetWidth, 'x', linksSection?.offsetHeight);
+    
+    // Initialize dashboard with error handling
     if (typeof initDashboard === 'function') {
-        initDashboard();
+        console.log('🚀 Initializing dashboard...');
+        try {
+            initDashboard();
+            console.log('✅ Dashboard initialized successfully');
+        } catch (error) {
+            console.error('❌ Dashboard initialization failed:', error);
+        }
+    } else {
+        console.error('❌ initDashboard function not found!');
     }
+    
+    console.groupEnd();
 }
+
 /**
  * Validate email format
  */
@@ -207,32 +257,65 @@ function setupAuthListeners() {
 
 
 /**
- * Initialize authentication system
+ * Enhanced initialization with comprehensive logging
  */
 function initAuth() {
-    console.log('🔐 Initializing Firebase authentication...');
+    console.group('🔐 AUTH INITIALIZATION');
+    console.log('📋 DOM Ready State:', document.readyState);
+    console.log('🏗️ Firebase App:', typeof firebase !== 'undefined' ? 'Loaded' : 'MISSING');
+    console.log('🔑 Firebase Auth:', typeof firebase.auth !== 'undefined' ? 'Loaded' : 'MISSING');
     
-    // Firebase auth state listener
+    authDebug.initCalled = true;
+
+    // Firebase auth state listener with enhanced logging
     firebase.auth().onAuthStateChanged((user) => {
+        console.group('🔄 AUTH STATE CHANGE');
+        console.log('👤 User Object:', user);
+        console.log('📧 User Email:', user?.email);
+        console.log('🆔 User UID:', user?.uid);
+        
+        authDebug.authStateChangedFired = true;
+
         if (user) {
-            // User is signed in
-            console.log('✅ User logged in:', user.email);
+            console.log('✅ AUTHENTICATED - Showing dashboard');
             showDashboard();
         } else {
-            // User is signed out
-            console.log('🔒 User logged out');
+            console.log('🔒 NOT AUTHENTICATED - Showing auth form');
             showAuth();
         }
+        console.groupEnd();
     });
-    
-    // Setup event listeners
+
     setupAuthListeners();
+    console.groupEnd();
 }
 
-// Initialize auth when DOM is ready
+
+/**
+ * Debug function to check current state
+ */
+function debugAuthState() {
+    console.group('🐛 AUTH DEBUG REPORT');
+    console.log('🔧 Init Called:', authDebug.initCalled);
+    console.log('🔄 Auth State Changed:', authDebug.authStateChangedFired);
+    console.log('📊 Show Dashboard Called:', authDebug.showDashboardCalled);
+    console.log('🔑 Show Auth Called:', authDebug.showAuthCalled);
+    console.log('👤 Current User:', getCurrentUser());
+    console.log('🔐 Is Authenticated:', isAuthenticated());
+    console.log('🏗️ Dashboard Element Display:', document.getElementById('dashboardSection')?.style.display);
+    console.log('🔗 Links Section Display:', document.querySelector('[data-section="links"]')?.style.display);
+    console.groupEnd();
+}
+
+// Enhanced DOM ready check
 if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', initAuth);
+    console.log('⏳ DOM Loading - Waiting for DOMContentLoaded');
+    document.addEventListener('DOMContentLoaded', () => {
+        console.log('🎉 DOM Content Loaded - Initializing Auth');
+        initAuth();
+    });
 } else {
+    console.log('⚡ DOM Ready - Initializing Auth Immediately');
     initAuth();
 }
 
