@@ -6,7 +6,7 @@ const DASHBOARD_CONFIG = {
     MAX_TEXT_LENGTH: 200,
     QR_SIZE: 300,
     QR_ERROR_CORRECTION: 'H'
-    URL_REGEX: /^(https?:\/\/)?([\da-z\.-]+)\.([a-z\.]{2,6})([\/\w \.-]*)*\/?$/   // for links
+    URL_REGEX: /^(https?:\/\/)?([\da-z\.-]+)\.([a-z\.]{2,6})([\/\w \.-]*)*\/?$/  
 };
 
 // Global state
