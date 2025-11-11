@@ -250,167 +250,106 @@
 
     <script>
         // Firebase configuration
-        const firebaseConfig = {
-            apiKey: "AIzaSyAcHV1_wbQjAojF9rBZHZ9Sg2LOYcPqde8",
-            authDomain: "memoryinqr-96de6.firebaseapp.com",
-            projectId: "memoryinqr-96de6",
-            storageBucket: "memoryinqr-96de6.firebasestorage.app",
-            messagingSenderId: "36040892781",
-            appId: "1:36040892781:web:50fce09a86be7fb4e3ba64",
-            measurementId: "G-56LX7EKM6E"
-        };
-        
-        // Initialize Firebase
-        firebase.initializeApp(firebaseConfig);
-        console.log('🔥 Firebase initialized for card viewer');
+const firebaseConfig = {
+    apiKey: "AIzaSyAcHV1_wbQjAojF9rBZHZ9Sg2LOYcPqde8",
+    authDomain: "memoryinqr-96de6.firebaseapp.com",
+    projectId: "memoryinqr-96de6", 
+    storageBucket: "memoryinqr-96de6.firebasestorage.app",
+    messagingSenderId: "36040892781",
+    appId: "1:36040892781:web:50fce09a86be7fb4e3ba64",
+    measurementId: "G-56LX7EKM6E"
+};
 
-        // Get message ID from URL
-        const urlParams = new URLSearchParams(window.location.search);
-        const messageId = urlParams.get('id');
+// Initialize Firebase
+firebase.initializeApp(firebaseConfig);
 
-        if (!messageId) {
-            showError('No message ID found in URL');
-        } else {
-            loadMessage(messageId);
-        }
-            // Add this after Firebase initialization
-console.log('🔍 Checking Firebase access...');
+// Get message ID from URL
+const urlParams = new URLSearchParams(window.location.search);
+const messageId = urlParams.get('id');
 
-// Test Firestore connection
-async function testFirestore() {
-    try {
-        const db = firebase.firestore();
-        // Try to read a test document
-        const testDoc = await db.collection('messages').doc('test').get();
-        console.log('✅ Firestore connection successful');
-        return true;
-    } catch (error) {
-        console.error('❌ Firestore connection failed:', error);
-        return false;
-    }
+if (!messageId) {
+    showError('No message ID found in URL');
+} else {
+    loadMessage(messageId);
 }
 
-// Update your loadMessage function to handle permissions
 async function loadMessage(messageId) {
     try {
-        console.log('📥 Loading message:', messageId);
-        
         const db = firebase.firestore();
         const docRef = db.collection('messages').doc(messageId);
         const doc = await docRef.get();
         
         if (!doc.exists) {
-            showError('Message not found or no longer available');
+            showError('Message not found');
             return;
         }
         
         const messageData = doc.data();
-        console.log('✅ Message loaded:', messageData);
         displayMessage(messageData);
         
-        // Try to update views (might fail without auth, that's OK)
+        // Update view count (silently fail if no permission)
         try {
             await docRef.update({
                 views: firebase.firestore.FieldValue.increment(1)
             });
         } catch (viewsError) {
-            console.log('⚠️ Could not update views (normal for public access)');
+            // Ignore - views are optional
         }
         
     } catch (error) {
-        console.error('❌ Error loading message:', error);
-        
-        if (error.code === 'permission-denied') {
-            showError('Access denied. Please check Firestore rules.');
-        } else if (error.code === 'not-found') {
-            showError('Message not found.');
-        } else {
-            showError('Failed to load message: ' + error.message);
-        }
+        console.error('Error loading message:', error);
+        showError('Failed to load message');
     }
 }
 
-        async function loadMessage(messageId) {
-            try {
-                const db = firebase.firestore();
-                const docRef = db.collection('messages').doc(messageId);
-                const doc = await docRef.get();
-                
-                if (!doc.exists) {
-                    showError('Message not found');
-                    return;
+function displayMessage(data) {
+    document.getElementById('loadingMessage').style.display = 'none';
+    document.getElementById('errorMessage').style.display = 'none';
+    
+    const cardHTML = `
+        <div class="memory-card theme-${data.theme || 'default'}">
+            <div class="card-header">
+                <div class="card-icon">${getThemeIcon(data.theme)}</div>
+                <h1 class="card-title">${data.title || 'Memory Card'}</h1>
+                <div class="card-date">${formatDate(data.createdAt?.toDate())}</div>
+            </div>
+            <div class="card-body">
+                ${data.type === 'url' 
+                    ? `<a href="${data.content}" class="url-link" target="_blank">${data.content}</a>`
+                    : `<div class="message-text">${data.content}</div>`
                 }
-                
-                const messageData = doc.data();
-                displayMessage(messageData);
-                
-                // Increment view count
-                await docRef.update({
-                    views: firebase.firestore.FieldValue.increment(1)
-                });
-                
-            } catch (error) {
-                console.error('Error loading message:', error);
-                showError('Failed to load message');
-            }
-        }
+            </div>
+            <div class="card-footer">
+                ✨ Created with MemoryinQR ✨
+            </div>
+        </div>
+    `;
+    
+    document.getElementById('cardContainer').innerHTML = cardHTML;
+}
 
-        function displayMessage(data) {
-            document.getElementById('loadingMessage').style.display = 'none';
-            
-            const cardHTML = `
-                <div class="memory-card theme-${data.theme || 'default'}">
-                    <div class="card-header">
-                        <div class="card-icon">${getThemeIcon(data.theme)}</div>
-                        <h1 class="card-title">${data.title || 'Memory Card'}</h1>
-                        <div class="card-date">${formatDate(data.createdAt?.toDate())}</div>
-                    </div>
-                    <div class="card-body">
-                        ${data.type === 'url' 
-                            ? `<a href="${data.content}" class="url-link" target="_blank">${data.content}</a>`
-                            : `<div class="message-text">${data.content}</div>`
-                        }
-                    </div>
-                    <div class="card-footer">
-                        ✨ Created with MemoryinQR ✨
-                    </div>
-                </div>
-            `;
-            
-            document.getElementById('cardContainer').innerHTML = cardHTML;
-        }
+function getThemeIcon(theme) {
+    const icons = {
+        birthday: '🎂', wedding: '💒', love: '❤️', gratitude: '🙏',
+        anniversary: '💝', baby: '👶', graduation: '🎓', website: '🌐', default: '🎁'
+    };
+    return icons[theme] || icons.default;
+}
 
-        function getThemeIcon(theme) {
-            const icons = {
-                birthday: '🎂',
-                wedding: '💒',
-                love: '❤️',
-                gratitude: '🙏',
-                anniversary: '💝',
-                baby: '👶',
-                graduation: '🎓',
-                website: '🌐',
-                default: '🎁'
-            };
-            return icons[theme] || icons.default;
-        }
+function formatDate(date) {
+    if (!date) return 'Unknown date';
+    return date.toLocaleDateString('en-US', {
+        year: 'numeric', month: 'long', day: 'numeric',
+        hour: '2-digit', minute: '2-digit'
+    });
+}
 
-        function formatDate(date) {
-            if (!date) return 'Unknown date';
-            return date.toLocaleDateString('en-US', {
-                year: 'numeric',
-                month: 'long',
-                day: 'numeric',
-                hour: '2-digit',
-                minute: '2-digit'
-            });
-        }
-
-        function showError(message) {
-            document.getElementById('loadingMessage').style.display = 'none';
-            document.getElementById('errorMessage').style.display = 'block';
-            document.getElementById('errorMessage').textContent = message;
-        }
+function showError(message) {
+    document.getElementById('loadingMessage').style.display = 'none';
+    document.getElementById('errorMessage').style.display = 'block';
+    document.getElementById('errorMessage').textContent = message;
+}
+       
     </script>
 </body>
 </html>
