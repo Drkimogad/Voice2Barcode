@@ -18,6 +18,7 @@ let recordingStartTime = 0;
 let voices = [];
 let html5QrCode = null;
 let lastQRData = null;
+let isProcessing = false;
 
 /**
  * Initialize dashboard
@@ -182,6 +183,10 @@ async function startRecording() {
         };
         
         mediaRecorder.onstop = async () => {
+              // Add safety check - prevent multiple processing
+    if (isProcessing || audioChunks.length === 0) return;
+    isProcessing = true;
+         try {
             // Stop all tracks
             stream.getTracks().forEach(track => track.stop());
             
@@ -196,9 +201,12 @@ async function startRecording() {
             // Generate QR code
          await generateQRFromAudio(compressedBlob); // Change to use compressedBlob
             
-            // Reset
-            audioChunks = [];
-        };
+        } finally {
+        isProcessing = false;
+             //reset
+        audioChunks = [];
+       }
+   };
         
         // Start recording
         mediaRecorder.start();
