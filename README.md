@@ -15,6 +15,20 @@ DISPLAYED QR CARD MESSAGE
 └─────────────────────────────────────┘
 
 PRINT PREVIEW WILL SHOW:
+
+DYNAMIC PRINT TITLES:
+🎂 Birthday messages → Birthday theme with pink colors
+💝 Anniversary messages → Orange theme
+❤️ Love messages → Red theme
+🙏 Thank you messages → Gold theme
+🌐 Website links → Blue theme
+
+PRINT WILL MATCH THE CARD DISPLAY:
+Same icon (🎁, 🎂, ❤️, etc.)
+Same title ("Memory Card")
+Same color theme
+Same message content
+
 ┌─────────────────────────────────────┐
 │             🎁 Memory Card          │
 │        November 11, 2025, 4:48 PM   │
