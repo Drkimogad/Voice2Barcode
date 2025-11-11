@@ -206,8 +206,8 @@ async function validateAudioQuality(blob) {
     updateStatus('Validating audio quality...', 'silver');
     
     return new Promise((resolve) => {
-        if (!blob || blob.size < 2000) {
-            console.log('❌ Audio too small or invalid');
+        if (!blob || blob.size < 1000) {
+        if (!blob || blob.size < 1000) { // Changed from 2000 to 1000
             updateStatus('Audio too small', 'error');
             resolve(false);
             return;
