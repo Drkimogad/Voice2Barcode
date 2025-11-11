@@ -1115,6 +1115,12 @@ function printCard() {
 function getPrintThemeStyles(theme) {
     const themeColors = {
         birthday: { primary: '#e84393', accent: '#fd79a8' },
+        wedding: { primary: '#9b59b6', accent: '#bb8fce' },
+        engagement: { primary: '#7f8c8d', accent: '#bdc3c7' },
+        baby: { primary: '#ff9ff3', accent: '#f8c8e8' },
+        graduation: { primary: '#3498db', accent: '#85c1e9' },
+        newhome: { primary: '#27ae60', accent: '#82e0aa' },
+        newjob: { primary: '#2c3e50', accent: '#566573' },
         anniversary: { primary: '#e67e22', accent: '#f39c12' },
         love: { primary: '#e74c3c', accent: '#eaa29a' },
         gratitude: { primary: '#f39c12', accent: '#f7dc6f' },
