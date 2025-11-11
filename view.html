@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Memory Card - MemoryinQR</title>
+    <style>
+        /* Your Color Scheme */
+        :root {
+            --silver: #C0C0C0;
+            --crimson: #CB4154;
+            --charcoal: #36454F;
+            --cream: #F5F5DC;
+            --mustard: #FFDB58;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Inter', Arial, sans-serif;
+            background: linear-gradient(135deg, var(--cream) 0%, #FAFAFA 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div id="cardContainer">
+        <!-- Card will be dynamically inserted here -->
+    </div>
+    
+    <div id="loadingMessage">Loading your memory card...</div>
+    <div id="errorMessage" style="display: none;"></div>
+</body>
+</html>
