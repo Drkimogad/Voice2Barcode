@@ -126,7 +126,7 @@ async function handleSignin(e) {
     
     try {
         // Get form values
-        const username = document.getElementById('signinUsername').value.trim();
+        const email = document.getElementById('signinEmail').value.trim();
         const password = document.getElementById('signinPassword').value;
         
         // Validation
