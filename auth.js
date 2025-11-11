@@ -104,7 +104,7 @@ async function handleSignup(e) {
         
         // Show success and switch to signin
         updateStatus('Account created successfully! Please sign in.', 'success');
-        setTimeout(() => toggleAuthView('signin'), 1500);
+        setTimeout(() => toggleAuthView('signin'), 1500);  // switches between signup and signin 
         
         console.log('✅ User registered:', username);
         
@@ -142,7 +142,7 @@ async function handleSignin(e) {
         
         // Show dashboard
         updateStatus('Welcome back!', 'success');
-        showDashboard();                    // to verify
+       // showDashboard();                    // to verify
         
         console.log('✅ User logged in:', username);
         
@@ -163,7 +163,7 @@ async function handleLogout() {
         console.log('✅ Firebase user logged out');
         
         // Show auth section
-        showAuth();                                                     // to verify
+      //  showAuth();                                                     // to verify
         
         updateStatus('Logged out successfully', 'success');
         console.log('✅ User logged out');
