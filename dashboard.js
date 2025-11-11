@@ -138,21 +138,42 @@ function initVoiceMode() {
 
 async function startRecording() {
     try {
-        // Request microphone access
-       // const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
         const stream = await navigator.mediaDevices.getUserMedia({ 
-        audio: {
-        sampleRate: 8000,      // Low sample rate
-        channelCount: 1,       // Mono
-        sampleSize: 8,         // Low bit depth
-        echoCancellation: true,
-        noiseSuppression: true
-       } 
-       });
+            audio: {
+                sampleRate: 8000,
+                channelCount: 1, 
+                echoCancellation: true,
+                noiseSuppression: true
+            } 
+        });
         
-        // Create MediaRecorder
-        mediaRecorder = new MediaRecorder(stream);
+        // Remove sampleSize: 8 - not widely supported
+        
+        // Create MediaRecorder WITH low quality options
+        const options = {
+            audioBitsPerSecond: 8000, // Very low bitrate for speech
+            mimeType: 'audio/webm;codecs=opus' // Force Opus codec
+        };
+        
+        // Try supported MIME types
+        const mimeTypes = [
+            'audio/webm;codecs=opus',
+            'audio/webm',
+            'audio/ogg;codecs=opus'
+        ];
+        
+        let mediaRecorder;
+        for (const mimeType of mimeTypes) {
+            if (MediaRecorder.isTypeSupported(mimeType)) {
+                options.mimeType = mimeType;
+                break;
+            }
+        }
+        
+        mediaRecorder = new MediaRecorder(stream, options);
         audioChunks = [];
+        
+        // ... rest of your code stays the same
         
         mediaRecorder.ondataavailable = (event) => {
             if (event.data.size > 0) {
