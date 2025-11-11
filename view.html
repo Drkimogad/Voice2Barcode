@@ -401,93 +401,113 @@ function printCard() {
         <html>
         <head>
             <title>Print ${cardTitle}</title>
-            <style>
-                body { 
-                    font-family: 'Inter', Arial, sans-serif; 
-                    margin: 0; 
-                    padding: 40px;
-                    display: flex;
-                    justify-content: center;
-                    align-items: center;
-                    min-height: 100vh;
-                    background: white;
-                }
-                .print-card {
-                    border: 2px solid #333;
-                    border-radius: 12px;
-                    padding: 30px;
-                    max-width: 500px;
-                    background: white;
-                    text-align: center;
-                }
-                .card-header { 
-                    margin-bottom: 25px; 
-                    border-bottom: 2px solid #eee;
-                    padding-bottom: 20px;
-                }
-                .card-icon { 
-                    font-size: 3em; 
-                    margin-bottom: 15px;
-                }
-                .card-title { 
-                    margin: 10px 0 8px 0; 
-                    color: #2c3e50; 
-                    font-size: 1.6em;
-                    font-weight: bold;
-                }
-                .card-date { 
-                    color: #7f8c8d; 
-                    font-size: 16px; 
-                    font-weight: 500;
-                }
-                .message-container {
-                    margin: 25px 0;
-                    padding: 0 20px;
-                }
-                .message-label { 
-                    font-weight: bold; 
-                    margin-bottom: 15px; 
-                    color: #2c3e50;
-                    font-size: 16px;
-                    text-transform: uppercase;
-                    letter-spacing: 1px;
-                }
-                .message-text { 
-                    word-break: break-word; 
-                    line-height: 1.6;
-                    font-size: 16px;
-                    color: #2c3e50;
-                    background: #f8f9fa;
-                    padding: 20px;
-                    border-radius: 8px;
-                    border-left: 4px solid #4a90e2;
-                    text-align: left;
-                }
-                .card-footer { 
-                    margin-top: 25px;
-                    border-top: 2px solid #eee;
-                    padding-top: 20px;
-                    color: #7f8c8d;
-                    font-size: 14px;
-                    font-style: italic;
-                }
-                
-                /* Dynamic theme colors for print */
-                ${getPrintThemeStyles(theme)}
-                
-                @media print {
-                    body { 
-                        padding: 20px; 
-                        display: block;
-                    }
-                    .print-card { 
-                        border: 2px solid #000;
-                        box-shadow: none;
-                        max-width: none;
-                        margin: 0 auto;
-                    }
-                }
-            </style>
+<style>
+    /* Your Color Scheme for Print */
+    :root {
+        --silver: #C0C0C0;
+        --crimson: #CB4154;
+        --charcoal: #36454F;
+        --cream: #F5F5DC;
+        --mustard: #FFDB58;
+    }
+    
+    body { 
+        font-family: 'Inter', Arial, sans-serif; 
+        margin: 0; 
+        padding: 40px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        min-height: 100vh;
+        background: white;
+    }
+    .print-card {
+        border: 3px solid var(--charcoal);
+        border-radius: 16px;
+        padding: 30px;
+        max-width: 500px;
+        background: white;
+        text-align: center;
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+    }
+    .card-header { 
+        margin-bottom: 25px; 
+        border-bottom: 4px solid var(--crimson);
+        padding-bottom: 20px;
+        background: linear-gradient(135deg, var(--silver) 0%, #D3D3D3 100%);
+        padding: 30px;
+        border-radius: 12px 12px 0 0;
+        margin: -30px -30px 25px -30px;
+    }
+    .card-icon { 
+        font-size: 3em; 
+        margin-bottom: 15px;
+    }
+    .card-title { 
+        margin: 10px 0 8px 0; 
+        color: var(--charcoal); 
+        font-size: 1.8em;
+        font-weight: 700;
+    }
+    .card-date { 
+        color: var(--charcoal); 
+        font-size: 14px; 
+        font-weight: 500;
+        opacity: 0.8;
+    }
+    .message-container {
+        margin: 25px 0;
+        padding: 0 20px;
+    }
+    .message-label { 
+        font-weight: bold; 
+        margin-bottom: 15px; 
+        color: var(--charcoal);
+        font-size: 16px;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+    }
+    .message-text { 
+        word-break: break-word; 
+        line-height: 1.6;
+        font-size: 16px;
+        color: var(--charcoal);
+        background: var(--cream);
+        padding: 20px;
+        border-radius: 8px;
+        border-left: 4px solid var(--mustard);
+        text-align: left;
+    }
+    .card-footer { 
+        margin-top: 25px;
+        border-top: 3px solid var(--crimson);
+        padding-top: 20px;
+        color: white;
+        background: var(--charcoal);
+        font-size: 14px;
+        font-weight: 500;
+        margin: 25px -30px -30px -30px;
+        padding: 20px 30px;
+        border-radius: 0 0 12px 12px;
+    }
+    
+    /* Dynamic theme colors for print */
+    ${getPrintThemeStyles(theme)}
+    
+    @media print {
+        body { 
+            padding: 20px; 
+            display: block;
+            background: white;
+        }
+        .print-card { 
+            border: 3px solid var(--charcoal);
+            box-shadow: none;
+            max-width: none;
+            margin: 0 auto;
+        }
+    }
+</style>
         </head>
         <body>
             <div class="print-card print-theme-${theme}">
