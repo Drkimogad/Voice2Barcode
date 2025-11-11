@@ -3,7 +3,7 @@
 // ========================================
 
 const DASHBOARD_CONFIG = {
-    MAX_RECORDING_TIME: 10, // seconds
+    MAX_RECORDING_TIME: 8, // seconds
     MAX_TEXT_LENGTH: 200,
     QR_SIZE: 300,
     QR_ERROR_CORRECTION: 'H'
@@ -225,7 +225,7 @@ async function startRecording() {
                 stopRecording();
                 updateStatus('Recording stopped (max time reached)', 'warning');
             }
-        }, DASHBOARD_CONFIG.MAX_RECORDING_TIME * 1000); // 7SECONDS
+        }, DASHBOARD_CONFIG.MAX_RECORDING_TIME * 800); // 7SECONDS
         
     } catch (error) {
         handleError('Recording start failed', error);
@@ -252,7 +252,7 @@ function stopRecording() {
 }
 
 function updateRecordingTimer() {
-    const elapsed = Math.floor((Date.now() - recordingStartTime) / 1000);
+    const elapsed = Math.floor((Date.now() - recordingStartTime) / 800);
     document.getElementById('timerDisplay').textContent = formatTime(elapsed);
 }
 
@@ -277,7 +277,7 @@ async function generateQRFromAudio(audioBlob) {
 const qrData = {
     t: 'audio',          // type
     d: base64Audio,      // data  
-    l: Math.floor((Date.now() - recordingStartTime) / 1000) // length 5 seconds
+    l: Math.floor((Date.now() - recordingStartTime) / 800) // length 5 seconds
 };
                 console.log('📦 QR data size:', JSON.stringify(qrData).length, 'characters');
 
