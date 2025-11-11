@@ -84,8 +84,13 @@ function blobToBase64(blob) {
     });
 }
 
-// Add AUDIO compression function
-
+/* Add AUDIO compression function
+This function:
+✅ Uses your small WebM files directly (9KB is perfect)
+✅ Only tries compression if file is over 50KB
+✅ Prevents making files larger with WAV conversion
+✅ Maintains your existing flow and status messages
+*/
 async function compressAudioBlob(blob) {
     console.log('🔧 Compression started - Original size:', blob.size, 'bytes');
     updateStatus('Checking audio size...', 'silver');
