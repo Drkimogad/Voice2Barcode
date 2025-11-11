@@ -96,13 +96,6 @@ function switchToMode(mode) {
  * Cleanup mode resources
  */
 function cleanupMode() {
-
-    
-    // Stop timer
-    if (recordingTimer) {
-        clearInterval(recordingTimer);
-        recordingTimer = null;
-    }
     
     // Stop scanner
     if (html5QrCode && html5QrCode.isScanning) {
