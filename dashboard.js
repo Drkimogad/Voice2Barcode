@@ -163,19 +163,16 @@ async function startRecording() {
             'audio/ogg;codecs=opus'
         ];
         
-        let mediaRecorder;
         for (const mimeType of mimeTypes) {
             if (MediaRecorder.isTypeSupported(mimeType)) {
                 options.mimeType = mimeType;
                 break;
             }
         }
-        
+                // Use the GLOBAL mediaRecorder variable
         mediaRecorder = new MediaRecorder(stream, options);
         audioChunks = [];
-        
-        // ... rest of your code stays the same
-        
+                
         mediaRecorder.ondataavailable = (event) => {
             if (event.data.size > 0) {
                 audioChunks.push(event.data);
