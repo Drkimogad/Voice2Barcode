@@ -970,6 +970,7 @@ function displayDecodedContent(qrContent) {
 }
 
 /**
+  DASHBOARD CARD DISPLAY OF SCANNED CONTENT 
  * Display text content in card layout
  * @param {object} data - Text data object
  */
@@ -979,27 +980,26 @@ function displayTextCard(data) {
     const cardMessageText = document.getElementById('cardMessageText');
     const urlContainer = document.getElementById('urlContainer');
     
-    // Show the card
     scannedContent.style.display = 'block';
     
-    // Set card date
-    const date = data.timestamp ? new Date(data.timestamp) : new Date();
-    cardDate.textContent = formatCardDate(date);
+    cardDate.textContent = formatCardDate(data.timestamp ? new Date(data.timestamp) : new Date());
     
-    // Set message text
+    // Set message text DIRECTLY (no "Message:" label)
     cardMessageText.textContent = data.data;
     cardMessageText.style.display = 'block';
+    
+    // REMOVE the "Message:" label from HTML or hide it
+    const messageLabel = document.querySelector('.message-label');
+    if (messageLabel) messageLabel.style.display = 'none';
     
     // Hide URL container for text cards
     urlContainer.style.display = 'none';
     
-    // Generate QR code for the card display
     generateCardQRCode(JSON.stringify(data));
     
-    // Setup print functionality
-    setupPrintButton();
+    // REMOVE print functionality from dashboard
+    // setupPrintButton(); // DELETE THIS LINE
     
-    // Apply theme based on content
     applyCardTheme('text', data.data);
 }
 
@@ -1020,21 +1020,25 @@ function displayUrlCard(url) {
     // Set card date
     cardDate.textContent = formatCardDate(new Date());
     
-    // Hide message text for URL cards
+    // REMOVE message text entirely for URL cards
     cardMessageText.style.display = 'none';
     
-    // Show and set URL
+    // Show and set URL DIRECTLY (no "Website:" label)
     urlContainer.style.display = 'block';
     cardUrl.href = url;
     cardUrl.textContent = url;
     
-    // Generate QR code for the card display (use direct URL)
+    // REMOVE the "Website:" label from HTML or hide it
+    const urlLabel = document.querySelector('.url-label');
+    if (urlLabel) urlLabel.style.display = 'none';
+    
+    // Generate QR code
     generateCardQRCode(url);
     
-    // Setup print functionality
-    setupPrintButton();
+    // REMOVE print functionality from dashboard
+    // setupPrintButton(); // DELETE THIS LINE
     
-    // Apply theme for URL cards
+    // Apply theme
     applyCardTheme('url', url);
     
     // Store for download
