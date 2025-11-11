@@ -114,44 +114,20 @@ function isAuthenticated() {
 // showAuth(), showDashboard(), toggleAuthView(), isValidEmail(), etc.
 
 
-
 /**
- * Generate authentication token
- * @param {object} user - User object
- * @returns {string} Token
- */
-function generateToken(user) {
-    return btoa(JSON.stringify({
-        userId: user.id,
-        username: user.username,
-        timestamp: Date.now()
-    }));
-}
-
-/**
- * Get registered users from localStorage
- * @returns {Array} Array of user objects
- */
-function getRegisteredUsers() {
-    const usersJson = localStorage.getItem(AUTH_CONFIG.USERS_KEY);
-    return usersJson ? JSON.parse(usersJson) : [];
-}
-
-/**
- * Get current logged in user
- * @returns {object|null} User object or null
+ * Get current logged in user from Firebase
+ * @returns {object|null} Firebase user object or null
  */
 function getCurrentUser() {
-    const userJson = localStorage.getItem(AUTH_CONFIG.USER_KEY);
-    return userJson ? JSON.parse(userJson) : null;
+    return firebase.auth().currentUser;
 }
 
 /**
- * Check if user is authenticated
+ * Check if user is authenticated with Firebase
  * @returns {boolean} True if authenticated
  */
 function isAuthenticated() {
-    return !!localStorage.getItem(AUTH_CONFIG.TOKEN_KEY);
+    return !!firebase.auth().currentUser;
 }
 
 /**
