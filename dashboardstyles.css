@@ -562,7 +562,7 @@ textarea:focus {
 
 
 /* ========================================
-   CARD LAYOUT STYLING
+   CARD LAYOUT STYLING - VERTICAL STACK
    ======================================== */
 
 .card-container {
@@ -576,7 +576,7 @@ textarea:focus {
     border-radius: 16px;
     box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
     padding: 24px;
-    max-width: 500px;
+    max-width: 400px; /* Reduced for better mobile fit */
     width: 100%;
     border: 1px solid #e1e5e9;
     transition: all 0.3s ease;
@@ -612,15 +612,17 @@ textarea:focus {
     font-weight: 500;
 }
 
+/* VERTICAL STACK - Everything flows top to bottom */
 .card-body {
     display: flex;
+    flex-direction: column; /* Changed from row to column */
     gap: 20px;
-    align-items: flex-start;
+    align-items: center; /* Center everything */
     margin-bottom: 20px;
 }
 
 .qr-display {
-    flex-shrink: 0;
+    order: 1; /* QR code first */
 }
 
 .card-qrcode {
@@ -628,11 +630,13 @@ textarea:focus {
     border-radius: 8px;
     padding: 8px;
     background: white;
+    max-width: 200px; /* Limit QR code size */
 }
 
 .card-content {
-    flex: 1;
-    min-width: 0;
+    order: 2; /* Content below QR */
+    width: 100%; /* Take full width */
+    text-align: center; /* Center text */
 }
 
 .message-container, .url-container {
@@ -650,11 +654,12 @@ textarea:focus {
 
 .message-text {
     background: #f8f9fa;
-    padding: 12px;
+    padding: 15px;
     border-radius: 8px;
     border-left: 4px solid #4a90e2;
     line-height: 1.5;
     word-break: break-word;
+    text-align: left; /* Keep text left-aligned for readability */
 }
 
 .card-url {
@@ -662,10 +667,11 @@ textarea:focus {
     text-decoration: none;
     word-break: break-all;
     display: block;
-    padding: 12px;
+    padding: 15px;
     background: #f8f9fa;
     border-radius: 8px;
     border-left: 4px solid #2ecc71;
+    text-align: left;
 }
 
 .card-url:hover {
@@ -708,7 +714,7 @@ textarea:focus {
     margin-top: 20px;
 }
 
-/* Card Themes */
+/* Card Themes - Keep these the same */
 .card-theme-birthday {
     border-top: 6px solid #e84393;
 }
@@ -753,30 +759,31 @@ textarea:focus {
     border-top: 6px solid #4a90e2;
 }
 
-.card-theme-default .card-icon {
+.card-theme-default .card-theme-default .card-icon {
     color: #4a90e2;
 }
 
 /* Responsive Design */
 @media (max-width: 768px) {
-    .card-body {
-        flex-direction: column;
-        text-align: center;
-    }
-    
     .qr-card {
         margin: 10px;
         padding: 20px;
+        max-width: 350px;
     }
     
     .card-title {
         font-size: 1.3em;
+    }
+    
+    .card-qrcode {
+        max-width: 180px;
     }
 }
 
 @media (max-width: 480px) {
     .qr-card {
         padding: 15px;
+        max-width: 300px;
     }
     
     .card-icon {
@@ -785,6 +792,10 @@ textarea:focus {
     
     .card-title {
         font-size: 1.2em;
+    }
+    
+    .card-qrcode {
+        max-width: 150px;
     }
 }
 
@@ -800,5 +811,3 @@ textarea:focus {
         max-width: none;
     }
 }
-
-
