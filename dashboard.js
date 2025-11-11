@@ -598,4 +598,308 @@ function downloadContent() {
     }
 }
 
+// ========================================
+// CARD LAYOUT FUNCTIONS
+// ========================================
+
+/**
+ * Display content in beautiful card layout
+ * @param {string} qrContent - The scanned QR code content
+ */
+function displayDecodedContent(qrContent) {
+    try {
+        // Check if it's a direct URL (not JSON)
+        if (qrContent.startsWith('http')) {
+            // It's a direct URL QR code
+            displayUrlCard(qrContent);
+            return;
+        }
+        
+        // Parse QR data (for JSON content)
+        const data = JSON.parse(qrContent);
+        
+        if (data.type === 'text') {
+            displayTextCard(data);
+        } else if (data.type === 'url') {
+            displayUrlCard(data.data);
+        }
+        
+        // Store for download
+        lastQRData = data;
+        
+        // Enable download button
+        document.getElementById('downloadContentBtn').disabled = false;
+        
+        updateStatus('Content decoded successfully!', 'success');
+        
+    } catch (error) {
+        // If JSON parsing fails, check if it's a direct URL
+        if (qrContent.startsWith('http')) {
+            displayUrlCard(qrContent);
+        } else {
+            handleError('Content display failed', error);
+            updateStatus('Invalid QR code format', 'error');
+        }
+    }
+}
+
+/**
+ * Display text content in card layout
+ * @param {object} data - Text data object
+ */
+function displayTextCard(data) {
+    const scannedContent = document.getElementById('scannedContent');
+    const cardDate = document.getElementById('cardDate');
+    const cardMessageText = document.getElementById('cardMessageText');
+    const urlContainer = document.getElementById('urlContainer');
+    
+    // Show the card
+    scannedContent.style.display = 'block';
+    
+    // Set card date
+    const date = data.timestamp ? new Date(data.timestamp) : new Date();
+    cardDate.textContent = formatCardDate(date);
+    
+    // Set message text
+    cardMessageText.textContent = data.data;
+    cardMessageText.style.display = 'block';
+    
+    // Hide URL container for text cards
+    urlContainer.style.display = 'none';
+    
+    // Generate QR code for the card display
+    generateCardQRCode(JSON.stringify(data));
+    
+    // Setup print functionality
+    setupPrintButton();
+    
+    // Apply theme based on content
+    applyCardTheme('text', data.data);
+}
+
+/**
+ * Display URL content in card layout
+ * @param {string} url - Website URL
+ */
+function displayUrlCard(url) {
+    const scannedContent = document.getElementById('scannedContent');
+    const cardDate = document.getElementById('cardDate');
+    const cardMessageText = document.getElementById('cardMessageText');
+    const urlContainer = document.getElementById('urlContainer');
+    const cardUrl = document.getElementById('cardUrl');
+    
+    // Show the card
+    scannedContent.style.display = 'block';
+    
+    // Set card date
+    cardDate.textContent = formatCardDate(new Date());
+    
+    // Hide message text for URL cards
+    cardMessageText.style.display = 'none';
+    
+    // Show and set URL
+    urlContainer.style.display = 'block';
+    cardUrl.href = url;
+    cardUrl.textContent = url;
+    
+    // Generate QR code for the card display (use direct URL)
+    generateCardQRCode(url);
+    
+    // Setup print functionality
+    setupPrintButton();
+    
+    // Apply theme for URL cards
+    applyCardTheme('url', url);
+    
+    // Store for download
+    lastQRData = {
+        type: 'url',
+        data: url,
+        timestamp: getTimestamp(),
+        displayText: `Website: ${url}`
+    };
+}
+
+/**
+ * Generate QR code specifically for card display
+ * @param {string} content - Content to encode in QR
+ */
+async function generateCardQRCode(content) {
+    try {
+        const canvas = document.getElementById('cardQrCode');
+        await QRCode.toCanvas(canvas, content, {
+            width: 200, // Smaller for card display
+            errorCorrectionLevel: DASHBOARD_CONFIG.QR_ERROR_CORRECTION,
+            margin: 1
+        });
+    } catch (error) {
+        console.error('Card QR generation failed:', error);
+    }
+}
+
+/**
+ * Format date for card display
+ * @param {Date} date - Date to format
+ * @returns {string} Formatted date
+ */
+function formatCardDate(date) {
+    return date.toLocaleDateString('en-US', {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+    });
+}
+
+/**
+ * Apply visual theme to card based on content
+ * @param {string} type - Content type ('text' or 'url')
+ * @param {string} content - The actual content
+ */
+function applyCardTheme(type, content) {
+    const card = document.getElementById('qrCard');
+    
+    // Reset all theme classes
+    card.className = 'qr-card';
+    
+    // Default theme
+    let theme = 'default';
+    
+    // Detect content type for themes
+    const contentLower = content.toLowerCase();
+    
+    if (type === 'text') {
+        if (contentLower.includes('birthday') || contentLower.includes('happy')) {
+            theme = 'birthday';
+        } else if (contentLower.includes('anniversary') || contentLower.includes('congrat')) {
+            theme = 'anniversary';
+        } else if (contentLower.includes('love') || contentLower.includes('miss you')) {
+            theme = 'love';
+        } else if (contentLower.includes('thank')) {
+            theme = 'gratitude';
+        }
+    } else if (type === 'url') {
+        theme = 'website';
+    }
+    
+    // Apply theme class
+    card.classList.add(`card-theme-${theme}`);
+}
+
+/**
+ * Setup print card functionality
+ */
+function setupPrintButton() {
+    const printBtn = document.getElementById('printCardBtn');
+    printBtn.onclick = printCard;
+}
+
+/**
+ * Print the card
+ */
+function printCard() {
+    const card = document.getElementById('qrCard');
+    const originalStyles = document.querySelectorAll('style, link[rel="stylesheet"]');
+    
+    // Create print window
+    const printWindow = window.open('', '_blank');
+    const printDocument = printWindow.document;
+    
+    // Write print content
+    printDocument.write(`
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <title>Print Memory Card</title>
+            <style>
+                body { 
+                    font-family: 'Inter', Arial, sans-serif; 
+                    margin: 0; 
+                    padding: 20px;
+                    display: flex;
+                    justify-content: center;
+                    align-items: center;
+                    min-height: 100vh;
+                    background: white;
+                }
+                .print-card {
+                    border: 2px solid #e1e5e9;
+                    border-radius: 12px;
+                    padding: 20px;
+                    max-width: 400px;
+                    box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+                    background: white;
+                }
+                .card-header { 
+                    text-align: center; 
+                    margin-bottom: 20px; 
+                    border-bottom: 1px solid #eee;
+                    padding-bottom: 15px;
+                }
+                .card-title { 
+                    margin: 10px 0 5px 0; 
+                    color: #2c3e50; 
+                }
+                .card-date { 
+                    color: #7f8c8d; 
+                    font-size: 14px; 
+                }
+                .card-body { 
+                    display: flex; 
+                    gap: 20px; 
+                    align-items: center;
+                    margin-bottom: 20px;
+                }
+                .card-content { 
+                    flex: 1; 
+                }
+                .message-label, .url-label { 
+                    font-weight: bold; 
+                    margin-bottom: 5px; 
+                    color: #2c3e50;
+                }
+                .message-text, .card-url { 
+                    word-break: break-word; 
+                    line-height: 1.4;
+                }
+                .card-footer { 
+                    text-align: center; 
+                    border-top: 1px solid #eee;
+                    padding-top: 15px;
+                    color: #7f8c8d;
+                }
+                @media print {
+                    body { padding: 0; }
+                    .print-card { box-shadow: none; border: 1px solid #ccc; }
+                }
+            </style>
+        </head>
+        <body>
+            <div class="print-card">
+                ${card.innerHTML}
+            </div>
+        </body>
+        </html>
+    `);
+    
+    printDocument.close();
+    
+    // Print after content loads
+    printWindow.onload = function() {
+        printWindow.print();
+        printWindow.onafterprint = function() {
+            printWindow.close();
+        };
+    };
+}
+
+
+
+
+
+
+
+
+
 console.log('✅ Dashboard.js loaded successfully');
