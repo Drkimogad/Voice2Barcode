@@ -8,12 +8,10 @@ const DASHBOARD_CONFIG = {
 };
 
 // Global state
-let currentMode = 'voice';
-let mediaRecorder = null;
+let currentMode = 'links';
 let audioChunks = [];
 let recordingTimer = null;
 let recordingStartTime = 0;
-let voices = [];
 let html5QrCode = null;
 let lastQRData = null;
 let isProcessing = false;
