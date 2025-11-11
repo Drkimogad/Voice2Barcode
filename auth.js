@@ -2,28 +2,21 @@
 // AUTHENTICATION MODULE
 // ========================================
 
-const AUTH_CONFIG = {
-    TOKEN_KEY: 'authToken',
-    USER_KEY: 'currentUser',
-    USERS_KEY: 'registeredUsers'
-};
-
-/**
- * Initialize authentication system
- */
 function initAuth() {
     console.log('🔐 Initializing authentication...');
     
-    // Check if user is already authenticated
-    const token = localStorage.getItem(AUTH_CONFIG.TOKEN_KEY);
-    
-    if (token) {
-        // User is logged in, show dashboard
-        showDashboard();
-    } else {
-        // User not logged in, show auth section
-        showAuth();
-    }
+    // Replace localStorage check with Firebase auth state listener
+    firebase.auth().onAuthStateChanged((user) => {
+        if (user) {
+            // User is signed in with Firebase
+            console.log('✅ Firebase user logged in:', user.email);
+            showDashboard();
+        } else {
+            // User is signed out
+            console.log('🔒 No Firebase user');
+            showAuth();
+        }
+    });
     
     // Setup event listeners
     setupAuthListeners();
@@ -102,31 +95,9 @@ function handleSignup(e) {
             throw new Error('Password must be at least 6 characters');
         }
         
-        // Get existing users
-        const users = getRegisteredUsers();
-        
-        // Check if username already exists
-        if (users.find(u => u.username === username)) {
-            throw new Error('Username already exists');
-        }
-        
-        // Check if email already exists
-        if (users.find(u => u.email === email)) {
-            throw new Error('Email already registered');
-        }
-        
-        // Create new user
-        const newUser = {
-            id: generateId(),
-            username,
-            email,
-            password, // In production, this should be hashed!
-            createdAt: getTimestamp()
-        };
-        
-        // Save user
-        users.push(newUser);
-        localStorage.setItem(AUTH_CONFIG.USERS_KEY, JSON.stringify(users));
+          // REPLACE localStorage with Firebase Auth
+        const userCredential = await firebase.auth().createUserWithEmailAndPassword(email, password);
+        console.log('✅ Firebase user registered:', email);
         
         // Clear form
         document.getElementById('signupForm').reset();
@@ -162,39 +133,23 @@ function handleSignin(e) {
         if (!username || !password) {
             throw new Error('All fields are required');
         }
-        
-        // Get registered users
-        const users = getRegisteredUsers();
-        
-        // Find user
-        const user = users.find(u => u.username === username && u.password === password);
-        
-        if (!user) {
-            throw new Error('Invalid username or password');
-        }
-        
-        // Create session
-        const token = generateToken(user);
-        localStorage.setItem(AUTH_CONFIG.TOKEN_KEY, token);
-        localStorage.setItem(AUTH_CONFIG.USER_KEY, JSON.stringify({
-            id: user.id,
-            username: user.username,
-            email: user.email
-        }));
+        // REPLACE localStorage check with Firebase Auth
+        const userCredential = await firebase.auth().signInWithEmailAndPassword(email, password);
+        console.log('✅ Firebase user logged in:', email);
         
         // Clear form
         document.getElementById('signinForm').reset();
         
         // Show dashboard
-        updateStatus('Welcome back, ' + user.username + '!', 'success');
-        showDashboard();
+        updateStatus('Welcome back!', 'success');
+        showDashboard();                    // to verify
         
         console.log('✅ User logged in:', username);
         
     } catch (error) {
         errorDisplay.textContent = error.message;
         document.getElementById('signinPassword').value = '';
-        console.error('Signin error:', error);
+        console.error('Firebase signin error:', error);
     }
 }
 
@@ -203,42 +158,20 @@ function handleSignin(e) {
  */
 function handleLogout() {
     try {
-        // Clear session
-        localStorage.removeItem(AUTH_CONFIG.TOKEN_KEY);
-        localStorage.removeItem(AUTH_CONFIG.USER_KEY);
+// REPLACE localStorage clear with Firebase signOut
+        await firebase.auth().signOut();
+        console.log('✅ Firebase user logged out');
         
         // Show auth section
-        showAuth();
+        showAuth();                                                     // to verify
         
         updateStatus('Logged out successfully', 'success');
         console.log('✅ User logged out');
         
     } catch (error) {
-        console.error('Logout error:', error);
+        console.error('Firebase logout error:', error);
         updateStatus('Logout failed', 'error');
     }
-}
-
-/**
- * Generate authentication token
- * @param {object} user - User object
- * @returns {string} Token
- */
-function generateToken(user) {
-    return btoa(JSON.stringify({
-        userId: user.id,
-        username: user.username,
-        timestamp: Date.now()
-    }));
-}
-
-/**
- * Get registered users from localStorage
- * @returns {Array} Array of user objects
- */
-function getRegisteredUsers() {
-    const usersJson = localStorage.getItem(AUTH_CONFIG.USERS_KEY);
-    return usersJson ? JSON.parse(usersJson) : [];
 }
 
 /**
@@ -246,8 +179,8 @@ function getRegisteredUsers() {
  * @returns {object|null} User object or null
  */
 function getCurrentUser() {
-    const userJson = localStorage.getItem(AUTH_CONFIG.USER_KEY);
-    return userJson ? JSON.parse(userJson) : null;
+    // REPLACE localStorage with Firebase currentUser
+    return firebase.auth().currentUser;
 }
 
 /**
@@ -255,7 +188,8 @@ function getCurrentUser() {
  * @returns {boolean} True if authenticated
  */
 function isAuthenticated() {
-    return !!localStorage.getItem(AUTH_CONFIG.TOKEN_KEY);
+    // REPLACE localStorage check with Firebase currentUser
+    return !!firebase.auth().currentUser;
 }
 
 /**
