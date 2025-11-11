@@ -34,6 +34,210 @@
             align-items: center;
             padding: 20px;
         }
+
+        /* Card Container */
+        .memory-card {
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 12px 40px rgba(0, 0, 0, 0.15);
+            max-width: 500px;
+            width: 100%;
+            overflow: hidden;
+            border: 3px solid var(--charcoal);
+        }
+
+        /* Card Header */
+        .card-header {
+            background: linear-gradient(135deg, var(--silver) 0%, #D3D3D3 100%);
+            padding: 30px;
+            text-align: center;
+            border-bottom: 4px solid var(--crimson);
+        }
+
+        .card-icon {
+            font-size: 3em;
+            margin-bottom: 15px;
+        }
+
+        .card-title {
+            color: var(--charcoal);
+            font-size: 1.8em;
+            font-weight: 700;
+            margin-bottom: 8px;
+        }
+
+        .card-date {
+            color: var(--charcoal);
+            font-size: 14px;
+            opacity: 0.8;
+            font-weight: 500;
+        }
+
+        /* Card Body */
+        .card-body {
+            padding: 30px;
+        }
+
+        .message-text {
+            font-size: 16px;
+            line-height: 1.6;
+            color: var(--charcoal);
+            background: var(--cream);
+            padding: 20px;
+            border-radius: 8px;
+            border-left: 4px solid var(--mustard);
+            white-space: pre-line;
+            word-break: break-word;
+        }
+
+        .url-link {
+            display: inline-block;
+            background: var(--crimson);
+            color: white;
+            padding: 12px 24px;
+            border-radius: 8px;
+            text-decoration: none;
+            font-weight: 600;
+            margin-top: 15px;
+            transition: all 0.3s ease;
+        }
+
+        .url-link:hover {
+            background: #B22222;
+            transform: translateY(-2px);
+        }
+
+        /* Card Footer */
+        .card-footer {
+            background: var(--charcoal);
+            color: white;
+            padding: 20px;
+            text-align: center;
+            font-size: 14px;
+            border-top: 3px solid var(--crimson);
+        }
+
+        /* Loading and Error States */
+        #loadingMessage, #errorMessage {
+            text-align: center;
+            padding: 40px;
+            font-size: 18px;
+            color: var(--charcoal);
+            max-width: 500px;
+            width: 100%;
+        }
+
+        #errorMessage {
+            color: var(--crimson);
+            background: #FFE5E5;
+            border-radius: 8px;
+            border-left: 4px solid var(--crimson);
+        }
+
+        /* Theme Variations */
+        .theme-birthday .card-header {
+            background: linear-gradient(135deg, #FF9FF3 0%, #FD79A8 100%);
+            border-bottom-color: #E84393;
+        }
+
+        .theme-wedding .card-header {
+            background: linear-gradient(135deg, #BB8FCE 0%, #9B59B6 100%);
+            border-bottom-color: #8E44AD;
+        }
+
+        .theme-love .card-header {
+            background: linear-gradient(135deg, #EAA29A 0%, #E74C3C 100%);
+            border-bottom-color: #C0392B;
+        }
+
+        .theme-gratitude .card-header {
+            background: linear-gradient(135deg, #F7DC6F 0%, #F39C12 100%);
+            border-bottom-color: #E67E22;
+        }
+
+        .theme-anniversary .card-header {
+            background: linear-gradient(135deg, #F1948A 0%, #E74C3C 100%);
+            border-bottom-color: #CB4335;
+        }
+
+        .theme-baby .card-header {
+            background: linear-gradient(135deg, #85C1E9 0%, #3498DB 100%);
+            border-bottom-color: #2980B9;
+        }
+
+        .theme-graduation .card-header {
+            background: linear-gradient(135deg, #82E0AA 0%, #27AE60 100%);
+            border-bottom-color: #229954;
+        }
+
+        .theme-website .card-header {
+            background: linear-gradient(135deg, #85C1E9 0%, #3498DB 100%);
+            border-bottom-color: #2980B9;
+        }
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .memory-card {
+                max-width: 400px;
+            }
+            
+            .card-header {
+                padding: 25px;
+            }
+            
+            .card-body {
+                padding: 25px;
+            }
+            
+            .card-icon {
+                font-size: 2.5em;
+            }
+            
+            .card-title {
+                font-size: 1.5em;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .memory-card {
+                max-width: 100%;
+                margin: 10px;
+            }
+            
+            .card-header {
+                padding: 20px;
+            }
+            
+            .card-body {
+                padding: 20px;
+            }
+            
+            .card-icon {
+                font-size: 2em;
+            }
+            
+            .card-title {
+                font-size: 1.3em;
+            }
+            
+            .message-text {
+                font-size: 14px;
+                padding: 15px;
+            }
+        }
+
+        @media print {
+            body {
+                background: white;
+                padding: 0;
+            }
+            
+            .memory-card {
+                box-shadow: none;
+                border: 2px solid #000;
+                max-width: none;
+            }
+        }
     </style>
 </head>
 <body>
@@ -45,7 +249,7 @@
     <div id="errorMessage" style="display: none;"></div>
 
     <script>
-        // Firebase configuration (same as your main app)
+        // Firebase configuration
         const firebaseConfig = {
             apiKey: "AIzaSyAcHV1_wbQjAojF9rBZHZ9Sg2LOYcPqde8",
             authDomain: "memoryinqr-96de6.firebaseapp.com",
@@ -59,6 +263,98 @@
         // Initialize Firebase
         firebase.initializeApp(firebaseConfig);
         console.log('🔥 Firebase initialized for card viewer');
+
+        // Get message ID from URL
+        const urlParams = new URLSearchParams(window.location.search);
+        const messageId = urlParams.get('id');
+
+        if (!messageId) {
+            showError('No message ID found in URL');
+        } else {
+            loadMessage(messageId);
+        }
+
+        async function loadMessage(messageId) {
+            try {
+                const db = firebase.firestore();
+                const docRef = db.collection('messages').doc(messageId);
+                const doc = await docRef.get();
+                
+                if (!doc.exists) {
+                    showError('Message not found');
+                    return;
+                }
+                
+                const messageData = doc.data();
+                displayMessage(messageData);
+                
+                // Increment view count
+                await docRef.update({
+                    views: firebase.firestore.FieldValue.increment(1)
+                });
+                
+            } catch (error) {
+                console.error('Error loading message:', error);
+                showError('Failed to load message');
+            }
+        }
+
+        function displayMessage(data) {
+            document.getElementById('loadingMessage').style.display = 'none';
+            
+            const cardHTML = `
+                <div class="memory-card theme-${data.theme || 'default'}">
+                    <div class="card-header">
+                        <div class="card-icon">${getThemeIcon(data.theme)}</div>
+                        <h1 class="card-title">${data.title || 'Memory Card'}</h1>
+                        <div class="card-date">${formatDate(data.createdAt?.toDate())}</div>
+                    </div>
+                    <div class="card-body">
+                        ${data.type === 'url' 
+                            ? `<a href="${data.content}" class="url-link" target="_blank">${data.content}</a>`
+                            : `<div class="message-text">${data.content}</div>`
+                        }
+                    </div>
+                    <div class="card-footer">
+                        ✨ Created with MemoryinQR ✨
+                    </div>
+                </div>
+            `;
+            
+            document.getElementById('cardContainer').innerHTML = cardHTML;
+        }
+
+        function getThemeIcon(theme) {
+            const icons = {
+                birthday: '🎂',
+                wedding: '💒',
+                love: '❤️',
+                gratitude: '🙏',
+                anniversary: '💝',
+                baby: '👶',
+                graduation: '🎓',
+                website: '🌐',
+                default: '🎁'
+            };
+            return icons[theme] || icons.default;
+        }
+
+        function formatDate(date) {
+            if (!date) return 'Unknown date';
+            return date.toLocaleDateString('en-US', {
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit'
+            });
+        }
+
+        function showError(message) {
+            document.getElementById('loadingMessage').style.display = 'none';
+            document.getElementById('errorMessage').style.display = 'block';
+            document.getElementById('errorMessage').textContent = message;
+        }
     </script>
 </body>
 </html>
