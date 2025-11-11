@@ -22,8 +22,8 @@ function initDashboard() {
     // Setup mode switching
     setupModeSwitching();
     
-    // Initialize voice mode by default
-    switchToMode('voice');
+    // Initialize text mode by default
+    switchToMode('text');
     
     // Setup global handlers
     setupGlobalHandlers();
