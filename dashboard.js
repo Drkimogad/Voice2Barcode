@@ -6,6 +6,7 @@ const DASHBOARD_CONFIG = {
     MAX_TEXT_LENGTH: 200,
     QR_SIZE: 300,
     QR_ERROR_CORRECTION: 'H'
+    URL_REGEX: /^(https?:\/\/)?([\da-z\.-]+)\.([a-z\.]{2,6})([\/\w \.-]*)*\/?$/   // for links
 };
 
 // Global state
@@ -79,8 +80,8 @@ function switchToMode(mode) {
     
     // Initialize new mode
     switch(mode) {
-        case 'voice':
-            initVoiceMode();
+        case 'links':  // ADD THIS CASE
+            initLinksMode();
             break;
         case 'text':
             initTextMode();
@@ -119,65 +120,155 @@ function cleanupMode() {
     }
 }
 
+// ========================================
+// LINKS MODE - Website Links QR Code
+// ========================================
+
+function initLinksMode() {
+    const urlInput = document.getElementById('urlInput');
+    const generateBtn = document.getElementById('generateLinkQRBtn');
+    const urlPreview = document.getElementById('urlPreview');
+    
+    // Generate QR when button clicked
+    generateBtn.onclick = handleLinkConversion;
+    
+    // Generate QR when Enter key pressed
+    urlInput.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') {
+            handleLinkConversion();
+        }
+    });
+    
+    // Live URL validation and preview
+    urlInput.addEventListener('input', function() {
+        const url = this.value.trim();
+        
+        if (isValidUrl(url)) {
+            // Show preview
+            const previewLink = document.getElementById('previewLink');
+            const fullUrl = url.startsWith('http') ? url : `https://${url}`;
+            previewLink.href = fullUrl;
+            previewLink.textContent = fullUrl;
+            urlPreview.style.display = 'block';
+            
+            // Visual feedback
+            this.classList.remove('invalid');
+            this.classList.add('valid');
+        } else {
+            // Hide preview
+            urlPreview.style.display = 'none';
+            this.classList.remove('valid');
+            if (url.length > 0) {
+                this.classList.add('invalid');
+            } else {
+                this.classList.remove('invalid');
+            }
+        }
+    });
+}
+
+/**
+ * Validate URL format
+ * @param {string} url - URL to validate
+ * @returns {boolean} True if valid URL
+ */
+function isValidUrl(url) {
+    if (!url) return false;
+    
+    // Add https:// if missing
+    const fullUrl = url.startsWith('http') ? url : `https://${url}`;
+    
+    try {
+        const urlObj = new URL(fullUrl);
+        return urlObj.protocol === 'http:' || urlObj.protocol === 'https:';
+    } catch {
+        return false;
+    }
+}
+
+/**
+ * Handle URL to QR conversion
+ */
+async function handleLinkConversion() {
+    try {
+        const urlInput = document.getElementById('urlInput');
+        const url = urlInput.value.trim();
+        
+        if (!url) {
+            updateStatus('Please enter a website URL', 'error');
+            urlInput.focus();
+            return;
+        }
+        
+        if (!isValidUrl(url)) {
+            updateStatus('Please enter a valid website URL', 'error');
+            urlInput.focus();
+            return;
+        }
+        
+        // Generate QR code
+        await generateQRFromUrl(url);
+        
+    } catch (error) {
+        handleError('URL conversion failed', error);
+    }
+}
+
+/**
+ * Generate QR code from URL
+ * @param {string} url - Website URL
+ */
+async function generateQRFromUrl(url) {
+    try {
+        toggleLoading(true, 'Generating QR code...');
+        
+        // Ensure URL has protocol
+        const fullUrl = url.startsWith('http') ? url : `https://${url}`;
+        
+        // Create QR data - use direct URL for scanning, not JSON
+        // This makes QR codes open directly in browser when scanned
+        const qrContent = fullUrl;
+        
+        // Store for download and display
+        lastQRData = {
+            type: 'url',
+            data: fullUrl,
+            timestamp: getTimestamp(),
+            displayText: `Website: ${fullUrl}`
+        };
+        
+        // Generate QR code with direct URL (not JSON)
+        const canvas = document.getElementById('qrcode');
+        await QRCode.toCanvas(canvas, qrContent, {
+            width: DASHBOARD_CONFIG.QR_SIZE,
+            errorCorrectionLevel: DASHBOARD_CONFIG.QR_ERROR_CORRECTION
+        });
+        
+        // Enable download button
+        document.getElementById('downloadQRCodeBtn').disabled = false;
+        
+        updateStatus('QR code generated successfully!', 'success');
+        
+    } catch (error) {
+        handleError('QR generation failed', error);
+    } finally {
+        toggleLoading(false);
+    }
+}
+
 
 // ========================================
 // TEXT MODE
 // ========================================
 
 function initTextMode() {
-    // Load voices
-    loadVoices();
-    
     const convertBtn = document.getElementById('textConvertBtn');
     convertBtn.onclick = handleTextConversion;
-    
-    // Listen for voices loaded
-    if (window.speechSynthesis) {
-        window.speechSynthesis.onvoiceschanged = loadVoices;
-    }
-}
-
-function loadVoices() {
-    if (!window.speechSynthesis) {
-        updateStatus('Text-to-speech not supported in this browser', 'error');
-        return;
-    }
-    
-    voices = window.speechSynthesis.getVoices();
-    
-    const maleSelect = document.getElementById('maleVoiceSelect');
-    const femaleSelect = document.getElementById('femaleVoiceSelect');
-    
-    // Clear existing options
-    maleSelect.innerHTML = '<option value="">Select Male Voice</option>';
-    femaleSelect.innerHTML = '<option value="">Select Female Voice</option>';
-    
-    voices.forEach(voice => {
-        const option = document.createElement('option');
-        option.textContent = `${voice.name} (${voice.lang})`;
-        option.value = voice.name;
-        
-        // Categorize by name (simple heuristic)
-        const nameLower = voice.name.toLowerCase();
-        if (nameLower.includes('male') && !nameLower.includes('female')) {
-            maleSelect.appendChild(option.cloneNode(true));
-        } else if (nameLower.includes('female')) {
-            femaleSelect.appendChild(option.cloneNode(true));
-        } else {
-            // Add to both if unclear
-            maleSelect.appendChild(option.cloneNode(true));
-            femaleSelect.appendChild(option.cloneNode(true));
-        }
-    });
 }
 
 async function handleTextConversion() {
     try {
-        const text = document.getElementById('textToConvert').value.trim();
-        const maleVoice = document.getElementById('maleVoiceSelect').value;
-        const femaleVoice = document.getElementById('femaleVoiceSelect').value;
-        const selectedVoice = maleVoice || femaleVoice;
-        
+        const text = document.getElementById('textToConvert').value.trim();      
         if (!text) {
             updateStatus('Please enter some text', 'error');
             return;
@@ -188,28 +279,15 @@ async function handleTextConversion() {
             return;
         }
         
-        if (!selectedVoice) {
-            updateStatus('Please select a voice', 'error');
-            return;
-        }
-        
-        // Speak the text
-        const utterance = new SpeechSynthesisUtterance(text);
-        const voice = voices.find(v => v.name === selectedVoice);
-        if (voice) utterance.voice = voice;
-        
-        window.speechSynthesis.speak(utterance);
-        updateStatus('Speaking...', 'info');
-        
         // Generate QR code
-        await generateQRFromText(text, selectedVoice);
+        await generateQRFromText(text);
         
     } catch (error) {
         handleError('Text conversion failed', error);
     }
 }
 
-async function generateQRFromText(text, voiceName) {
+async function generateQRFromText(text) {
     try {
         toggleLoading(true, 'Generating QR code...');
         
@@ -217,7 +295,6 @@ async function generateQRFromText(text, voiceName) {
         const qrData = {
             type: 'text',
             data: text,
-            voice: voiceName,
             timestamp: getTimestamp()
         };
         
@@ -371,7 +448,14 @@ function stopQRScanner() {
 
 function displayDecodedContent(qrContent) {
     try {
-        // Parse QR data
+        // Check if it's a direct URL (not JSON)
+        if (qrContent.startsWith('http')) {
+            // It's a direct URL QR code
+            displayUrlContent(qrContent);
+            return;
+        }
+        
+        // Parse QR data (for JSON content)
         const data = JSON.parse(qrContent);
         
         const scannedContent = document.getElementById('scannedContent');
@@ -386,28 +470,9 @@ function displayDecodedContent(qrContent) {
             // Display text
             messageText.textContent = data.data;
             
-            // Add replay button for text-to-speech
-            if (data.voice && window.speechSynthesis) {
-                const replayBtn = document.createElement('button');
-                replayBtn.className = 'btn';
-                replayBtn.textContent = '🔊 Replay';
-                replayBtn.onclick = () => {
-                    const utterance = new SpeechSynthesisUtterance(data.data);
-                    const voice = voices.find(v => v.name === data.voice);
-                    if (voice) utterance.voice = voice;
-                    window.speechSynthesis.speak(utterance);
-                };
-                scannedAudio.appendChild(replayBtn);
-            }
-            
-        } else if (data.type === 'audio') {
-            // Display audio player
-            const audio = document.createElement('audio');
-            audio.controls = true;
-            audio.src = `data:${data.mimeType};base64,${data.data}`;
-            scannedAudio.appendChild(audio);
-            
-            messageText.textContent = `Audio Recording (${data.duration || '?'}s)`;
+        } else if (data.type === 'url') {
+            // Display URL content
+            displayUrlContent(data.data);
         }
         
         // Store for download
@@ -419,9 +484,52 @@ function displayDecodedContent(qrContent) {
         updateStatus('Content decoded successfully!', 'success');
         
     } catch (error) {
-        handleError('Content display failed', error);
-        updateStatus('Invalid QR code format', 'error');
+        // If JSON parsing fails, check if it's a direct URL
+        if (qrContent.startsWith('http')) {
+            displayUrlContent(qrContent);
+        } else {
+            handleError('Content display failed', error);
+            updateStatus('Invalid QR code format', 'error');
+        }
     }
+}
+
+/**
+ * Display URL content in results section
+ * @param {string} url - Website URL
+ */
+function displayUrlContent(url) {
+    const scannedContent = document.getElementById('scannedContent');
+    const messageText = document.getElementById('messageText');
+    const scannedAudio = document.getElementById('scannedAudio');
+    
+    scannedContent.style.display = 'block';
+    scannedAudio.innerHTML = '';
+    
+    // Create clickable link
+    const link = document.createElement('a');
+    link.href = url;
+    link.target = '_blank';
+    link.rel = 'noopener noreferrer';
+    link.textContent = url;
+    link.className = 'url-link';
+    
+    messageText.innerHTML = '';
+    messageText.appendChild(document.createTextNode('Website: '));
+    messageText.appendChild(link);
+    
+    // Store for download
+    lastQRData = {
+        type: 'url',
+        data: url,
+        timestamp: getTimestamp(),
+        displayText: `Website: ${url}`
+    };
+    
+    // Enable download button
+    document.getElementById('downloadContentBtn').disabled = false;
+    
+    updateStatus('Website link decoded successfully!', 'success');
 }
 
 // ========================================
