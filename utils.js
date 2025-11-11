@@ -85,105 +85,149 @@ function blobToBase64(blob) {
 }
 
 // Add AUDIO compression function
+
 async function compressAudioBlob(blob) {
-    updateStatus('Starting compression...', 'silver');
-    
-    if (blob.size <= 30000) {
-        updateStatus('Audio size is good', 'success');
-        return blob;
-    }
+    console.log('🔧 Compression started - Original size:', blob.size, 'bytes');
+    updateStatus('Compressing audio...', 'silver');
     
     try {
-        updateStatus('Compressing with Opus...', 'silver');
-        const compressedBlob = await reencodeWithOpus(blob);
+        // Convert blob to audio buffer
+        console.log('🔄 Converting blob to audio buffer...');
+        const audioBuffer = await blobToAudioBuffer(blob);
         
-        if (compressedBlob.size <= 30000) {
-            updateStatus('Compression successful!', 'success');
-        } else {
-            updateStatus('Compressed but still large', 'warning');
-        }
+        // Create lower quality audio
+        console.log('🎚️ Downsampling audio...');
+        const compressedBuffer = await downsampleAudio(audioBuffer, 8000, 1); // 8kHz mono
         
+        // Convert back to blob
+        console.log('📦 Encoding to WAV...');
+        const compressedBlob = await audioBufferToWav(compressedBuffer);
+        
+        console.log('✅ Compression complete - Final size:', compressedBlob.size, 'bytes');
+        updateStatus('Audio compressed successfully', 'success');
         return compressedBlob;
         
     } catch (error) {
-        updateStatus('Compression failed', 'error');
+        console.error('❌ Compression failed:', error);
+        updateStatus('Compression failed, using original', 'warning');
         return blob;
     }
 }
 
-
-
-async function reencodeWithOpus(blob) {
-    return new Promise((resolve, reject) => {
-        // Create audio context from blob
-        const audioContext = new AudioContext();
-        const fileReader = new FileReader();
-        
-        fileReader.onload = async function() {
-            try {
-                const audioBuffer = await audioContext.decodeAudioData(this.result);
-                
-                // Use Opus-recorder to re-encode at low bitrate
-                const recorder = new Recorder({
-                    encoderBitRate: 16000, // Low bitrate for speech (16kbps)
-                    encoderSampleRate: 16000, // Lower sample rate
-                    numberOfChannels: 1, // Mono
-                    encoderPath: 'libs/opus-recorder/encoderWorker.min.js'
-                });
-                
-                // Create a new stream for recording
-                const destination = recorder.createScriptProcessorNode();
-                
-                recorder.start().then(() => {
-                    // Play through recorder to capture
-                    const source = audioContext.createBufferSource();
-                    source.buffer = audioBuffer;
-                    source.connect(destination);
-                    source.start();
-                    
-                    source.onended = () => {
-                        recorder.stop().then((opusBlob) => {
-                            resolve(opusBlob);
-                        }).catch(reject);
-                    };
-                }).catch(reject);
-                
-            } catch (error) {
-                reject(error);
-            }
-        };
-        
-        fileReader.readAsArrayBuffer(blob);
-    });
+async function blobToAudioBuffer(blob) {
+    console.log('📄 Reading blob as array buffer...');
+    const arrayBuffer = await blob.arrayBuffer();
+    
+    console.log('🎵 Creating audio context...');
+    const audioContext = new AudioContext();
+    
+    console.log('🔊 Decoding audio data...');
+    const audioBuffer = await audioContext.decodeAudioData(arrayBuffer);
+    
+    console.log('✅ Audio buffer created - duration:', audioBuffer.duration, 'seconds');
+    return audioBuffer;
 }
 
-//validate audio quality
+async function downsampleAudio(audioBuffer, targetSampleRate, targetChannels) {
+    console.log(`🎚️ Downsampling to ${targetSampleRate}Hz, ${targetChannels} channel(s)`);
+    
+    const length = audioBuffer.length * targetSampleRate / audioBuffer.sampleRate;
+    const offlineContext = new OfflineAudioContext(
+        targetChannels,
+        length,
+        targetSampleRate
+    );
+    
+    const source = offlineContext.createBufferSource();
+    source.buffer = audioBuffer;
+    source.connect(offlineContext.destination);
+    source.start();
+    
+    console.log('🔄 Rendering downsampled audio...');
+    const renderedBuffer = await offlineContext.startRendering();
+    
+    console.log('✅ Downsampling complete');
+    return renderedBuffer;
+}
+
+function audioBufferToWav(buffer) {
+    console.log('💾 Converting to WAV format...');
+    
+    const length = buffer.length;
+    const channels = buffer.numberOfChannels;
+    const sampleRate = buffer.sampleRate;
+    
+    const wavBuffer = new ArrayBuffer(44 + length * channels * 2);
+    const view = new DataView(wavBuffer);
+    
+    // Write WAV header
+    const writeString = (offset, string) => {
+        for (let i = 0; i < string.length; i++) {
+            view.setUint8(offset + i, string.charCodeAt(i));
+        }
+    };
+    
+    writeString(0, 'RIFF');
+    view.setUint32(4, 36 + length * channels * 2, true);
+    writeString(8, 'WAVE');
+    writeString(12, 'fmt ');
+    view.setUint32(16, 16, true);
+    view.setUint16(20, 1, true);
+    view.setUint16(22, channels, true);
+    view.setUint32(24, sampleRate, true);
+    view.setUint32(28, sampleRate * channels * 2, true);
+    view.setUint16(32, channels * 2, true);
+    view.setUint16(34, 16, true);
+    writeString(36, 'data');
+    view.setUint32(40, length * channels * 2, true);
+    
+    // Write audio data
+    let offset = 44;
+    for (let i = 0; i < length; i++) {
+        for (let channel = 0; channel < channels; channel++) {
+            const sample = Math.max(-1, Math.min(1, buffer.getChannelData(channel)[i]));
+            view.setInt16(offset, sample < 0 ? sample * 0x8000 : sample * 0x7FFF, true);
+            offset += 2;
+        }
+    }
+    
+    console.log('✅ WAV conversion complete');
+    return new Blob([wavBuffer], { type: 'audio/wav' });
+}
+
 async function validateAudioQuality(blob) {
-    updateStatus('Validating audio...', 'silver');
+    console.log('🔍 Validating audio - Size:', blob.size, 'bytes');
+    updateStatus('Validating audio quality...', 'silver');
     
     return new Promise((resolve) => {
         if (!blob || blob.size < 2000) {
+            console.log('❌ Audio too small or invalid');
             updateStatus('Audio too small', 'error');
             resolve(false);
             return;
         }
         
+        console.log('🎵 Testing audio playback...');
         const audio = new Audio();
         audio.src = URL.createObjectURL(blob);
         
         audio.onloadeddata = () => {
+            console.log('✅ Audio validation passed - can play');
             URL.revokeObjectURL(audio.src);
             updateStatus('Audio quality good', 'success');
             resolve(true);
         };
         
         audio.onerror = () => {
+            console.log('❌ Audio validation failed - cannot play');
             URL.revokeObjectURL(audio.src);
             updateStatus('Audio cannot play', 'error');
             resolve(false);
         };
         
+        // Timeout fallback
         setTimeout(() => {
+            console.log('⏰ Audio validation timeout, assuming valid');
             URL.revokeObjectURL(audio.src);
             updateStatus('Audio validation complete', 'info');
             resolve(true);
