@@ -875,27 +875,45 @@ function setupPrintButton() {
 /**
  * Print the card
  */
+/**
+ * Print the card - CLEAN VERSION WITHOUT QR CODE
+ */
+/**
+ * Print the card - WITH DYNAMIC TITLES
+ */
 function printCard() {
     const card = document.getElementById('qrCard');
+    
+    // Get dynamic content from the displayed card
+    const message = document.getElementById('cardMessageText').textContent;
+    const date = document.getElementById('cardDate').textContent;
+    const cardIcon = document.querySelector('.card-icon').textContent;
+    const cardTitle = document.querySelector('.card-title').textContent;
+    
+    // Detect theme from card classes
+    const cardElement = document.getElementById('qrCard');
+    let theme = 'default';
+    if (cardElement.classList.contains('card-theme-birthday')) theme = 'birthday';
+    else if (cardElement.classList.contains('card-theme-anniversary')) theme = 'anniversary';
+    else if (cardElement.classList.contains('card-theme-love')) theme = 'love';
+    else if (cardElement.classList.contains('card-theme-gratitude')) theme = 'gratitude';
+    else if (cardElement.classList.contains('card-theme-website')) theme = 'website';
     
     // Create print window
     const printWindow = window.open('', '_blank');
     const printDocument = printWindow.document;
     
-    // Get card content but remove the print button
-    const cardContent = card.innerHTML.replace(/<button[^>]*print-btn[^>]*>[\s\S]*?<\/button>/, '');
-    
-    // Write print content with HORIZONTAL layout for better print use
+    // Write dynamic print content
     printDocument.write(`
         <!DOCTYPE html>
         <html>
         <head>
-            <title>Print Memory Card</title>
+            <title>Print ${cardTitle}</title>
             <style>
                 body { 
                     font-family: 'Inter', Arial, sans-serif; 
                     margin: 0; 
-                    padding: 20px;
+                    padding: 40px;
                     display: flex;
                     justify-content: center;
                     align-items: center;
@@ -903,84 +921,98 @@ function printCard() {
                     background: white;
                 }
                 .print-card {
-                    border: 2px solid #e1e5e9;
+                    border: 2px solid #333;
                     border-radius: 12px;
-                    padding: 20px;
+                    padding: 30px;
                     max-width: 500px;
-                    box-shadow: 0 4px 20px rgba(0,0,0,0.1);
                     background: white;
+                    text-align: center;
                 }
                 .card-header { 
-                    text-align: center; 
-                    margin-bottom: 20px; 
-                    border-bottom: 1px solid #eee;
-                    padding-bottom: 15px;
+                    margin-bottom: 25px; 
+                    border-bottom: 2px solid #eee;
+                    padding-bottom: 20px;
+                }
+                .card-icon { 
+                    font-size: 3em; 
+                    margin-bottom: 15px;
                 }
                 .card-title { 
-                    margin: 10px 0 5px 0; 
+                    margin: 10px 0 8px 0; 
                     color: #2c3e50; 
-                    font-size: 1.4em;
+                    font-size: 1.6em;
+                    font-weight: bold;
                 }
                 .card-date { 
                     color: #7f8c8d; 
-                    font-size: 14px; 
+                    font-size: 16px; 
+                    font-weight: 500;
                 }
-                /* HORIZONTAL LAYOUT FOR PRINT - Better space usage */
-                .card-body { 
-                    display: flex; 
-                    gap: 20px; 
-                    align-items: flex-start;
-                    margin-bottom: 20px;
+                .message-container {
+                    margin: 25px 0;
+                    padding: 0 20px;
                 }
-                .qr-display {
-                    flex-shrink: 0;
-                }
-                .card-content { 
-                    flex: 1; 
-                }
-                .message-label, .url-label { 
+                .message-label { 
                     font-weight: bold; 
-                    margin-bottom: 5px; 
+                    margin-bottom: 15px; 
                     color: #2c3e50;
-                    font-size: 14px;
+                    font-size: 16px;
+                    text-transform: uppercase;
+                    letter-spacing: 1px;
                 }
-                .message-text, .card-url { 
+                .message-text { 
                     word-break: break-word; 
-                    line-height: 1.4;
-                    font-size: 14px;
+                    line-height: 1.6;
+                    font-size: 16px;
+                    color: #2c3e50;
+                    background: #f8f9fa;
+                    padding: 20px;
+                    border-radius: 8px;
+                    border-left: 4px solid #4a90e2;
+                    text-align: left;
                 }
                 .card-footer { 
-                    text-align: center; 
-                    border-top: 1px solid #eee;
-                    padding-top: 15px;
+                    margin-top: 25px;
+                    border-top: 2px solid #eee;
+                    padding-top: 20px;
                     color: #7f8c8d;
                     font-size: 14px;
+                    font-style: italic;
                 }
-                /* Hide the print button in print view */
-                .print-btn {
-                    display: none !important;
-                }
+                
+                /* Dynamic theme colors for print */
+                ${getPrintThemeStyles(theme)}
+                
                 @media print {
                     body { 
-                        padding: 0; 
+                        padding: 20px; 
                         display: block;
                     }
                     .print-card { 
-                        box-shadow: none; 
-                        border: 1px solid #ccc;
+                        border: 2px solid #000;
+                        box-shadow: none;
                         max-width: none;
                         margin: 0 auto;
-                    }
-                    /* Ensure good print layout */
-                    .card-body {
-                        display: flex !important;
                     }
                 }
             </style>
         </head>
         <body>
-            <div class="print-card">
-                ${cardContent}
+            <div class="print-card print-theme-${theme}">
+                <div class="card-header">
+                    <div class="card-icon">${cardIcon}</div>
+                    <h1 class="card-title">${cardTitle}</h1>
+                    <div class="card-date">${date}</div>
+                </div>
+                
+                <div class="message-container">
+                    <div class="message-label">Message</div>
+                    <div class="message-text">${message}</div>
+                </div>
+                
+                <div class="card-footer">
+                    ✨ MemoryQR ✨
+                </div>
             </div>
         </body>
         </html>
@@ -991,11 +1023,39 @@ function printCard() {
     // Print after content loads
     printWindow.onload = function() {
         printWindow.print();
-        // Close after printing
         printWindow.onafterprint = function() {
             printWindow.close();
         };
     };
+}
+
+/**
+ * Get theme-specific styles for print
+ */
+function getPrintThemeStyles(theme) {
+    const themeColors = {
+        birthday: { primary: '#e84393', accent: '#fd79a8' },
+        anniversary: { primary: '#e67e22', accent: '#f39c12' },
+        love: { primary: '#e74c3c', accent: '#eaa29a' },
+        gratitude: { primary: '#f39c12', accent: '#f7dc6f' },
+        website: { primary: '#3498db', accent: '#85c1e9' },
+        default: { primary: '#4a90e2', accent: '#7fb3e8' }
+    };
+    
+    const colors = themeColors[theme] || themeColors.default;
+    
+    return `
+        .print-theme-${theme} {
+            border-top: 6px solid ${colors.primary};
+        }
+        .print-theme-${theme} .card-icon {
+            color: ${colors.primary};
+        }
+        .print-theme-${theme} .message-text {
+            border-left-color: ${colors.primary};
+            background: linear-gradient(135deg, #f8f9fa, ${colors.accent}15);
+        }
+    `;
 }
 
 console.log('✅ Dashboard.js loaded successfully');
