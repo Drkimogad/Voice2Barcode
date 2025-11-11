@@ -110,26 +110,6 @@ function isAuthenticated() {
     return !!firebase.auth().currentUser;
 }
 
-// Keep the rest of your existing functions unchanged:
-// showAuth(), showDashboard(), toggleAuthView(), isValidEmail(), etc.
-
-
-/**
- * Get current logged in user from Firebase
- * @returns {object|null} Firebase user object or null
- */
-function getCurrentUser() {
-    return firebase.auth().currentUser;
-}
-
-/**
- * Check if user is authenticated with Firebase
- * @returns {boolean} True if authenticated
- */
-function isAuthenticated() {
-    return !!firebase.auth().currentUser;
-}
-
 /**
  * Show authentication section
  */
