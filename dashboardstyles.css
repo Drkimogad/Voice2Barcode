@@ -868,24 +868,22 @@ textarea:focus {
     color: #2c3e50;
 }
 
-/*
-The issue is flexbox layout! The containers need proper flex styling.
-
-*/
-.input-section {
-    display: flex;
-    flex-direction: column;
-    min-height: 120px;
-    gap: 15px;
+/* Fix dashboard layout */
+#dashboardSection {
+    display: block !important;
+    min-height: 100vh;
+    padding: 20px;
 }
 
-.url-input-container {
-    display: flex;
-    gap: 10px;
-    align-items: center;
+.app-header, #dashboardContent {
+    display: block !important;
 }
 
-.url-input {
-    flex: 1;
-    min-width: 200px;
+/* Ensure loading overlay can be properly hidden */
+#loadingOverlay {
+    display: none;
+}
+
+#loadingOverlay[style*="display: none"] {
+    display: none !important;
 }
