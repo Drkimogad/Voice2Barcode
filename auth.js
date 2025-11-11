@@ -66,7 +66,7 @@ function setupAuthListeners() {
  * Handle user signup
  * @param {Event} e - Form submit event
  */
-function handleSignup(e) {
+async function handleSignup(e) {
     e.preventDefault();
     
     const errorDisplay = document.getElementById('signupError');
@@ -118,7 +118,7 @@ function handleSignup(e) {
  * Handle user signin
  * @param {Event} e - Form submit event
  */
-function handleSignin(e) {
+async function handleSignin(e) {
     e.preventDefault();
     
     const errorDisplay = document.getElementById('signinError');
@@ -156,7 +156,7 @@ function handleSignin(e) {
 /**
  * Handle user logout
  */
-function handleLogout() {
+async function handleLogout() {
     try {
 // REPLACE localStorage clear with Firebase signOut
         await firebase.auth().signOut();
