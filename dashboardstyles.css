@@ -102,59 +102,7 @@
     align-items: center;
 }
 
-/* Recording Controls */
-.recording-controls {
-    display: flex;
-    gap: 15px;
-    justify-content: center;
-    flex-wrap: wrap;
-}
 
-.btn.record {
-    background: linear-gradient(135deg, #CB4154 0%, #B22222 100%);
-    color: #FFFFFF;
-    border: 2px solid #CB4154;
-    padding: 16px 32px;
-    font-size: 18px;
-}
-
-.btn.record:hover:not(:disabled) {
-    background: linear-gradient(135deg, #B22222 0%, #8B0000 100%);
-    transform: scale(1.05);
-}
-
-.btn.stop {
-    background: linear-gradient(135deg, #36454F 0%, #3B3B3B 100%);
-    color: #FFFFFF;
-    border: 2px solid #36454F;
-    padding: 16px 32px;
-    font-size: 18px;
-}
-
-.btn.stop:hover:not(:disabled) {
-    background: linear-gradient(135deg, #3B3B3B 0%, #000000 100%);
-    transform: scale(1.05);
-}
-
-.btn:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-    transform: none !important;
-}
-
-/* Recording Timer */
-.recording-timer {
-    font-size: 32px;
-    font-weight: 700;
-    color: #CB4154;
-    font-family: 'Courier New', monospace;
-    text-align: center;
-    padding: 15px;
-    background: #FAFAFA;
-    border: 2px solid #C0C0C0;
-    border-radius: 8px;
-    min-width: 120px;
-}
 
 /* Text Input */
 textarea {
@@ -178,32 +126,6 @@ textarea:focus {
     box-shadow: 0 0 0 3px rgba(203, 65, 84, 0.1);
 }
 
-/* Voice Selection */
-.voice-selection {
-    display: flex;
-    gap: 15px;
-    width: 100%;
-    flex-wrap: wrap;
-}
-
-.voice-select {
-    flex: 1;
-    min-width: 200px;
-    padding: 12px 16px;
-    border: 2px solid #C0C0C0;
-    border-radius: 8px;
-    font-size: 14px;
-    background: #FAFAFA;
-    color: #1a1a1a;
-    cursor: pointer;
-    transition: all 0.3s ease;
-}
-
-.voice-select:focus {
-    outline: none;
-    border-color: #CB4154;
-    background: #FFFFFF;
-}
 
 /* QR Section */
 .qr-section {
@@ -509,3 +431,133 @@ textarea:focus {
     0% { background-position: -200% 0; }
     100% { background-position: 200% 0; }
 }
+
+
+/* ========================================
+   LINKS MODE STYLING
+   ======================================== */
+
+.url-input-container {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    max-width: 500px;
+    margin: 0 auto;
+}
+
+.url-input {
+    padding: 12px 16px;
+    border: 2px solid #e1e5e9;
+    border-radius: 8px;
+    font-size: 16px;
+    font-family: 'Inter', sans-serif;
+    transition: all 0.3s ease;
+    background: white;
+}
+
+.url-input:focus {
+    outline: none;
+    border-color: #4a90e2;
+    box-shadow: 0 0 0 3px rgba(74, 144, 226, 0.1);
+}
+
+.url-input.valid {
+    border-color: #2ecc71;
+    background-color: rgba(46, 204, 113, 0.05);
+}
+
+.url-input.invalid {
+    border-color: #e74c3c;
+    background-color: rgba(231, 76, 60, 0.05);
+}
+
+.generate-btn {
+    padding: 12px 24px;
+    background: linear-gradient(135deg, #4a90e2, #357abd);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 16px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.generate-btn:hover {
+    background: linear-gradient(135deg, #357abd, #2c6aa7);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(74, 144, 226, 0.3);
+}
+
+.generate-btn:active {
+    transform: translateY(0);
+}
+
+.url-preview {
+    padding: 12px 16px;
+    background: #f8f9fa;
+    border-radius: 8px;
+    border-left: 4px solid #4a90e2;
+    animation: slideIn 0.3s ease;
+}
+
+.preview-label {
+    font-weight: 600;
+    color: #2c3e50;
+    margin-right: 8px;
+}
+
+#previewLink {
+    color: #4a90e2;
+    text-decoration: none;
+    word-break: break-all;
+}
+
+#previewLink:hover {
+    text-decoration: underline;
+    color: #357abd;
+}
+
+/* URL link in results */
+.url-link {
+    color: #4a90e2;
+    text-decoration: none;
+    font-weight: 500;
+    word-break: break-all;
+}
+
+.url-link:hover {
+    text-decoration: underline;
+    color: #357abd;
+}
+
+/* Animation */
+@keyframes slideIn {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+    .url-input-container {
+        gap: 12px;
+    }
+    
+    .url-input {
+        font-size: 14px;
+        padding: 10px 14px;
+    }
+    
+    .generate-btn {
+        padding: 10px 20px;
+        font-size: 14px;
+    }
+}
+
+
