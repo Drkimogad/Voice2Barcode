@@ -315,7 +315,7 @@ async function loadMessage(messageId) {
 function displayMessage(data) {
     document.getElementById('loadingMessage').style.display = 'none';
     document.getElementById('errorMessage').style.display = 'none';
-    
+
     const cardHTML = `
         <div class="memory-card theme-${data.theme || 'default'}">
             <div class="card-header">
@@ -337,6 +337,8 @@ function displayMessage(data) {
     `;
     
     document.getElementById('cardContainer').innerHTML = cardHTML;
+     // ADD THIS - setup print button after card is rendered
+    setupPrintButton();
 }
 
 function getThemeIcon(theme) {
@@ -373,22 +375,21 @@ function setupPrintButton() {
  * Print the card - WITH DYNAMIC TITLES
  */
 function printCard() {
-    const card = document.getElementById('qrCard');
-    
-    // Get dynamic content from the displayed card
-    const message = document.getElementById('cardMessageText').textContent;
-    const date = document.getElementById('cardDate').textContent;
+    const card = document.querySelector('.memory-card'); // USE THIS
+        // CHANGE THESE SELECTORS to match view.html
+    const message = document.querySelector('.message-text').textContent;
+    const date = document.querySelector('.card-date').textContent;
     const cardIcon = document.querySelector('.card-icon').textContent;
     const cardTitle = document.querySelector('.card-title').textContent;
-    
-    // Detect theme from card classes
-    const cardElement = document.getElementById('qrCard');
+
+     // CHANGE theme detection to match view.html classes
+    const cardElement = document.querySelector('.memory-card');
     let theme = 'default';
-    if (cardElement.classList.contains('card-theme-birthday')) theme = 'birthday';
-    else if (cardElement.classList.contains('card-theme-anniversary')) theme = 'anniversary';
-    else if (cardElement.classList.contains('card-theme-love')) theme = 'love';
-    else if (cardElement.classList.contains('card-theme-gratitude')) theme = 'gratitude';
-    else if (cardElement.classList.contains('card-theme-website')) theme = 'website';
+    if (cardElement.classList.contains('theme-birthday')) theme = 'birthday';
+    else if (cardElement.classList.contains('theme-anniversary')) theme = 'anniversary';
+    else if (cardElement.classList.contains('theme-love')) theme = 'love';
+    else if (cardElement.classList.contains('theme-gratitude')) theme = 'gratitude';
+    else if (cardElement.classList.contains('theme-website')) theme = 'website';
     
     // Create print window
     const printWindow = window.open('', '_blank');
