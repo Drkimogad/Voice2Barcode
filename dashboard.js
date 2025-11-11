@@ -3,7 +3,7 @@
 // ========================================
 
 const DASHBOARD_CONFIG = {
-    MAX_RECORDING_TIME: 8, // seconds
+    MAX_RECORDING_TIME: 5, // seconds
     MAX_TEXT_LENGTH: 200,
     QR_SIZE: 300,
     QR_ERROR_CORRECTION: 'H'
@@ -225,7 +225,7 @@ async function startRecording() {
                 stopRecording();
                 updateStatus('Recording stopped (max time reached)', 'warning');
             }
-        }, DASHBOARD_CONFIG.MAX_RECORDING_TIME * 800); // 7SECONDS
+        }, DASHBOARD_CONFIG.MAX_RECORDING_TIME * 500); // 7SECONDS
         
     } catch (error) {
         handleError('Recording start failed', error);
