@@ -8,6 +8,30 @@
     <link rel="stylesheet" href="dashboardstyles.css">
     <link rel="icon" href="https://drkimogad.github.io/MemoryinQR/favicon.ico" type="image/x-icon">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+
+    <!-- Firebase SDK -->
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+
+<!-- Your Firebase Config - INLINE (Recommended) -->
+<script>
+const firebaseConfig = {
+  apiKey: "AIzaSyAcHV1_wbQjAojF9rBZHZ9Sg2LOYcPqde8",
+  authDomain: "memoryinqr-96de6.firebaseapp.com",
+  projectId: "memoryinqr-96de6",
+  storageBucket: "memoryinqr-96de6.firebasestorage.app",
+  messagingSenderId: "36040892781",
+  appId: "1:36040892781:web:50fce09a86be7fb4e3ba64",
+  measurementId: "G-56LX7EKM6E"
+};
+  
+  // Initialize Firebase
+  firebase.initializeApp(firebaseConfig);
+  console.log('🔥 Firebase initialized successfully');
+</script>
+
+
 </head>
 <body>
     <!-- Info Banner -->
