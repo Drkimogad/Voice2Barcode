@@ -174,6 +174,16 @@
             background: linear-gradient(135deg, #85C1E9 0%, #3498DB 100%);
             border-bottom-color: #2980B9;
         }
+        .print-btn {
+    background: var(--crimson);
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 6px;
+    cursor: pointer;
+    margin-top: 10px;
+    font-size: 14px;
+}
 
         /* Responsive Design */
         @media (max-width: 768px) {
@@ -321,6 +331,7 @@ function displayMessage(data) {
             </div>
             <div class="card-footer">
                 ✨ Created with MemoryinQR ✨
+                    <button id="printCardBtn" class="btn print-btn">🖨️ Print Card</button> <!-- ADD HERE -->
             </div>
         </div>
     `;
@@ -348,6 +359,200 @@ function showError(message) {
     document.getElementById('loadingMessage').style.display = 'none';
     document.getElementById('errorMessage').style.display = 'block';
     document.getElementById('errorMessage').textContent = message;
+}
+
+        /**
+ * Setup print card functionality
+ */
+function setupPrintButton() {
+    const printBtn = document.getElementById('printCardBtn');
+    printBtn.onclick = printCard;
+}
+
+/**
+ * Print the card - WITH DYNAMIC TITLES
+ */
+function printCard() {
+    const card = document.getElementById('qrCard');
+    
+    // Get dynamic content from the displayed card
+    const message = document.getElementById('cardMessageText').textContent;
+    const date = document.getElementById('cardDate').textContent;
+    const cardIcon = document.querySelector('.card-icon').textContent;
+    const cardTitle = document.querySelector('.card-title').textContent;
+    
+    // Detect theme from card classes
+    const cardElement = document.getElementById('qrCard');
+    let theme = 'default';
+    if (cardElement.classList.contains('card-theme-birthday')) theme = 'birthday';
+    else if (cardElement.classList.contains('card-theme-anniversary')) theme = 'anniversary';
+    else if (cardElement.classList.contains('card-theme-love')) theme = 'love';
+    else if (cardElement.classList.contains('card-theme-gratitude')) theme = 'gratitude';
+    else if (cardElement.classList.contains('card-theme-website')) theme = 'website';
+    
+    // Create print window
+    const printWindow = window.open('', '_blank');
+    const printDocument = printWindow.document;
+    
+    // Write dynamic print content
+    printDocument.write(`
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <title>Print ${cardTitle}</title>
+            <style>
+                body { 
+                    font-family: 'Inter', Arial, sans-serif; 
+                    margin: 0; 
+                    padding: 40px;
+                    display: flex;
+                    justify-content: center;
+                    align-items: center;
+                    min-height: 100vh;
+                    background: white;
+                }
+                .print-card {
+                    border: 2px solid #333;
+                    border-radius: 12px;
+                    padding: 30px;
+                    max-width: 500px;
+                    background: white;
+                    text-align: center;
+                }
+                .card-header { 
+                    margin-bottom: 25px; 
+                    border-bottom: 2px solid #eee;
+                    padding-bottom: 20px;
+                }
+                .card-icon { 
+                    font-size: 3em; 
+                    margin-bottom: 15px;
+                }
+                .card-title { 
+                    margin: 10px 0 8px 0; 
+                    color: #2c3e50; 
+                    font-size: 1.6em;
+                    font-weight: bold;
+                }
+                .card-date { 
+                    color: #7f8c8d; 
+                    font-size: 16px; 
+                    font-weight: 500;
+                }
+                .message-container {
+                    margin: 25px 0;
+                    padding: 0 20px;
+                }
+                .message-label { 
+                    font-weight: bold; 
+                    margin-bottom: 15px; 
+                    color: #2c3e50;
+                    font-size: 16px;
+                    text-transform: uppercase;
+                    letter-spacing: 1px;
+                }
+                .message-text { 
+                    word-break: break-word; 
+                    line-height: 1.6;
+                    font-size: 16px;
+                    color: #2c3e50;
+                    background: #f8f9fa;
+                    padding: 20px;
+                    border-radius: 8px;
+                    border-left: 4px solid #4a90e2;
+                    text-align: left;
+                }
+                .card-footer { 
+                    margin-top: 25px;
+                    border-top: 2px solid #eee;
+                    padding-top: 20px;
+                    color: #7f8c8d;
+                    font-size: 14px;
+                    font-style: italic;
+                }
+                
+                /* Dynamic theme colors for print */
+                ${getPrintThemeStyles(theme)}
+                
+                @media print {
+                    body { 
+                        padding: 20px; 
+                        display: block;
+                    }
+                    .print-card { 
+                        border: 2px solid #000;
+                        box-shadow: none;
+                        max-width: none;
+                        margin: 0 auto;
+                    }
+                }
+            </style>
+        </head>
+        <body>
+            <div class="print-card print-theme-${theme}">
+                <div class="card-header">
+                    <div class="card-icon">${cardIcon}</div>
+                    <h1 class="card-title">${cardTitle}</h1>
+                    <div class="card-date">${date}</div>
+                </div>
+                
+                <div class="message-container">
+                    <div class="message-label">Message</div>
+                    <div class="message-text">${message}</div>
+                </div>
+                
+                <div class="card-footer">
+                    ✨ MemoryinQR ✨
+                </div>
+            </div>
+        </body>
+        </html>
+    `);
+    
+    printDocument.close();
+    
+    // Print after content loads
+    printWindow.onload = function() {
+        printWindow.print();
+        printWindow.onafterprint = function() {
+            printWindow.close();
+        };
+    };
+}
+
+/**
+ * Get theme-specific styles for print
+ */
+function getPrintThemeStyles(theme) {
+    const themeColors = {
+        birthday: { primary: '#e84393', accent: '#fd79a8' },
+        wedding: { primary: '#9b59b6', accent: '#bb8fce' },
+        engagement: { primary: '#7f8c8d', accent: '#bdc3c7' },
+        baby: { primary: '#ff9ff3', accent: '#f8c8e8' },
+        graduation: { primary: '#3498db', accent: '#85c1e9' },
+        newhome: { primary: '#27ae60', accent: '#82e0aa' },
+        newjob: { primary: '#2c3e50', accent: '#566573' },
+        anniversary: { primary: '#e67e22', accent: '#f39c12' },
+        love: { primary: '#e74c3c', accent: '#eaa29a' },
+        gratitude: { primary: '#f39c12', accent: '#f7dc6f' },
+        website: { primary: '#3498db', accent: '#85c1e9' },
+        default: { primary: '#4a90e2', accent: '#7fb3e8' }
+    };
+    
+    const colors = themeColors[theme] || themeColors.default;
+    
+    return `
+        .print-theme-${theme} {
+            border-top: 6px solid ${colors.primary};
+        }
+        .print-theme-${theme} .card-icon {
+            color: ${colors.primary};
+        }
+        .print-theme-${theme} .message-text {
+            border-left-color: ${colors.primary};
+            background: linear-gradient(135deg, #f8f9fa, ${colors.accent}15);
+        }
+    `;
 }
        
     </script>
