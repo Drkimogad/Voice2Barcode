@@ -72,13 +72,26 @@
         <div id="dashboardContent">
             <!-- Mode Switching -->
             <div class="mode-switcher" role="navigation">
-                <button class="btn mode-btn active" data-mode="voice" aria-label="Voice mode">🎤 Voice</button>
+                <button class="btn mode-btn active" data-mode="links" aria-label="Links mode">🔗 Links</button>
                 <button class="btn mode-btn" data-mode="text" aria-label="Text mode">📝 Text</button>
                 <button class="btn mode-btn" data-mode="upload" aria-label="Upload mode">📤 Upload</button>
                 <button class="btn mode-btn" data-mode="scan" aria-label="Scan mode">🔍 Scan</button>
             </div>
 
-            <!-- Voice Section -->
+            <!-- Links Section -->
+<section data-section="links" class="mode-section">
+    <div class="input-section">
+        <div class="url-input-container">
+            <input type="url" id="urlInput" placeholder="https://example.com" 
+                   class="url-input" aria-label="Website URL">
+            <button id="generateLinkQRBtn" class="btn generate-btn">Generate QR Code</button>
+        </div>
+        <div class="url-preview" id="urlPreview" style="display: none;">
+            <span class="preview-label">Preview:</span>
+            <a id="previewLink" target="_blank" rel="noopener noreferrer">Visit Website</a>
+        </div>
+    </div>
+</section>
           
 
             <!-- Text Section -->
