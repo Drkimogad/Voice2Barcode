@@ -79,6 +79,7 @@
             </div>
 
             <!-- Links Section -->
+<!-- Add this new Links Section -->
 <section data-section="links" class="mode-section">
     <div class="input-section">
         <div class="url-input-container">
@@ -121,6 +122,47 @@
                     <button id="stopScanBtn" class="btn" style="display: none;">⏹ Stop Scanning</button>
                 </div>
             </section>
+
+            <!-- REPLACE THIS ENTIRE SECTION -->
+<section id="scannedContent" class="results-section" style="display: none;">
+    <div class="card-container">
+        <!-- QR Code Card -->
+        <div class="qr-card" id="qrCard">
+            <div class="card-header">
+                <div class="card-icon">🎁</div>
+                <h2 class="card-title">Memory Card</h2>
+                <div class="card-date" id="cardDate"></div>
+            </div>
+            
+            <div class="card-body">
+                <div class="qr-display">
+                    <canvas id="cardQrCode" class="card-qrcode"></canvas>
+                </div>
+                
+                <div class="card-content">
+                    <div class="message-container">
+                        <p class="message-label">Message:</p>
+                        <div class="message-text" id="cardMessageText"></div>
+                    </div>
+                    
+                    <div class="url-container" id="urlContainer" style="display: none;">
+                        <p class="url-label">Website:</p>
+                        <a class="card-url" id="cardUrl" target="_blank" rel="noopener noreferrer"></a>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="card-footer">
+                <div class="card-decoration">✨ Voice2Barcode ✨</div>
+                <button id="printCardBtn" class="btn print-btn">🖨️ Print Card</button>
+            </div>
+        </div>
+    </div>
+    
+    <div class="action-buttons">
+        <button id="downloadContentBtn" class="btn" disabled>⬇ Download Content</button>
+    </div>
+</section>
 
             <!-- QR Display -->
             <section class="qr-section" data-secure="true">
