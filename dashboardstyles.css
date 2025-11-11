@@ -561,3 +561,244 @@ textarea:focus {
 }
 
 
+/* ========================================
+   CARD LAYOUT STYLING
+   ======================================== */
+
+.card-container {
+    display: flex;
+    justify-content: center;
+    margin: 20px 0;
+}
+
+.qr-card {
+    background: white;
+    border-radius: 16px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+    padding: 24px;
+    max-width: 500px;
+    width: 100%;
+    border: 1px solid #e1e5e9;
+    transition: all 0.3s ease;
+}
+
+.qr-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.15);
+}
+
+.card-header {
+    text-align: center;
+    margin-bottom: 20px;
+    border-bottom: 2px solid #f8f9fa;
+    padding-bottom: 15px;
+}
+
+.card-icon {
+    font-size: 2.5em;
+    margin-bottom: 10px;
+}
+
+.card-title {
+    margin: 0 0 8px 0;
+    color: #2c3e50;
+    font-size: 1.5em;
+    font-weight: 600;
+}
+
+.card-date {
+    color: #7f8c8d;
+    font-size: 0.9em;
+    font-weight: 500;
+}
+
+.card-body {
+    display: flex;
+    gap: 20px;
+    align-items: flex-start;
+    margin-bottom: 20px;
+}
+
+.qr-display {
+    flex-shrink: 0;
+}
+
+.card-qrcode {
+    border: 1px solid #e1e5e9;
+    border-radius: 8px;
+    padding: 8px;
+    background: white;
+}
+
+.card-content {
+    flex: 1;
+    min-width: 0;
+}
+
+.message-container, .url-container {
+    margin-bottom: 15px;
+}
+
+.message-label, .url-label {
+    font-weight: 600;
+    color: #2c3e50;
+    margin-bottom: 8px;
+    font-size: 0.9em;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.message-text {
+    background: #f8f9fa;
+    padding: 12px;
+    border-radius: 8px;
+    border-left: 4px solid #4a90e2;
+    line-height: 1.5;
+    word-break: break-word;
+}
+
+.card-url {
+    color: #4a90e2;
+    text-decoration: none;
+    word-break: break-all;
+    display: block;
+    padding: 12px;
+    background: #f8f9fa;
+    border-radius: 8px;
+    border-left: 4px solid #2ecc71;
+}
+
+.card-url:hover {
+    text-decoration: underline;
+    color: #357abd;
+}
+
+.card-footer {
+    text-align: center;
+    border-top: 2px solid #f8f9fa;
+    padding-top: 15px;
+}
+
+.card-decoration {
+    color: #7f8c8d;
+    font-size: 0.9em;
+    margin-bottom: 15px;
+    font-style: italic;
+}
+
+.print-btn {
+    background: linear-gradient(135deg, #27ae60, #219a52);
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: 500;
+    transition: all 0.3s ease;
+}
+
+.print-btn:hover {
+    background: linear-gradient(135deg, #219a52, #1e8449);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(39, 174, 96, 0.3);
+}
+
+.action-buttons {
+    text-align: center;
+    margin-top: 20px;
+}
+
+/* Card Themes */
+.card-theme-birthday {
+    border-top: 6px solid #e84393;
+}
+
+.card-theme-birthday .card-icon {
+    color: #e84393;
+}
+
+.card-theme-anniversary {
+    border-top: 6px solid #e67e22;
+}
+
+.card-theme-anniversary .card-icon {
+    color: #e67e22;
+}
+
+.card-theme-love {
+    border-top: 6px solid #e74c3c;
+}
+
+.card-theme-love .card-icon {
+    color: #e74c3c;
+}
+
+.card-theme-gratitude {
+    border-top: 6px solid #f39c12;
+}
+
+.card-theme-gratitude .card-icon {
+    color: #f39c12;
+}
+
+.card-theme-website {
+    border-top: 6px solid #3498db;
+}
+
+.card-theme-website .card-icon {
+    color: #3498db;
+}
+
+.card-theme-default {
+    border-top: 6px solid #4a90e2;
+}
+
+.card-theme-default .card-icon {
+    color: #4a90e2;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .card-body {
+        flex-direction: column;
+        text-align: center;
+    }
+    
+    .qr-card {
+        margin: 10px;
+        padding: 20px;
+    }
+    
+    .card-title {
+        font-size: 1.3em;
+    }
+}
+
+@media (max-width: 480px) {
+    .qr-card {
+        padding: 15px;
+    }
+    
+    .card-icon {
+        font-size: 2em;
+    }
+    
+    .card-title {
+        font-size: 1.2em;
+    }
+}
+
+/* Print Styles */
+@media print {
+    .action-buttons {
+        display: none;
+    }
+    
+    .qr-card {
+        box-shadow: none;
+        border: 2px solid #333;
+        max-width: none;
+    }
+}
+
+
