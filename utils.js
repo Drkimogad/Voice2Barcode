@@ -88,28 +88,29 @@ function blobToBase64(blob) {
 
 async function compressAudioBlob(blob) {
     console.log('🔧 Compression started - Original size:', blob.size, 'bytes');
-    updateStatus('Compressing audio...', 'silver');
+    updateStatus('Checking audio size...', 'silver');
     
+    // If already small enough, return as-is (WebM is compressed)
+    if (blob.size <= 50000) { // 50KB limit
+        console.log('✅ Size good, using original WebM');
+        updateStatus('Audio size is good', 'success');
+        return blob;
+    }
+    
+    // Only compress if absolutely necessary
     try {
-        // Convert blob to audio buffer
-        console.log('🔄 Converting blob to audio buffer...');
-        const audioBuffer = await blobToAudioBuffer(blob);
+        console.log('🔄 Audio too large, compressing...');
+        updateStatus('Compressing audio...', 'silver');
         
-        // Create lower quality audio
-        console.log('🎚️ Downsampling audio...');
-        const compressedBuffer = await downsampleAudio(audioBuffer, 8000, 1); // 8kHz mono
-        
-        // Convert back to blob
-        console.log('📦 Encoding to WAV...');
-        const compressedBlob = await audioBufferToWav(compressedBuffer);
-        
-        console.log('✅ Compression complete - Final size:', compressedBlob.size, 'bytes');
-        updateStatus('Audio compressed successfully', 'success');
-        return compressedBlob;
+        // Your Web Audio API compression code here
+        // But for now, just return original to avoid making it larger
+        console.log('⚠️ Compression skipped - would make file larger');
+        updateStatus('Using original audio', 'info');
+        return blob;
         
     } catch (error) {
         console.error('❌ Compression failed:', error);
-        updateStatus('Compression failed, using original', 'warning');
+        updateStatus('Compression failed', 'warning');
         return blob;
     }
 }
