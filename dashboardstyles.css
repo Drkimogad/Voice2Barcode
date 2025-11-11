@@ -811,3 +811,61 @@ textarea:focus {
         max-width: none;
     }
 }
+/* ========================================
+   NEW THEME STYLES
+   ======================================== */
+
+/* 💒 WEDDING THEME - Romantic Purple */
+.card-theme-wedding {
+    border-top: 6px solid #9b59b6;
+}
+
+.card-theme-wedding .card-icon {
+    color: #9b59b6;
+}
+
+/* 💍 ENGAGEMENT THEME - Silver/Blue */
+.card-theme-engagement {
+    border-top: 6px solid #7f8c8d;
+}
+
+.card-theme-engagement .card-icon {
+    color: #7f8c8d;
+}
+
+/* 👶 BABY THEME - Soft Pink/Blue */
+.card-theme-baby {
+    border-top: 6px solid #ff9ff3;
+}
+
+.card-theme-baby .card-icon {
+    color: #ff9ff3;
+}
+
+/* 🎓 GRADUATION THEME - Academic Blue */
+.card-theme-graduation {
+    border-top: 6px solid #3498db;
+}
+
+.card-theme-graduation .card-icon {
+    color: #3498db;
+}
+
+/* 🏠 NEW HOME THEME - Warm Green */
+.card-theme-newhome {
+    border-top: 6px solid #27ae60;
+}
+
+.card-theme-newhome .card-icon {
+    color: #27ae60;
+}
+
+/* 💼 NEW JOB THEME - Professional Navy */
+.card-theme-newjob {
+    border-top: 6px solid #2c3e50;
+}
+
+.card-theme-newjob .card-icon {
+    color: #2c3e50;
+}
+
