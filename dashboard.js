@@ -1091,7 +1091,7 @@ function printCard() {
                 </div>
                 
                 <div class="card-footer">
-                    ✨ MemoryQR ✨
+                    ✨ MemoryinQR ✨
                 </div>
             </div>
         </body>
