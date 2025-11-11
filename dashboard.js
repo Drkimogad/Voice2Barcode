@@ -872,15 +872,20 @@ function setupPrintButton() {
 /**
  * Print the card
  */
+/**
+ * Print the card
+ */
 function printCard() {
     const card = document.getElementById('qrCard');
-    const originalStyles = document.querySelectorAll('style, link[rel="stylesheet"]');
     
     // Create print window
     const printWindow = window.open('', '_blank');
     const printDocument = printWindow.document;
     
-    // Write print content
+    // Get card content but remove the print button
+    const cardContent = card.innerHTML.replace(/<button[^>]*print-btn[^>]*>[\s\S]*?<\/button>/, '');
+    
+    // Write print content with HORIZONTAL layout for better print use
     printDocument.write(`
         <!DOCTYPE html>
         <html>
@@ -901,7 +906,7 @@ function printCard() {
                     border: 2px solid #e1e5e9;
                     border-radius: 12px;
                     padding: 20px;
-                    max-width: 400px;
+                    max-width: 500px;
                     box-shadow: 0 4px 20px rgba(0,0,0,0.1);
                     background: white;
                 }
@@ -914,16 +919,21 @@ function printCard() {
                 .card-title { 
                     margin: 10px 0 5px 0; 
                     color: #2c3e50; 
+                    font-size: 1.4em;
                 }
                 .card-date { 
                     color: #7f8c8d; 
                     font-size: 14px; 
                 }
+                /* HORIZONTAL LAYOUT FOR PRINT - Better space usage */
                 .card-body { 
                     display: flex; 
                     gap: 20px; 
-                    align-items: center;
+                    align-items: flex-start;
                     margin-bottom: 20px;
+                }
+                .qr-display {
+                    flex-shrink: 0;
                 }
                 .card-content { 
                     flex: 1; 
@@ -932,26 +942,45 @@ function printCard() {
                     font-weight: bold; 
                     margin-bottom: 5px; 
                     color: #2c3e50;
+                    font-size: 14px;
                 }
                 .message-text, .card-url { 
                     word-break: break-word; 
                     line-height: 1.4;
+                    font-size: 14px;
                 }
                 .card-footer { 
                     text-align: center; 
                     border-top: 1px solid #eee;
                     padding-top: 15px;
                     color: #7f8c8d;
+                    font-size: 14px;
+                }
+                /* Hide the print button in print view */
+                .print-btn {
+                    display: none !important;
                 }
                 @media print {
-                    body { padding: 0; }
-                    .print-card { box-shadow: none; border: 1px solid #ccc; }
+                    body { 
+                        padding: 0; 
+                        display: block;
+                    }
+                    .print-card { 
+                        box-shadow: none; 
+                        border: 1px solid #ccc;
+                        max-width: none;
+                        margin: 0 auto;
+                    }
+                    /* Ensure good print layout */
+                    .card-body {
+                        display: flex !important;
+                    }
                 }
             </style>
         </head>
         <body>
             <div class="print-card">
-                ${card.innerHTML}
+                ${cardContent}
             </div>
         </body>
         </html>
@@ -962,18 +991,11 @@ function printCard() {
     // Print after content loads
     printWindow.onload = function() {
         printWindow.print();
+        // Close after printing
         printWindow.onafterprint = function() {
             printWindow.close();
         };
     };
 }
-
-
-
-
-
-
-
-
 
 console.log('✅ Dashboard.js loaded successfully');
