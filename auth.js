@@ -1,29 +1,30 @@
 // ========================================
-// AUTHENTICATION MODULE
+// AUTHENTICATION MODULE - FIREBASE VERSION
 // ========================================
 
 const AUTH_CONFIG = {
     TOKEN_KEY: 'authToken',
-    USER_KEY: 'currentUser',
-    USERS_KEY: 'registeredUsers'
+    USER_KEY: 'currentUser'
 };
 
 /**
  * Initialize authentication system
  */
 function initAuth() {
-    console.log('🔐 Initializing authentication...');
+    console.log('🔐 Initializing Firebase authentication...');
     
-    // Check if user is already authenticated
-    const token = localStorage.getItem(AUTH_CONFIG.TOKEN_KEY);
-    
-    if (token) {
-        // User is logged in, show dashboard
-        showDashboard();
-    } else {
-        // User not logged in, show auth section
-        showAuth();
-    }
+    // Firebase auth state listener
+    firebase.auth().onAuthStateChanged((user) => {
+        if (user) {
+            // User is signed in
+            console.log('✅ User logged in:', user.email);
+            showDashboard();
+        } else {
+            // User is signed out
+            console.log('🔒 User logged out');
+            showAuth();
+        }
+    });
     
     // Setup event listeners
     setupAuthListeners();
@@ -70,28 +71,21 @@ function setupAuthListeners() {
 }
 
 /**
- * Handle user signup
- * @param {Event} e - Form submit event
+ * Handle user signup with Firebase
  */
-function handleSignup(e) {
+async function handleSignup(e) {
     e.preventDefault();
     
     const errorDisplay = document.getElementById('signupError');
     errorDisplay.textContent = '';
     
     try {
-        // Get form values
-        const username = document.getElementById('signupUsername').value.trim();
         const email = document.getElementById('signupEmail').value.trim();
         const password = document.getElementById('signupPassword').value;
         
         // Validation
-        if (!username || !email || !password) {
+        if (!email || !password) {
             throw new Error('All fields are required');
-        }
-        
-        if (username.length < 3) {
-            throw new Error('Username must be at least 3 characters');
         }
         
         if (!isValidEmail(email)) {
@@ -102,122 +96,84 @@ function handleSignup(e) {
             throw new Error('Password must be at least 6 characters');
         }
         
-        // Get existing users
-        const users = getRegisteredUsers();
+        // Create user with Firebase Auth
+        const userCredential = await firebase.auth().createUserWithEmailAndPassword(email, password);
+        console.log('✅ User registered:', email);
         
-        // Check if username already exists
-        if (users.find(u => u.username === username)) {
-            throw new Error('Username already exists');
-        }
-        
-        // Check if email already exists
-        if (users.find(u => u.email === email)) {
-            throw new Error('Email already registered');
-        }
-        
-        // Create new user
-        const newUser = {
-            id: generateId(),
-            username,
-            email,
-            password, // In production, this should be hashed!
-            createdAt: getTimestamp()
-        };
-        
-        // Save user
-        users.push(newUser);
-        localStorage.setItem(AUTH_CONFIG.USERS_KEY, JSON.stringify(users));
-        
-        // Clear form
+        // Clear form and show success
         document.getElementById('signupForm').reset();
-        
-        // Show success and switch to signin
-        updateStatus('Account created successfully! Please sign in.', 'success');
-        setTimeout(() => toggleAuthView('signin'), 1500);
-        
-        console.log('✅ User registered:', username);
+        updateStatus('Account created successfully!', 'success');
         
     } catch (error) {
-        errorDisplay.textContent = error.message;
         console.error('Signup error:', error);
+        errorDisplay.textContent = error.message;
     }
 }
 
 /**
- * Handle user signin
- * @param {Event} e - Form submit event
+ * Handle user signin with Firebase
  */
-function handleSignin(e) {
+async function handleSignin(e) {
     e.preventDefault();
     
     const errorDisplay = document.getElementById('signinError');
     errorDisplay.textContent = '';
     
     try {
-        // Get form values
-        const username = document.getElementById('signinUsername').value.trim();
+        const email = document.getElementById('signinEmail').value.trim();
         const password = document.getElementById('signinPassword').value;
         
-        // Validation
-        if (!username || !password) {
+        if (!email || !password) {
             throw new Error('All fields are required');
         }
         
-        // Get registered users
-        const users = getRegisteredUsers();
-        
-        // Find user
-        const user = users.find(u => u.username === username && u.password === password);
-        
-        if (!user) {
-            throw new Error('Invalid username or password');
-        }
-        
-        // Create session
-        const token = generateToken(user);
-        localStorage.setItem(AUTH_CONFIG.TOKEN_KEY, token);
-        localStorage.setItem(AUTH_CONFIG.USER_KEY, JSON.stringify({
-            id: user.id,
-            username: user.username,
-            email: user.email
-        }));
+        // Sign in with Firebase Auth
+        const userCredential = await firebase.auth().signInWithEmailAndPassword(email, password);
+        console.log('✅ User logged in:', email);
         
         // Clear form
         document.getElementById('signinForm').reset();
-        
-        // Show dashboard
-        updateStatus('Welcome back, ' + user.username + '!', 'success');
-        showDashboard();
-        
-        console.log('✅ User logged in:', username);
+        updateStatus('Welcome back!', 'success');
         
     } catch (error) {
+        console.error('Signin error:', error);
         errorDisplay.textContent = error.message;
         document.getElementById('signinPassword').value = '';
-        console.error('Signin error:', error);
     }
 }
 
 /**
  * Handle user logout
  */
-function handleLogout() {
+async function handleLogout() {
     try {
-        // Clear session
-        localStorage.removeItem(AUTH_CONFIG.TOKEN_KEY);
-        localStorage.removeItem(AUTH_CONFIG.USER_KEY);
-        
-        // Show auth section
-        showAuth();
-        
-        updateStatus('Logged out successfully', 'success');
+        await firebase.auth().signOut();
         console.log('✅ User logged out');
-        
+        updateStatus('Logged out successfully', 'success');
     } catch (error) {
         console.error('Logout error:', error);
         updateStatus('Logout failed', 'error');
     }
 }
+
+/**
+ * Get current logged in user
+ */
+function getCurrentUser() {
+    return firebase.auth().currentUser;
+}
+
+/**
+ * Check if user is authenticated
+ */
+function isAuthenticated() {
+    return !!firebase.auth().currentUser;
+}
+
+// Keep the rest of your existing functions unchanged:
+// showAuth(), showDashboard(), toggleAuthView(), isValidEmail(), etc.
+
+
 
 /**
  * Generate authentication token
@@ -305,6 +261,7 @@ function toggleAuthView(view) {
     }
 }
 
+
 // Initialize auth when DOM is ready
 if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', initAuth);
@@ -312,4 +269,4 @@ if (document.readyState === 'loading') {
     initAuth();
 }
 
-console.log('✅ Auth.js loaded successfully');
+console.log('✅ Firebase Auth.js loaded successfully');
