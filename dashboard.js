@@ -3,7 +3,7 @@
 // ========================================
 
 const DASHBOARD_CONFIG = {
-    MAX_RECORDING_TIME: 10, // seconds
+    MAX_RECORDING_TIME: 07, // seconds
     MAX_TEXT_LENGTH: 200,
     QR_SIZE: 300,
     QR_ERROR_CORRECTION: 'H'
@@ -152,7 +152,7 @@ async function startRecording() {
         
         // Create MediaRecorder WITH low quality options
         const options = {
-            audioBitsPerSecond: 5000, // Very low bitrate for speech
+            audioBitsPerSecond: 3000, // Very low bitrate for speech
             mimeType: 'audio/webm;codecs=opus' // Force Opus codec
         };
         
@@ -215,7 +215,7 @@ async function startRecording() {
         
         // Start timer
         updateRecordingTimer();
-        recordingTimer = setInterval(updateRecordingTimer, 1000);
+        recordingTimer = setInterval(updateRecordingTimer, 700);
         
         updateStatus('Recording... Speak now!', 'info');
         
@@ -225,7 +225,7 @@ async function startRecording() {
                 stopRecording();
                 updateStatus('Recording stopped (max time reached)', 'warning');
             }
-        }, DASHBOARD_CONFIG.MAX_RECORDING_TIME * 1000);
+        }, DASHBOARD_CONFIG.MAX_RECORDING_TIME * 700); // 7SECONDS
         
     } catch (error) {
         handleError('Recording start failed', error);
@@ -272,7 +272,11 @@ async function generateQRFromAudio(audioBlob) {
         // Convert to base64
         const base64Audio = await blobToBase64(audioBlob);
                 console.log('📊 Base64 data length:', base64Audio.length);
-
+        
+        if (base64Audio.length > 2800) {
+    console.log('❌ Too large for QR:', base64Audio.length, 'chars');
+    throw new Error(`Audio too large (${base64Audio.length} chars). Reduce quality or duration.`);
+}      
         
         // Create QR data
 const qrData = {
