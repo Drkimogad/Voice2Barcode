@@ -1233,6 +1233,12 @@ function initAdminMode() {
 }
 
 async function searchByContent() {
+    // Add offline check
+    if (!navigator.onLine) {
+        updateStatus('You are offline - cannot search', 'error');
+        return;
+    }
+    
     const searchText = document.getElementById('adminContentSearch').value.trim();
     if (!searchText) {
         updateStatus('Please enter search keywords', 'error');
