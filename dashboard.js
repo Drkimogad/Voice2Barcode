@@ -85,7 +85,10 @@ function switchToMode(mode) {
         case 'scan':
             initScanMode();
             break;
-    }
+        case 'admin':
+            initAdminMode();
+            break;
+        }
     
     // Clear results
     document.getElementById('scannedContent').style.display = 'none';
@@ -1202,5 +1205,189 @@ function updateCardHeader(theme) {
     cardIcon.textContent = config.icon;
     cardTitle.textContent = config.title;
 }
+
+
+// ========================================
+// ADMIN MODE - Retrieve & Regenerate QR Codes
+// ========================================
+
+function initAdminMode() {
+    console.log('⚙️ Initializing admin mode...');
+    
+    // Setup search buttons
+    document.getElementById('searchContentBtn').onclick = searchByContent;
+    document.getElementById('searchDateBtn').onclick = searchByDate;
+    document.getElementById('searchThemeBtn').onclick = searchByTheme;
+    document.getElementById('regenerateQRBtn').onclick = regenerateQRCode;
+    
+    // Clear previous results
+    document.getElementById('adminResults').style.display = 'none';
+    document.getElementById('adminRegenerate').style.display = 'none';
+}
+
+async function searchByContent() {
+    const searchText = document.getElementById('adminContentSearch').value.trim();
+    if (!searchText) {
+        updateStatus('Please enter search keywords', 'error');
+        return;
+    }
+    
+    try {
+        toggleLoading(true, 'Searching messages...');
+        const db = firebase.firestore();
+        const currentUser = firebase.auth().currentUser;
+        
+        const querySnapshot = await db.collection('messages')
+            .where('createdBy', '==', currentUser.uid)
+            .where('content', '>=', searchText)
+            .where('content', '<=', searchText + '\uf8ff')
+            .orderBy('content')
+            .limit(20)
+            .get();
+            
+        displaySearchResults(querySnapshot);
+        
+    } catch (error) {
+        handleError('Search failed', error);
+    } finally {
+        toggleLoading(false);
+    }
+}
+
+async function searchByDate() {
+    const dateFrom = document.getElementById('adminDateFrom').value;
+    const dateTo = document.getElementById('adminDateTo').value;
+    
+    if (!dateFrom || !dateTo) {
+        updateStatus('Please select both date ranges', 'error');
+        return;
+    }
+    
+    try {
+        toggleLoading(true, 'Searching by date...');
+        const db = firebase.firestore();
+        const currentUser = firebase.auth().currentUser;
+        
+        const startDate = new Date(dateFrom);
+        const endDate = new Date(dateTo);
+        endDate.setHours(23, 59, 59, 999);
+        
+        const querySnapshot = await db.collection('messages')
+            .where('createdBy', '==', currentUser.uid)
+            .where('createdAt', '>=', startDate)
+            .where('createdAt', '<=', endDate)
+            .orderBy('createdAt', 'desc')
+            .limit(20)
+            .get();
+            
+        displaySearchResults(querySnapshot);
+        
+    } catch (error) {
+        handleError('Date search failed', error);
+    } finally {
+        toggleLoading(false);
+    }
+}
+
+async function searchByTheme() {
+    const theme = document.getElementById('adminThemeSearch').value;
+    if (!theme) {
+        updateStatus('Please select a theme', 'error');
+        return;
+    }
+    
+    try {
+        toggleLoading(true, 'Searching by theme...');
+        const db = firebase.firestore();
+        const currentUser = firebase.auth().currentUser;
+        
+        const querySnapshot = await db.collection('messages')
+            .where('createdBy', '==', currentUser.uid)
+            .where('theme', '==', theme)
+            .orderBy('createdAt', 'desc')
+            .limit(20)
+            .get();
+            
+        displaySearchResults(querySnapshot);
+        
+    } catch (error) {
+        handleError('Theme search failed', error);
+    } finally {
+        toggleLoading(false);
+    }
+}
+
+function displaySearchResults(querySnapshot) {
+    const resultsList = document.getElementById('adminResultsList');
+    resultsList.innerHTML = '';
+    
+    if (querySnapshot.empty) {
+        resultsList.innerHTML = '<div class="no-results">No messages found</div>';
+    } else {
+        querySnapshot.forEach(doc => {
+            const data = doc.data();
+            const resultItem = document.createElement('div');
+            resultItem.className = 'result-item';
+            resultItem.innerHTML = `
+                <div class="result-content">${data.content.substring(0, 100)}${data.content.length > 100 ? '...' : ''}</div>
+                <div class="result-meta">
+                    <span>${data.theme} • ${data.type}</span>
+                    <span>${data.createdAt?.toDate().toLocaleDateString()}</span>
+                </div>
+            `;
+            resultItem.onclick = () => selectMessageForRegeneration(doc.id, data);
+            resultsList.appendChild(resultItem);
+        });
+    }
+    
+    document.getElementById('adminResults').style.display = 'block';
+}
+
+function selectMessageForRegeneration(docId, messageData) {
+    document.getElementById('previewContent').textContent = messageData.content;
+    document.getElementById('previewTheme').textContent = messageData.theme;
+    document.getElementById('previewDate').textContent = messageData.createdAt?.toDate().toLocaleString();
+    
+    // Store for regeneration
+    window.selectedMessageForRegen = {
+        id: docId,
+        data: messageData
+    };
+    
+    document.getElementById('adminRegenerate').style.display = 'block';
+}
+
+async function regenerateQRCode() {
+    if (!window.selectedMessageForRegen) {
+        updateStatus('No message selected', 'error');
+        return;
+    }
+    
+    try {
+        toggleLoading(true, 'Generating QR code...');
+        
+        // Use the original document ID to generate same QR code
+        const documentId = window.selectedMessageForRegen.id;
+        const qrContent = `https://drkimogad.github.io/MemoryinQR/view.html?id=${documentId}`;
+        
+        // Generate QR code
+        const canvas = document.getElementById('qrcode');
+        await QRCode.toCanvas(canvas, qrContent, {
+            width: DASHBOARD_CONFIG.QR_SIZE,
+            errorCorrectionLevel: DASHBOARD_CONFIG.QR_ERROR_CORRECTION
+        });
+        
+        // Enable download button
+        document.getElementById('downloadQRCodeBtn').disabled = false;
+        
+        updateStatus('QR code regenerated successfully!', 'success');
+        
+    } catch (error) {
+        handleError('QR regeneration failed', error);
+    } finally {
+        toggleLoading(false);
+    }
+}
+
 
 console.log('✅ Dashboard.js loaded successfully');
