@@ -1,4 +1,4 @@
-const CACHE_NAME = 'memoryinqr-v1.0.0';
+const CACHE_NAME = 'memoryinqr-v1.1.0';
 const URLS_TO_CACHE = [
   '/',
   '/index.html',
@@ -56,24 +56,14 @@ self.addEventListener('activate', (event) => {
 });
 
 // Fetch event - serve from cache, fallback to network
+// FIXED Fetch event:
 self.addEventListener('fetch', (event) => {
-  // Skip Firebase requests and external API calls
-  if (event.request.url.includes('firebase') || 
-      event.request.url.includes('googleapis')) {
-    return;
-  }
-
   event.respondWith(
     caches.match(event.request)
       .then((response) => {
-        // Return cached version or fetch from network
         return response || fetch(event.request)
           .then((fetchResponse) => {
-            // Cache new requests (except external libs which are already cached)
-            if (!event.request.url.startsWith('http')) {
-              return fetchResponse;
-            }
-            
+            // Cache ALL successful requests (including external libs)
             return caches.open(CACHE_NAME)
               .then((cache) => {
                 cache.put(event.request, fetchResponse.clone());
@@ -81,7 +71,6 @@ self.addEventListener('fetch', (event) => {
               });
           })
           .catch(() => {
-            // If both cache and network fail, show offline page for HTML requests
             if (event.request.destination === 'document') {
               return caches.match('/offline.html');
             }
@@ -90,6 +79,7 @@ self.addEventListener('fetch', (event) => {
       })
   );
 });
+
 
 // Check for updates
 self.addEventListener('message', (event) => {
