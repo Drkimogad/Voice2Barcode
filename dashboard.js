@@ -257,6 +257,12 @@ async function generateQRFromUrl(url) {
  * @returns {string} Document ID
  */
 async function saveMessageToFirestore(messageData) {
+        // Add offline check
+    if (!navigator.onLine) {
+        updateStatus('You are offline - cannot save message', 'error');
+        throw new Error('Offline - cannot save to Firestore');
+    }
+    
     try {
         const db = firebase.firestore();
         const user = firebase.auth().currentUser;
