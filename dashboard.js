@@ -883,7 +883,8 @@ function downloadQRCode() {
         const canvas = document.getElementById('qrcode');
         const dataUrl = canvas.toDataURL('image/png');
         const timestamp = new Date().getTime();
-        triggerDownload(dataUrl, `voice2barcode-qr-${timestamp}.png`);
+                // CHANGE THIS LINE:
+        triggerDownload(dataUrl, `memoryinqr-qr-${timestamp}.png`);   // will be changed for firebase 
         updateStatus('QR code downloaded!', 'success');
     } catch (error) {
         handleError('QR download failed', error);
