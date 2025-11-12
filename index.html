@@ -97,6 +97,7 @@ const firebaseConfig = {
                 <button class="btn mode-btn" data-mode="text" aria-label="Text mode">📝 Text</button>
                 <button class="btn mode-btn" data-mode="upload" aria-label="Upload mode">📤 Upload</button>
                 <button class="btn mode-btn" data-mode="scan" aria-label="Scan mode">🔍 Scan</button>
+                <button class="btn mode-btn" data-mode="admin" aria-label="Admin mode">⚙️ Admin</button>
             </div>
 
             <!-- Links Section -->
@@ -205,6 +206,66 @@ const firebaseConfig = {
             <div id="status" class="status-message" aria-live="polite" role="alert"></div>
         </div>
     </div>
+    
+        <!-- Admin Section -->
+<section data-section="admin" class="mode-section" style="display: none;">
+    <div class="admin-container">
+        <div class="admin-search-box">
+            <h3>🔍 Retrieve & Regenerate QR Codes</h3>
+            
+            <!-- Search by Content -->
+            <div class="search-group">
+                <label>Search by Message Content:</label>
+                <input type="text" id="adminContentSearch" placeholder="Enter keywords (birthday, love, names...)" class="search-input">
+                <button id="searchContentBtn" class="btn search-btn">Search Messages</button>
+            </div>
+
+            <!-- Search by Date -->
+            <div class="search-group">
+                <label>Search by Date Range:</label>
+                <div class="date-inputs">
+                    <input type="date" id="adminDateFrom" class="date-input">
+                    <span>to</span>
+                    <input type="date" id="adminDateTo" class="date-input">
+                </div>
+                <button id="searchDateBtn" class="btn search-btn">Search by Date</button>
+            </div>
+
+            <!-- Search by Theme -->
+            <div class="search-group">
+                <label>Search by Theme:</label>
+                <select id="adminThemeSearch" class="theme-select">
+                    <option value="">All Themes</option>
+                    <option value="birthday">🎂 Birthday</option>
+                    <option value="love">❤️ Love</option>
+                    <option value="gratitude">🙏 Gratitude</option>
+                    <option value="anniversary">💝 Anniversary</option>
+                    <option value="baby">👶 Baby</option>
+                    <option value="graduation">🎓 Graduation</option>
+                    <option value="website">🌐 Website</option>
+                </select>
+                <button id="searchThemeBtn" class="btn search-btn">Search by Theme</button>
+            </div>
+        </div>
+
+        <!-- Search Results -->
+        <div id="adminResults" class="admin-results" style="display: none;">
+            <h4>📋 Found Messages</h4>
+            <div id="adminResultsList" class="results-list"></div>
+        </div>
+
+        <!-- Regenerate Area -->
+        <div id="adminRegenerate" class="admin-regenerate" style="display: none;">
+            <h4>🔄 Regenerate QR Code</h4>
+            <div class="message-preview">
+                <p><strong>Content:</strong> <span id="previewContent"></span></p>
+                <p><strong>Theme:</strong> <span id="previewTheme"></span></p>
+                <p><strong>Date:</strong> <span id="previewDate"></span></p>
+            </div>
+            <button id="regenerateQRBtn" class="btn regenerate-btn">Generate Same QR Code</button>
+        </div>
+    </div>
+</section>
 
     <!-- Loading Overlay -->
     <div id="loadingOverlay" class="loading-overlay" style="display: none;">
