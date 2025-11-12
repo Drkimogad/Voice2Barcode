@@ -225,5 +225,5 @@ function registerServiceWorker() {
 }
 
 // Call this in your main app initialization
-// registerServiceWorker();
+// registerServiceWorker();  no need as utils.js loads before auth.js
 
