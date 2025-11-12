@@ -1,6 +1,11 @@
 // ========================================
 // DASHBOARD MODULE
 // ========================================
+// Add this at the top of dashboard.js
+const APP_CONFIG = {
+  baseUrl: window.location.origin // Auto-detects current domain
+};
+
 const DASHBOARD_CONFIG = {
     MAX_TEXT_LENGTH: 200,
     QR_SIZE: 300,
@@ -406,8 +411,9 @@ async function generateQRFromDocumentId(documentId) {
     try {
         toggleLoading(true, 'Generating QR code...');
         
-        // Create URL for your domain - we'll use memoryinqr.com for now
-     const qrContent = `https://drkimogad.github.io/MemoryinQR/view.html?id=${documentId}`;   // REPLACE LATER FOR FIREBASE DEPLOYMENT 
+    // Create URL for your domain - we'll use memoryinqr.com for now
+    // const qrContent = `https://drkimogad.github.io/MemoryinQR/view.html?id=${documentId}`;   // REPLACE LATER FOR FIREBASE DEPLOYMENT 
+        const qrContent = `${APP_CONFIG.baseUrl}/view.html?id=${documentId}`;
         
         // Store document ID for download reference
         lastQRData = {
