@@ -10,29 +10,8 @@ function checkOnlineStatus() {
   return true;
 }
 
-// Add missing utility functions
-function isValidEmail(email) {
-  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-  return emailRegex.test(email);
-}
-
-function updateStatus(message, type) {
-  const statusElement = document.getElementById('status');
-  if (statusElement) {
-    statusElement.textContent = message;
-    statusElement.className = `status-message ${type}`;
-    statusElement.style.display = 'block';
-    
-    // Auto-hide success messages after 3 seconds
-    if (type === 'success') {
-      setTimeout(() => {
-        statusElement.style.display = 'none';
-      }, 3000);
-    }
-  }
-  console.log(`📢 ${type.toUpperCase()}: ${message}`);
-}
-
+//function isValidEmail(email) and function updateStatus(message, type)
+// are in utils.js 
 
 function initAuth() {
   if (!checkOnlineStatus()) return;
