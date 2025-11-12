@@ -1,8 +1,19 @@
 // ========================================
 // AUTHENTICATION MODULE
 // ========================================
+// Add to auth.js at the top
+function checkOnlineStatus() {
+  if (!navigator.onLine) {
+    window.location.href = '/offline.html';
+    return false;
+  }
+  return true;
+}
+
 
 function initAuth() {
+      if (!checkOnlineStatus()) return;
+    
     console.log('🔐 Initializing authentication...');
     
     // Replace localStorage check with Firebase auth state listener
@@ -68,6 +79,11 @@ function setupAuthListeners() {
  */
 async function handleSignup(e) {
     e.preventDefault();
+    // Add offline check
+    if (!navigator.onLine) {
+        window.location.href = '/offline.html';
+        return;
+    }
     
     const errorDisplay = document.getElementById('signupError');
     errorDisplay.textContent = '';
@@ -120,6 +136,11 @@ async function handleSignup(e) {
  */
 async function handleSignin(e) {
     e.preventDefault();
+    // Add offline check
+    if (!navigator.onLine) {
+        window.location.href = '/offline.html';
+        return;
+    }
     
     const errorDisplay = document.getElementById('signinError');
     errorDisplay.textContent = '';
@@ -158,19 +179,27 @@ async function handleSignin(e) {
  */
 async function handleLogout() {
     try {
-// REPLACE localStorage clear with Firebase signOut
-        await firebase.auth().signOut();
-        console.log('✅ Firebase user logged out');
+        // Clear local session data
+        localStorage.removeItem('lastActivePage');
+        // Add any other local storage cleanup here
         
-        // Show auth section
-      //  showAuth();                                                     // to verify
+        // Try Firebase signOut if online
+        if (navigator.onLine) {
+            await firebase.auth().signOut();
+            console.log('✅ Firebase user logged out');
+            updateStatus('Logged out successfully', 'success');
+        } else {
+            // Offline logout - just clear local data
+            console.log('🔌 Offline logout - local data cleared');
+            updateStatus('Logged out (offline mode)', 'success');
+        }
         
-        updateStatus('Logged out successfully', 'success');
-        console.log('✅ User logged out');
+        // NO NEED to call showAuth() - Firebase auth state listener handles it automatically
         
     } catch (error) {
-        console.error('Firebase logout error:', error);
-        updateStatus('Logout failed', 'error');
+        console.error('Logout error:', error);
+        updateStatus('Logout completed', 'success');
+        // Firebase auth state listener will still handle the UI
     }
 }
 
