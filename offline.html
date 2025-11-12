@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Offline - MemoryinQR</title>
+    <style>
+        :root {
+            --silver: #C0C0C0;
+            --crimson: #CB4154;
+            --charcoal: #36454F;
+            --cream: #F5F5DC;
+            --mustard: #FFDB58;
+        }
+        
+        body {
+            font-family: 'Inter', Arial, sans-serif;
+            background: linear-gradient(135deg, var(--cream) 0%, #FAFAFA 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+            margin: 0;
+        }
+        
+        .offline-container {
+            text-align: center;
+            background: white;
+            padding: 40px;
+            border-radius: 16px;
+            box-shadow: 0 12px 40px rgba(0, 0, 0, 0.15);
+            border: 3px solid var(--charcoal);
+            max-width: 500px;
+        }
+        
+        .offline-icon {
+            font-size: 4em;
+            margin-bottom: 20px;
+        }
+        
+        h1 {
+            color: var(--charcoal);
+            margin-bottom: 15px;
+        }
+        
+        p {
+            color: var(--charcoal);
+            margin-bottom: 25px;
+            line-height: 1.6;
+        }
+        
+        .retry-btn {
+            background: linear-gradient(135deg, var(--crimson) 0%, #B22222 100%);
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        
+        .retry-btn:hover {
+            background: linear-gradient(135deg, #B22222 0%, #8B0000 100%);
+        }
+    </style>
+</head>
+<body>
+    <div class="offline-container">
+        <div class="offline-icon">📶</div>
+        <h1>You're Offline</h1>
+        <p>MemoryinQR requires an internet connection to work. Please check your connection and try again.</p>
+        <button class="retry-btn" onclick="window.location.reload()">Retry Connection</button>
+    </div>
+</body>
+</html>
