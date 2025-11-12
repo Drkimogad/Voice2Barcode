@@ -10,27 +10,50 @@ function checkOnlineStatus() {
   return true;
 }
 
+// Add missing utility functions
+function isValidEmail(email) {
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  return emailRegex.test(email);
+}
+
+function updateStatus(message, type) {
+  const statusElement = document.getElementById('status');
+  if (statusElement) {
+    statusElement.textContent = message;
+    statusElement.className = `status-message ${type}`;
+    statusElement.style.display = 'block';
+    
+    // Auto-hide success messages after 3 seconds
+    if (type === 'success') {
+      setTimeout(() => {
+        statusElement.style.display = 'none';
+      }, 3000);
+    }
+  }
+  console.log(`📢 ${type.toUpperCase()}: ${message}`);
+}
+
 
 function initAuth() {
-      if (!checkOnlineStatus()) return;
-    
-    console.log('🔐 Initializing authentication...');
-    
-    // Replace localStorage check with Firebase auth state listener
-    firebase.auth().onAuthStateChanged((user) => {
-        if (user) {
-            // User is signed in with Firebase
-            console.log('✅ Firebase user logged in:', user.email);
-            showDashboard();
-        } else {
-            // User is signed out
-            console.log('🔒 No Firebase user');
-            showAuth();
-        }
-    });
-    
-    // Setup event listeners
-    setupAuthListeners();
+  if (!checkOnlineStatus()) return;
+  
+  console.log('🔐 Initializing authentication...');
+  
+  // Replace localStorage check with Firebase auth state listener
+  firebase.auth().onAuthStateChanged((user) => {
+      if (user) {
+          // User is signed in with Firebase
+          console.log('✅ Firebase user logged in:', user.email);
+          showDashboard();
+      } else {
+          // User is signed out
+          console.log('🔒 No Firebase user');
+          showAuth();
+      }
+  });
+  
+  // Setup event listeners
+  setupAuthListeners();
 }
 
 /**
@@ -163,9 +186,9 @@ async function handleSignin(e) {
         
         // Show dashboard
         updateStatus('Welcome back!', 'success');
-       // showDashboard();                    // to verify
         
-        console.log('✅ User logged in:', username);
+        // FIXED: Remove undefined username reference
+        console.log('✅ User logged in:', email);
         
     } catch (error) {
         errorDisplay.textContent = error.message;
