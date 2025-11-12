@@ -198,5 +198,32 @@ function debounce(func, wait) {
 console.log('✅ Utils.js loaded successfully');
 
 
+// Add to utils.js
+function registerServiceWorker() {
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('/service-worker.js')
+      .then((registration) => {
+        console.log('Service Worker registered:', registration);
+        
+        // Check for updates
+        registration.addEventListener('updatefound', () => {
+          const newWorker = registration.installing;
+          console.log('New Service Worker found...');
+          
+          newWorker.addEventListener('statechange', () => {
+            if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+              console.log('New content available; please refresh.');
+              // You can show "Update available" notification here
+            }
+          });
+        });
+      })
+      .catch((error) => {
+        console.log('Service Worker registration failed:', error);
+      });
+  }
+}
 
+// Call this in your main app initialization
+// registerServiceWorker();
 
