@@ -1,0 +1,377 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Privacy Policy - MemoryinQR</title>
+    <style>
+        :root {
+            --silver: #C0C0C0;
+            --crimson: #CB4154;
+            --charcoal: #36454F;
+            --cream: #F5F5DC;
+            --mustard: #FFDB58;
+            --white: #FFFFFF;
+            --off-white: #F9FAFB;
+            --light-charcoal: #4B5563;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        }
+
+        body {
+            background: linear-gradient(135deg, var(--cream) 0%, #FAFAFA 100%);
+            color: var(--charcoal);
+            line-height: 1.6;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .privacy-container {
+            max-width: 900px;
+            margin: 0 auto;
+            background: var(--white);
+            border-radius: 16px;
+            box-shadow: 0 12px 40px rgba(0, 0, 0, 0.15);
+            border: 3px solid var(--charcoal);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, var(--silver) 0%, #D3D3D3 100%);
+            padding: 40px 30px;
+            text-align: center;
+            border-bottom: 4px solid var(--crimson);
+        }
+
+        .header h1 {
+            color: var(--charcoal);
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            font-weight: 700;
+        }
+
+        .header p {
+            color: var(--charcoal);
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+
+        .content {
+            padding: 40px;
+        }
+
+        .last-updated {
+            background: var(--cream);
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 30px;
+            border-left: 4px solid var(--mustard);
+            font-weight: 600;
+        }
+
+        .important-note {
+            background: #FFE5E5;
+            border: 1px solid var(--crimson);
+            border-left: 4px solid var(--crimson);
+            padding: 20px;
+            margin: 25px 0;
+            border-radius: 8px;
+        }
+
+        .section {
+            margin-bottom: 35px;
+        }
+
+        .section h2 {
+            color: var(--crimson);
+            margin-bottom: 20px;
+            font-size: 1.6rem;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid var(--silver);
+        }
+
+        .section h3 {
+            color: var(--charcoal);
+            margin: 25px 0 15px;
+            font-size: 1.3rem;
+        }
+
+        .section p {
+            margin-bottom: 15px;
+            color: var(--light-charcoal);
+            line-height: 1.7;
+        }
+
+        .data-list {
+            list-style: none;
+            padding-left: 0;
+            margin: 20px 0;
+        }
+
+        .data-list li {
+            margin-bottom: 12px;
+            padding-left: 30px;
+            position: relative;
+            color: var(--light-charcoal);
+        }
+
+        .data-list li:before {
+            content: "🎁";
+            position: absolute;
+            left: 0;
+            font-size: 1.1em;
+        }
+
+        .highlight-box {
+            background: var(--cream);
+            padding: 25px;
+            border-radius: 8px;
+            border: 1px solid var(--silver);
+            margin: 25px 0;
+            border-left: 4px solid var(--mustard);
+        }
+
+        .contact-info {
+            background: linear-gradient(135deg, var(--silver) 0%, #D3D3D3 100%);
+            padding: 25px;
+            border-radius: 8px;
+            border-left: 4px solid var(--crimson);
+            margin-top: 30px;
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            margin-top: 40px;
+            padding-top: 30px;
+            border-top: 2px solid var(--silver);
+        }
+
+        .btn {
+            padding: 14px 28px;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            min-width: 160px;
+            justify-content: center;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--crimson) 0%, #B22222 100%);
+            color: var(--white);
+        }
+
+        .btn-primary:hover {
+            background: linear-gradient(135deg, #B22222 0%, #8B0000 100%);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(203, 65, 84, 0.3);
+        }
+
+        .btn-secondary {
+            background: var(--silver);
+            color: var(--charcoal);
+        }
+
+        .btn-secondary:hover {
+            background: #D3D3D3;
+            transform: translateY(-2px);
+        }
+
+        .footer {
+            text-align: center;
+            margin-top: 40px;
+            padding-top: 30px;
+            border-top: 1px solid var(--silver);
+            color: var(--light-charcoal);
+        }
+
+        @media (max-width: 768px) {
+            body {
+                padding: 10px;
+            }
+            
+            .privacy-container {
+                margin: 0;
+                border-radius: 12px;
+            }
+            
+            .header {
+                padding: 30px 20px;
+            }
+            
+            .header h1 {
+                font-size: 2rem;
+            }
+            
+            .content {
+                padding: 25px;
+            }
+            
+            .action-buttons {
+                flex-direction: column;
+            }
+            
+            .btn {
+                width: 100%;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .header {
+                padding: 25px 15px;
+            }
+            
+            .content {
+                padding: 20px;
+            }
+            
+            .section h2 {
+                font-size: 1.4rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="privacy-container">
+        <div class="header">
+            <h1>🛡️ Privacy Policy</h1>
+            <p>MemoryinQR - Last updated: November 2025</p>
+        </div>
+
+        <div class="content">
+            <div class="last-updated">
+                <strong>Service Provider:</strong> MemoryinQR is operated by Dr. Karim O. Gad, based in Johannesburg, South Africa.
+            </div>
+
+            <div class="important-note">
+                <strong>🔔 IMPORTANT:</strong> By using MemoryinQR, you acknowledge that you have read and agree to this Privacy Policy. If you do not agree, please do not use our application.
+            </div>
+
+            <div class="section">
+                <h2>🔐 Information We Collect</h2>
+                
+                <h3>Authentication Information</h3>
+                <p>When you create an account using Firebase Authentication, we collect:</p>
+                <ul class="data-list">
+                    <li>Your email address</li>
+                    <li>Authentication tokens and session data</li>
+                    <li>Account creation and login timestamps</li>
+                </ul>
+
+                <h3>Memory Card Data</h3>
+                <p>We store the beautiful memory cards you create:</p>
+                <ul class="data-list">
+                    <li>Message content and themes</li>
+                    <li>QR code generation data</li>
+                    <li>Card creation timestamps</li>
+                    <li>View counts for shared cards</li>
+                </ul>
+
+                <h3>Technical Information</h3>
+                <p>We do not collect technical information such as IP addresses, browser types, or usage analytics. Our focus is solely on your memory card data.</p>
+            </div>
+
+            <div class="section">
+                <h2>🗂️ How We Use Your Information</h2>
+                <p>We use your information to:</p>
+                <ul class="data-list">
+                    <li>Create and display your beautiful memory cards</li>
+                    <li>Generate QR codes for sharing memories</li>
+                    <li>Track views of your shared cards</li>
+                    <li>Provide personalized theme detection</li>
+                    <li>Ensure application security and functionality</li>
+                </ul>
+            </div>
+
+            <div class="section">
+                <h2>🏢 Data Storage & Security</h2>
+                <p>Your data is securely stored using Google Firebase:</p>
+                
+                <div class="highlight-box">
+                    <strong>Firebase Services We Use:</strong>
+                    <ul class="data-list">
+                        <li><strong>Firebase Authentication:</strong> Secure user accounts</li>
+                        <li><strong>Cloud Firestore:</strong> Memory card storage</li>
+                        <li><strong>Security Rules:</strong> Data protection</li>
+                    </ul>
+                </div>
+
+                <h3>Security Measures</h3>
+                <ul class="data-list">
+                    <li>Data encryption in transit (SSL/TLS)</li>
+                    <li>Secure authentication protocols</li>
+                    <li>Regular security updates</li>
+                    <li>Access controls and permissions</li>
+                </ul>
+            </div>
+
+            <div class="section">
+                <h2>🌐 Data Sharing</h2>
+                <p>We do not sell or trade your personal information. Data is only shared with:</p>
+                <ul class="data-list">
+                    <li><strong>Google Firebase:</strong> Essential for app functionality</li>
+                    <li><strong>Legal Authorities:</strong> When required by law</li>
+                </ul>
+                
+                <div class="important-note">
+                    <strong>Note:</strong> Memory cards shared via QR codes are publicly accessible to anyone with the link.
+                </div>
+            </div>
+
+            <div class="section">
+                <h2>⚖️ Your Rights</h2>
+                <p>You have full control over your data:</p>
+                <ul class="data-list">
+                    <li>Access all your memory cards</li>
+                    <li>Delete any memory card or your entire account</li>
+                    <li>Export your data</li>
+                    <li>Control who sees your shared cards</li>
+                </ul>
+            </div>
+
+            <div class="section">
+                <h2>📊 Data Retention</h2>
+                <p>We retain your data while your account is active. Account deletion permanently removes all your memory cards and data.</p>
+            </div>
+
+            <div class="section">
+                <h2>🔄 Policy Updates</h2>
+                <p>We may update this policy. Continued use constitutes acceptance of changes. We'll notify you of significant updates.</p>
+            </div>
+
+            <div class="contact-info">
+                <h3>📧 Contact Us</h3>
+                <p>Questions about this policy or your data rights?</p>
+                <p><strong>Email:</strong> dr_kimogad@yahoo.com</p>
+                <p>We respond promptly to all inquiries.</p>
+            </div>
+
+            <div class="action-buttons">
+                <a href="index.html" class="btn btn-primary">🏠 Back to App</a>
+                <a href="terms.html" class="btn btn-secondary">📝 Terms of Service</a>
+            </div>
+
+            <div class="footer">
+                <p>© 2025 MemoryinQR™. All Rights Reserved.</p>
+                <p>Capture life's precious moments with beautiful QR code cards ✨</p>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
