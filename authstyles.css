@@ -185,6 +185,24 @@ body {
     opacity: 0.9;
 }
 
+/* Legal Links in Footer */
+.legal-links {
+    margin-top: 10px;
+}
+
+.legal-links a {
+    color: var(--cream) !important;
+    text-decoration: none;
+    font-size: 14px;
+    transition: opacity 0.3s ease;
+    margin: 0 15px;
+}
+
+.legal-links a:hover {
+    opacity: 0.8;
+    text-decoration: underline;
+}
+
 /* Responsive Design */
 @media (max-width: 768px) {
     .container {
