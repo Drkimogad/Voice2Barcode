@@ -1,18 +1,18 @@
-const CACHE_NAME = 'memoryinqr-v1.1.5';
+const CACHE_NAME = 'memoryinqr-v1.1.6';
 const URLS_TO_CACHE = [
   '/MemoryinQR/',
-  '/index.html', 
-  '/view.html',
-  '/offline.html',
-  '/auth.js',
-  '/dashboard.js',
-  '/utils.js',
-  '/authstyles.css',
-  '/dashboardstyles.css',
-  '/manifest.json',
-  '/favicon.ico',
-  '/icons/icon-192x192.png',
-  '/icons/icon-512x512.png'
+  '/MemoryinQR/index.html', 
+  '/MemoryinQR/view.html',
+  '/MemoryinQR/offline.html',
+  '/MemoryinQR/auth.js',
+  '/MemoryinQR/dashboard.js',
+  '/MemoryinQR/utils.js',
+  '/MemoryinQR/authstyles.css',
+  '/MemoryinQR/dashboardstyles.css',
+  '/MemoryinQR/manifest.json',
+  '/MemoryinQR/favicon.ico',
+  '/MemoryinQR/icons/icon-192x192.png',
+  '/MemoryinQR/icons/icon-512x512.png'
 ];
 
 // External libraries to cache
@@ -94,7 +94,7 @@ self.addEventListener('fetch', (event) => {
         })
         .catch(error => {
           console.log('❌ Navigation failed, serving offline.html');
-          return caches.match('/offline.html')
+          return caches.match('/MemoryinQR/offline.html')
             .then(offlineResponse => {
               if (offlineResponse) {
                 console.log('📄 Serving offline.html');
