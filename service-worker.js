@@ -1,4 +1,4 @@
-const CACHE_NAME = 'memoryinqr-v1.2.5';
+const CACHE_NAME = 'memoryinqr-v1.2.6';
 const URLS_TO_CACHE = [
   '/MemoryinQR/',
   '/MemoryinQR/index.html', 
@@ -25,34 +25,37 @@ const EXTERNAL_LIBS = [
 ];
 
 // Install event - cache all assets
+// Install event - cache all assets
 self.addEventListener('install', (event) => {
   console.log('🛠️ Service Worker installing...');
   event.waitUntil(
-    caches.open(CACHE_NAME)
-      .then((cache) => {
-        console.log('💾 Opened cache, attempting to add files...');
-        
-        // Cache critical files with proper error handling
-        return cache.add('/MemoryinQR/offline.html')
-          .then(() => console.log('✅ offline.html cached'))
-          .then(() => cache.add('/MemoryinQR/'))
-          .then(() => console.log('✅ root / cached'))
-          .then(() => cache.add('/MemoryinQR/index.html'))
-          .then(() => console.log('✅ index.html cached'))
-          .catch(error => {
-            console.error('❌ Cache add failed:', error);
-            throw error;
-          });
-      })
-      .then(() => {
-        console.log('⚡ skipWaiting called');
-        return self.skipWaiting();
-      })
-      .catch(error => {
-        console.error('🔥 INSTALL FAILED:', error);
-        return self.skipWaiting();
-      })
+    (async () => {
+      const cache = await caches.open(CACHE_NAME);
+      
+      // Cache local assets with same-origin mode (CRITICAL FIX)
+      const localRequests = URLS_TO_CACHE.map(url => 
+        new Request(url, { mode: 'same-origin' })
+      );
+      
+      await cache.addAll(localRequests);
+      console.log('✅ Local assets cached successfully');
+      
+      // Cache external libs separately with no-cors
+      const externalCache = await caches.open(OFFLINE_CACHE);
+      for (const url of EXTERNAL_LIBS) {
+        try {
+          await externalCache.add(new Request(url, { mode: 'no-cors' }));
+        } catch (err) {
+          console.warn(`⚠️ Could not cache: ${url}`, err);
+        }
+      }
+      
+      console.log('✅ Installation completed');
+    })().catch(error => {
+      console.error('🔥 Installation failed:', error);
+    })
   );
+  self.skipWaiting();
 });
 
 // Activate event - clean up old caches
