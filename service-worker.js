@@ -1,4 +1,4 @@
-const CACHE_NAME = 'memoryinqr-v1.1.6';
+const CACHE_NAME = 'memoryinqr-v1.1.7';
 const URLS_TO_CACHE = [
   '/MemoryinQR/',
   '/MemoryinQR/index.html', 
