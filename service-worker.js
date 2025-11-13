@@ -1,4 +1,4 @@
-const CACHE_NAME = 'memoryinqr-v1.2.1';
+const CACHE_NAME = 'memoryinqr-v1.2.2';
 const URLS_TO_CACHE = [
   '/MemoryinQR/',
   '/MemoryinQR/index.html', 
@@ -25,6 +25,18 @@ const EXTERNAL_LIBS = [
   'https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js',
   'https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js'
 ];
+
+
+// Add this to your service worker temporarily
+setTimeout(() => {
+  caches.open(CACHE_NAME).then(cache => {
+    cache.keys().then(keys => {
+      console.log('🔍 Cache check - Total files:', keys.length);
+      keys.forEach(key => console.log('   -', key.url));
+    });
+  });
+}, 3000);
+
 
 // Install event - cache all assets
 // Install event - cache all assets
