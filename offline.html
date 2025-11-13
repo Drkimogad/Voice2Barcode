@@ -505,12 +505,13 @@
 // Replace the setTimeout redirect section with:
 setTimeout(() => {
   const lastState = localStorage.getItem('lastKnownState');
-  let redirectUrl = '/';
-  
+ // let redirectUrl = '/';      
+  let redirectUrl = '/MemoryinQR/';      
+    
   if (lastState === 'dashboard-authenticated') {
-    redirectUrl = '/'; // Will auto-go to dashboard
+    redirectUrl = '/MemoryinQR/'; // Will auto-go to dashboard
   } else {
-    redirectUrl = '/'; // Will show auth page
+    redirectUrl = '/MemoryinQR/'; // Will show auth page
   }
   
   window.location.href = redirectUrl;
