@@ -1,4 +1,4 @@
-const CACHE_NAME = 'memoryinqr-v1.1.7';
+const CACHE_NAME = 'memoryinqr-v1.1.8';
 const URLS_TO_CACHE = [
   '/MemoryinQR/',
   '/MemoryinQR/index.html', 
@@ -83,19 +83,19 @@ self.addEventListener('fetch', (event) => {
   const request = event.request;
   const url = new URL(request.url);
   
-  console.log('🌐 Fetch event:', request.method, request.url);
+  console.log('🌐 Fetch event:', request.method, request.url, 'Mode:', request.mode);
   
-  // Handle navigation requests (page loads) separately
-  if (request.mode === 'navigate') {
-    console.log('🧭 Navigation request detected');
+  // TEMPORARY: Handle ALL page requests (not just navigate mode)
+  if (request.destination === 'document' || request.mode === 'navigate') {
+    console.log('🧭 PAGE REQUEST detected:', request.url);
     event.respondWith(
       fetch(request)
         .then(response => {
-          console.log('✅ Navigation fetch successful');
+          console.log('✅ Page fetch successful');
           return response;
         })
         .catch(error => {
-          console.log('❌ Navigation failed, serving offline.html');
+          console.log('❌ Page fetch failed, serving offline.html');
           return caches.match('/MemoryinQR/offline.html')
             .then(offlineResponse => {
               if (offlineResponse) {
@@ -109,6 +109,7 @@ self.addEventListener('fetch', (event) => {
     );
     return;
   }
+
   
   // For all other requests (CSS, JS, images, etc.)
   event.respondWith(
