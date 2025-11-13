@@ -1,4 +1,4 @@
-const CACHE_NAME = 'memoryinqr-v1.1.0';
+const CACHE_NAME = 'memoryinqr-v1.1.1';
 const URLS_TO_CACHE = [
   '/',
   '/index.html',
@@ -19,7 +19,7 @@ const URLS_TO_CACHE = [
 const EXTERNAL_LIBS = [
   'https://cdn.jsdelivr.net/npm/qrcode@1.5.0/build/qrcode.min.js',
   'https://unpkg.com/html5-qrcode',
-  'https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap',
+
   'https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js',
   'https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js',
   'https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js'
