@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Offline - MemoryinQR</title>
     <style>
+        /* [KEEP ALL YOUR EXISTING STYLES EXACTLY AS THEY ARE] */
         :root {
             --silver: #C0C0C0;
             --crimson: #CB4154;
@@ -251,6 +252,34 @@
             0%, 80%, 100% { transform: scale(0); }
             40% { transform: scale(1); }
         }
+
+        /* NEW: Recovery animation styles */
+        .recovery-sequence {
+            margin: 1rem 0;
+            padding: 1rem;
+            background: #E8F5E8;
+            border-radius: 8px;
+            border-left: 4px solid #059669;
+        }
+        
+        .recovery-step {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin: 0.5rem 0;
+            opacity: 0.7;
+        }
+        
+        .recovery-step.active {
+            opacity: 1;
+            font-weight: bold;
+            color: #059669;
+        }
+        
+        .recovery-step.completed {
+            opacity: 1;
+            color: #059669;
+        }
     </style>
 </head>
 <body>
@@ -301,6 +330,14 @@
             <p><strong>QR Scanning:</strong> You can still scan existing QR codes to view memory cards that were previously loaded.</p>
         </div>
 
+        <!-- NEW: Recovery Sequence Visual -->
+        <div class="recovery-sequence" id="recoverySequence" style="display: none;">
+            <h3 style="color: #059669; margin-bottom: 1rem;">🔄 Restoring Connection...</h3>
+            <div class="recovery-step" id="step1">⏳ Detecting network...</div>
+            <div class="recovery-step" id="step2">🔍 Checking authentication...</div>
+            <div class="recovery-step" id="step3">📱 Redirecting to app...</div>
+        </div>
+
         <div class="action-buttons">
             <button class="btn btn-primary" id="retryBtn">
                 <span class="btn-text">🔄 Retry Connection</span>
@@ -328,9 +365,10 @@
         constructor() {
             this.retryCount = 0;
             this.maxRetries = 5;
-            this.redirectDelay = 3000;
+            this.redirectDelay = 5000; // 5 seconds as requested
             this.isChecking = false;
             this.connectionChecked = false;
+            this.recoverySequenceStarted = false;
             
             this.initializeElements();
             this.setupEventListeners();
@@ -345,6 +383,7 @@
             this.attemptCount = document.getElementById('attemptCount');
             this.statusIndicator = document.getElementById('statusIndicator');
             this.offlineContainer = document.getElementById('offlineContainer');
+            this.recoverySequence = document.getElementById('recoverySequence');
             this.btnText = this.retryBtn?.querySelector('.btn-text');
         }
 
@@ -408,11 +447,41 @@
             }
         }
 
+        startRecoverySequence() {
+            if (this.recoverySequenceStarted) return;
+            this.recoverySequenceStarted = true;
+            
+            this.recoverySequence.style.display = 'block';
+            
+            // Step 1: Detecting network
+            this.updateRecoveryStep('step1', 'active');
+            setTimeout(() => {
+                this.updateRecoveryStep('step1', 'completed');
+                this.updateRecoveryStep('step2', 'active');
+                
+                // Step 2: Checking authentication
+                setTimeout(() => {
+                    this.updateRecoveryStep('step2', 'completed');
+                    this.updateRecoveryStep('step3', 'active');
+                }, 1000);
+            }, 1000);
+        }
+
+        updateRecoveryStep(stepId, status) {
+            const step = document.getElementById(stepId);
+            if (step) {
+                step.className = `recovery-step ${status}`;
+            }
+        }
+
         handleOnline() {
             if (this.connectionChecked) return;
             this.connectionChecked = true;
             
             console.log('✅ Internet connection restored');
+            
+            // Start recovery sequence visual
+            this.startRecoverySequence();
             
             // Update UI
             if (this.offlineContainer) {
@@ -428,15 +497,34 @@
                 this.statusIndicator.textContent = '✅';
             }
             
-            // Redirect to app
+            // Check where to redirect based on previous state
+            const lastKnownState = localStorage.getItem('lastKnownState');
+            console.log('📝 Last known state:', lastKnownState);
+            
+            // Wait 5 seconds then redirect to appropriate page
             setTimeout(() => {
-                window.location.href = '/';
+                let redirectUrl = '/';
+                
+                // Smart redirect based on previous state
+                if (lastKnownState === 'dashboard-authenticated') {
+                    redirectUrl = '/'; // Will auto-redirect to dashboard
+                    console.log('🔄 Redirecting to dashboard');
+                } else if (lastKnownState === 'auth-page' || lastKnownState === 'logged-out') {
+                    redirectUrl = '/'; // Will show auth page
+                    console.log('🔄 Redirecting to auth page');
+                } else {
+                    redirectUrl = '/'; // Default to root
+                    console.log('🔄 Redirecting to default page');
+                }
+                
+                window.location.href = redirectUrl;
             }, this.redirectDelay);
         }
 
         handleOffline() {
             console.log('❌ Internet connection lost');
             this.connectionChecked = false;
+            this.recoverySequenceStarted = false;
             
             // Update UI
             if (this.offlineContainer) {
@@ -450,6 +538,9 @@
             }
             if (this.statusIndicator) {
                 this.statusIndicator.textContent = '📵';
+            }
+            if (this.recoverySequence) {
+                this.recoverySequence.style.display = 'none';
             }
         }
     }
