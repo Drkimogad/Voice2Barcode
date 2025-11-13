@@ -3,34 +3,53 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MemoryinQR</title>
+    <meta name="theme-color" content="#6B46C1">
+    
+    <title>MemoryinQR - Secure QR Code Memories</title>
+    
+    <!-- Primary Meta Tags -->
+    <meta name="description" content="Store and share your memories securely with QR codes. Private, encrypted memory storage with easy sharing.">
+    
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website">
+    <meta property="og:title" content="MemoryinQR - Secure QR Code Memories">
+    <meta property="og:description" content="Store and share your memories securely with QR codes. Private, encrypted memory storage with easy sharing.">
+    <meta property="og:image" content="https://drkimogad.github.io/MemoryinQR/banner/Image.png">
+    
+    <!-- Twitter -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="MemoryinQR - Secure QR Code Memories">
+    <meta name="twitter:description" content="Store and share your memories securely with QR codes. Private, encrypted memory storage with easy sharing.">
+    <meta name="twitter:image" content="https://drkimogad.github.io/MemoryinQR/banner/Image.png">
+    
+    <!-- Canonical URL -->
+    <link rel="canonical" href="https://drkimogad.github.io/MemoryinQR/">
+    
+    <!-- Styles -->
     <link rel="stylesheet" href="authstyles.css">
     <link rel="stylesheet" href="dashboardstyles.css">
     <link rel="icon" href="favicon.ico" type="image/x-icon">
 
     <!-- Firebase SDK -->
-<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
 
-<!-- Your Firebase Config - INLINE (Recommended) -->
-<script>
-const firebaseConfig = {
-  apiKey: "AIzaSyAcHV1_wbQjAojF9rBZHZ9Sg2LOYcPqde8",
-  authDomain: "memoryinqr-96de6.firebaseapp.com",
-  projectId: "memoryinqr-96de6",
-  storageBucket: "memoryinqr-96de6.firebasestorage.app",
-  messagingSenderId: "36040892781",
-  appId: "1:36040892781:web:50fce09a86be7fb4e3ba64",
-  measurementId: "G-56LX7EKM6E"
-};
-  
-  // Initialize Firebase
-  firebase.initializeApp(firebaseConfig);
-  console.log('🔥 Firebase initialized successfully');
-</script>
-
-
+    <!-- Firebase Config -->
+    <script>
+    const firebaseConfig = {
+      apiKey: "AIzaSyAcHV1_wbQjAojF9rBZHZ9Sg2LOYcPqde8",
+      authDomain: "memoryinqr-96de6.firebaseapp.com",
+      projectId: "memoryinqr-96de6",
+      storageBucket: "memoryinqr-96de6.firebasestorage.app",
+      messagingSenderId: "36040892781",
+      appId: "1:36040892781:web:50fce09a86be7fb4e3ba64",
+      measurementId: "G-56LX7EKM6E"
+    };
+    
+    firebase.initializeApp(firebaseConfig);
+    console.log('🔥 Firebase initialized successfully');
+    </script>
 </head>
 <body>
     <!-- Info Banner -->
