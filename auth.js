@@ -9,27 +9,17 @@ let isCheckingOnlineStatus = false;
 // REPLACE LINES 7-14 with this SMART ONLINE CHECK
 function checkOnlineStatus() {
   if (!navigator.onLine) {
-    console.log('🔌 Offline - Checking previous state:', lastKnownState);
-    
-    // Track that we're going offline
-    trackUserState('offline');
-    
-    // Only redirect to offline.html if we weren't in dashboard as authenticated user
-    if (lastKnownState !== 'dashboard-authenticated') {
-      console.log('🔄 Redirecting to offline page');
+    const lastState = localStorage.getItem('lastKnownState');
+    // Only redirect if user wasn't previously authenticated in dashboard
+    if (lastState !== 'dashboard-authenticated') {
       window.location.href = '/offline.html';
       return false;
     }
-    
-    // If we were authenticated in dashboard, stay and show offline banner
-    console.log('📱 Offline but authenticated - staying in dashboard');
-    showOfflineBanner();
+    // If authenticated, stay and show banner
     return false;
   }
   return true;
 }
-
-
 
 
 // NEW FUNCTION: Track user state
@@ -115,11 +105,17 @@ function initAuth() {
     // If we have Firebase user but offline, show dashboard
     firebase.auth().onAuthStateChanged((user) => {
       if (user && lastKnownState === 'dashboard-authenticated') {
+            // ADD THIS LINE:
+      localStorage.setItem('lastKnownState', 'dashboard-authenticated');
+        
         console.log('✅ Offline but authenticated - showing dashboard');
         trackUserState('dashboard-authenticated');
         showDashboard();
         showOfflineBanner();
       } else if (!user) {
+            // ADD THIS LINE:  
+      localStorage.setItem('lastKnownState', 'auth-page');
+        
         console.log('🔒 Offline and not authenticated - redirecting');
         trackUserState('offline-not-authenticated');
         window.location.href = '/offline.html';
