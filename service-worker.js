@@ -1,4 +1,4 @@
-const CACHE_NAME = 'memoryinqr-v1.1.8';
+const CACHE_NAME = 'memoryinqr-v1.1.9';
 const URLS_TO_CACHE = [
   '/MemoryinQR/',
   '/MemoryinQR/index.html', 
@@ -54,6 +54,7 @@ self.addEventListener('install', (event) => {
 });
 
 // Activate event - clean up old caches
+// Activate event - clean up old caches
 self.addEventListener('activate', (event) => {
   console.log('🎯 Service Worker activating...');
   event.waitUntil(
@@ -64,6 +65,17 @@ self.addEventListener('activate', (event) => {
           if (cacheName !== CACHE_NAME) {
             console.log('🚮 Deleting old cache:', cacheName);
             return caches.delete(cacheName);
+          } else {
+            // ADD THIS DIAGNOSTIC PART - check what's in current cache
+            return caches.open(cacheName).then(cache => {
+              return cache.keys().then(requests => {
+                console.log('📦 Currently cached files in', cacheName, ':');
+                requests.forEach(request => {
+                  console.log('   -', request.url);
+                });
+                return true;
+              });
+            });
           }
         })
       );
