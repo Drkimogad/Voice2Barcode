@@ -11,6 +11,9 @@ function checkOnlineStatus() {
   if (!navigator.onLine) {
     console.log('🔌 Offline - Checking previous state:', lastKnownState);
     
+    // Track that we're going offline
+    trackUserState('offline');
+    
     // Only redirect to offline.html if we weren't in dashboard as authenticated user
     if (lastKnownState !== 'dashboard-authenticated') {
       console.log('🔄 Redirecting to offline page');
@@ -30,6 +33,7 @@ function checkOnlineStatus() {
 function trackUserState(state) {
   lastKnownState = state;
   localStorage.setItem('lastKnownState', state);
+  localStorage.setItem('lastStateTimestamp', Date.now());
   console.log('📝 State tracked:', state);
 }
 
@@ -65,12 +69,37 @@ function hideOfflineBanner() {
   }
 }
 
+// NEW FUNCTION: Show connection recovery visual
+function showConnectionRecovery() {
+  const recoveryBanner = document.createElement('div');
+  recoveryBanner.id = 'connectionRecovery';
+  recoveryBanner.style.cssText = `
+    background: #059669;
+    color: white;
+    padding: 15px;
+    text-align: center;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 1001;
+    font-weight: bold;
+    font-size: 16px;
+  `;
+  recoveryBanner.innerHTML = '✅ Connection restored! Syncing data... <span class="loading-dots"><span></span><span></span><span></span></span>';
+  document.body.appendChild(recoveryBanner);
+  
+  // Remove after 3 seconds
+  setTimeout(() => {
+    if (recoveryBanner.parentNode) {
+      recoveryBanner.remove();
+    }
+  }, 3000);
+}
+
 // ENHANCE LINES 19-32 - OFFLINE-AWARE INIT
 function initAuth() {
   console.log('🔐 Initializing authentication...');
-  
-  // Track that we're initializing
-  trackUserState('initializing');
   
   // Setup connection event listeners FIRST
   window.addEventListener('online', handleOnlineEvent);
@@ -84,10 +113,12 @@ function initAuth() {
     firebase.auth().onAuthStateChanged((user) => {
       if (user && lastKnownState === 'dashboard-authenticated') {
         console.log('✅ Offline but authenticated - showing dashboard');
+        trackUserState('dashboard-authenticated');
         showDashboard();
         showOfflineBanner();
       } else if (!user) {
         console.log('🔒 Offline and not authenticated - redirecting');
+        trackUserState('offline-not-authenticated');
         window.location.href = '/offline.html';
       }
     });
@@ -115,12 +146,15 @@ function initAuth() {
 // NEW FUNCTION: Handle online event
 function handleOnlineEvent() {
   console.log('✅ Online event - hiding offline banner');
+  showConnectionRecovery();
   hideOfflineBanner();
   
   // If we're in dashboard, refresh data if needed
   if (lastKnownState === 'dashboard-authenticated' && typeof initDashboard === 'function') {
     console.log('🔄 Online - refreshing dashboard data');
-    initDashboard();
+    setTimeout(() => {
+      initDashboard();
+    }, 1000);
   }
 }
 
@@ -136,7 +170,7 @@ function handleOfflineEvent() {
     showOfflineBanner();
   } else {
     console.log('🔄 Offline and not in dashboard - tracking state');
-    trackUserState('offline-page');
+    trackUserState('offline-not-authenticated');
   }
 }
 
@@ -149,7 +183,7 @@ async function handleLogout() {
   try {
     // Clear local session data
     localStorage.removeItem('lastKnownPage');
-    localStorage.removeItem('lastKnownState');
+    localStorage.setItem('lastKnownState', 'logged-out');
     
     // Track logout state
     trackUserState('logged-out');
@@ -175,7 +209,7 @@ async function handleLogout() {
   }
 }
 
-// KEEP EVERYTHING ELSE EXACTLY AS IS:
+// [KEEP ALL YOUR EXISTING FUNCTIONS FROM setupAuthListeners() THROUGH toggleAuthView() EXACTLY AS THEY WERE]
 
 /**
  * Setup authentication event listeners
