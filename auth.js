@@ -1,39 +1,181 @@
 // ========================================
-// AUTHENTICATION MODULE
+// AUTHENTICATION MODULE - OFFLINE FIXED
 // ========================================
-// Add to auth.js at the top
+
+// STATE TRACKING FOR OFFLINE RECOVERY
+let lastKnownState = localStorage.getItem('lastKnownState') || 'unknown';
+let isCheckingOnlineStatus = false;
+
+// REPLACE LINES 7-14 with this SMART ONLINE CHECK
 function checkOnlineStatus() {
   if (!navigator.onLine) {
-    window.location.href = '/offline.html';
+    console.log('🔌 Offline - Checking previous state:', lastKnownState);
+    
+    // Only redirect to offline.html if we weren't in dashboard as authenticated user
+    if (lastKnownState !== 'dashboard-authenticated') {
+      console.log('🔄 Redirecting to offline page');
+      window.location.href = '/offline.html';
+      return false;
+    }
+    
+    // If we were authenticated in dashboard, stay and show offline banner
+    console.log('📱 Offline but authenticated - staying in dashboard');
+    showOfflineBanner();
     return false;
   }
   return true;
 }
 
-//function isValidEmail(email) and function updateStatus(message, type)
-// are in utils.js 
+// NEW FUNCTION: Track user state
+function trackUserState(state) {
+  lastKnownState = state;
+  localStorage.setItem('lastKnownState', state);
+  console.log('📝 State tracked:', state);
+}
 
+// NEW FUNCTION: Show offline banner in dashboard
+function showOfflineBanner() {
+  // Create or show offline banner if in dashboard
+  const dashboardSection = document.getElementById('dashboardSection');
+  if (dashboardSection && !document.getElementById('offlineBanner')) {
+    const offlineBanner = document.createElement('div');
+    offlineBanner.id = 'offlineBanner';
+    offlineBanner.style.cssText = `
+      background: #ff6b35;
+      color: white;
+      padding: 10px;
+      text-align: center;
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      z-index: 1000;
+      font-weight: bold;
+    `;
+    offlineBanner.textContent = '📵 You are currently offline. Some features may be unavailable.';
+    document.body.appendChild(offlineBanner);
+  }
+}
+
+// NEW FUNCTION: Remove offline banner
+function hideOfflineBanner() {
+  const offlineBanner = document.getElementById('offlineBanner');
+  if (offlineBanner) {
+    offlineBanner.remove();
+  }
+}
+
+// ENHANCE LINES 19-32 - OFFLINE-AWARE INIT
 function initAuth() {
-  if (!checkOnlineStatus()) return;
-  
   console.log('🔐 Initializing authentication...');
   
-  // Replace localStorage check with Firebase auth state listener
-  firebase.auth().onAuthStateChanged((user) => {
-      if (user) {
-          // User is signed in with Firebase
-          console.log('✅ Firebase user logged in:', user.email);
-          showDashboard();
-      } else {
-          // User is signed out
-          console.log('🔒 No Firebase user');
-          showAuth();
+  // Track that we're initializing
+  trackUserState('initializing');
+  
+  // Setup connection event listeners FIRST
+  window.addEventListener('online', handleOnlineEvent);
+  window.addEventListener('offline', handleOfflineEvent);
+  
+  // Check online status without immediate redirect
+  if (!navigator.onLine) {
+    console.log('🔌 Starting offline - using last known state:', lastKnownState);
+    
+    // If we have Firebase user but offline, show dashboard
+    firebase.auth().onAuthStateChanged((user) => {
+      if (user && lastKnownState === 'dashboard-authenticated') {
+        console.log('✅ Offline but authenticated - showing dashboard');
+        showDashboard();
+        showOfflineBanner();
+      } else if (!user) {
+        console.log('🔒 Offline and not authenticated - redirecting');
+        window.location.href = '/offline.html';
       }
+    });
+    return;
+  }
+  
+  // ONLINE: Normal Firebase auth flow
+  firebase.auth().onAuthStateChanged((user) => {
+    if (user) {
+      console.log('✅ Firebase user logged in:', user.email);
+      trackUserState('dashboard-authenticated');
+      hideOfflineBanner();
+      showDashboard();
+    } else {
+      console.log('🔒 No Firebase user');
+      trackUserState('auth-page');
+      showAuth();
+    }
   });
   
   // Setup event listeners
   setupAuthListeners();
 }
+
+// NEW FUNCTION: Handle online event
+function handleOnlineEvent() {
+  console.log('✅ Online event - hiding offline banner');
+  hideOfflineBanner();
+  
+  // If we're in dashboard, refresh data if needed
+  if (lastKnownState === 'dashboard-authenticated' && typeof initDashboard === 'function') {
+    console.log('🔄 Online - refreshing dashboard data');
+    initDashboard();
+  }
+}
+
+// NEW FUNCTION: Handle offline event  
+function handleOfflineEvent() {
+  console.log('🔌 Offline event detected');
+  
+  // If we're authenticated and in dashboard, show banner but don't redirect
+  const user = firebase.auth().currentUser;
+  if (user && document.getElementById('dashboardSection')?.style.display !== 'none') {
+    console.log('📱 Offline but authenticated in dashboard - showing banner');
+    trackUserState('dashboard-authenticated');
+    showOfflineBanner();
+  } else {
+    console.log('🔄 Offline and not in dashboard - tracking state');
+    trackUserState('offline-page');
+  }
+}
+
+// KEEP ALL YOUR EXISTING FUNCTIONS BELOW EXACTLY AS THEY ARE - ONLY MODIFY handleLogout:
+
+/**
+ * Handle user logout - ENHANCE OFFLINE SUPPORT
+ */
+async function handleLogout() {
+  try {
+    // Clear local session data
+    localStorage.removeItem('lastKnownPage');
+    localStorage.removeItem('lastKnownState');
+    
+    // Track logout state
+    trackUserState('logged-out');
+    
+    // Try Firebase signOut if online
+    if (navigator.onLine) {
+      await firebase.auth().signOut();
+      console.log('✅ Firebase user logged out');
+      updateStatus('Logged out successfully', 'success');
+    } else {
+      // Offline logout - clear local state only
+      console.log('🔌 Offline logout - local state cleared');
+      updateStatus('Logged out (offline mode)', 'success');
+      
+      // Redirect to auth page immediately for offline logout
+      showAuth();
+    }
+    
+  } catch (error) {
+    console.error('Logout error:', error);
+    updateStatus('Logout completed', 'success');
+    showAuth(); // Ensure we show auth page even on error
+  }
+}
+
+// KEEP EVERYTHING ELSE EXACTLY AS IS:
 
 /**
  * Setup authentication event listeners
@@ -177,35 +319,6 @@ async function handleSignin(e) {
 }
 
 /**
- * Handle user logout
- */
-async function handleLogout() {
-    try {
-        // Clear local session data
-        localStorage.removeItem('lastActivePage');
-        // Add any other local storage cleanup here
-        
-        // Try Firebase signOut if online
-        if (navigator.onLine) {
-            await firebase.auth().signOut();
-            console.log('✅ Firebase user logged out');
-            updateStatus('Logged out successfully', 'success');
-        } else {
-            // Offline logout - just clear local data
-            console.log('🔌 Offline logout - local data cleared');
-            updateStatus('Logged out (offline mode)', 'success');
-        }
-        
-        // NO NEED to call showAuth() - Firebase auth state listener handles it automatically
-        
-    } catch (error) {
-        console.error('Logout error:', error);
-        updateStatus('Logout completed', 'success');
-        // Firebase auth state listener will still handle the UI
-    }
-}
-
-/**
  * Get current logged in user
  * @returns {object|null} User object or null
  */
@@ -277,4 +390,4 @@ if (document.readyState === 'loading') {
     initAuth();
 }
 
-console.log('✅ Auth.js loaded successfully');
+console.log('✅ Auth.js loaded successfully - OFFLINE FIXED');
