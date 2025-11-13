@@ -1,4 +1,4 @@
-const CACHE_NAME = 'memoryinqr-v1.1.1';
+const CACHE_NAME = 'memoryinqr-v1.1.2';
 const URLS_TO_CACHE = [
   '/',
   '/index.html',
@@ -70,12 +70,14 @@ self.addEventListener('fetch', (event) => {
                 return fetchResponse;
               });
           })
-          .catch(() => {
-            if (event.request.destination === 'document') {
-              return caches.match('/offline.html');
-            }
-            return null;
-          });
+          // TO THIS:
+.catch(() => {
+  if (event.request.destination === 'document') {
+    // Always serve your custom offline.html, never browser's offline page
+    return caches.match('/offline.html');
+  }
+  return Response.error();
+});
       })
   );
 });
