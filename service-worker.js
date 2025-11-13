@@ -1,4 +1,4 @@
-const CACHE_NAME = 'memoryinqr-v1.1.9';
+const CACHE_NAME = 'memoryinqr-v1.2.0';
 const URLS_TO_CACHE = [
   '/MemoryinQR/',
   '/MemoryinQR/index.html', 
@@ -91,74 +91,41 @@ self.addEventListener('activate', (event) => {
 });
 
 // DEBUGGED Fetch event - handle offline properly
+// TEMPORARY: Simple fetch handler to test offline.html
 self.addEventListener('fetch', (event) => {
   const request = event.request;
-  const url = new URL(request.url);
   
-  console.log('🌐 Fetch event:', request.method, request.url, 'Mode:', request.mode);
+  console.log('🌐 Fetch event:', request.url, 'Mode:', request.mode);
   
-  // TEMPORARY: Handle ALL page requests (not just navigate mode)
-  if (request.destination === 'document' || request.mode === 'navigate') {
-    console.log('🧭 PAGE REQUEST detected:', request.url);
+  // Handle page navigation
+  if (request.mode === 'navigate') {
     event.respondWith(
-      fetch(request)
-        .then(response => {
-          console.log('✅ Page fetch successful');
-          return response;
-        })
-        .catch(error => {
-          console.log('❌ Page fetch failed, serving offline.html');
-          return caches.match('/MemoryinQR/offline.html')
-            .then(offlineResponse => {
-              if (offlineResponse) {
-                console.log('📄 Serving offline.html');
-                return offlineResponse;
-              }
-              console.log('⚠️ offline.html not in cache');
-              return Response.error();
-            });
-        })
+      fetch(request).catch(async error => {
+        console.log('❌ Navigation failed, checking cache...');
+        
+        // List all cached files to debug
+        const cache = await caches.open(CACHE_NAME);
+        const keys = await cache.keys();
+        console.log('📦 All cached files:');
+        keys.forEach(key => console.log('   -', key.url));
+        
+        // Try to serve offline.html
+        const offlineResponse = await cache.match('/MemoryinQR/offline.html');
+        if (offlineResponse) {
+          console.log('✅ Found offline.html in cache');
+          return offlineResponse;
+        } else {
+          console.log('❌ offline.html NOT in cache');
+          return Response.error();
+        }
+      })
     );
     return;
   }
-
   
-  // For all other requests (CSS, JS, images, etc.)
-  event.respondWith(
-    caches.match(request)
-      .then(cachedResponse => {
-        if (cachedResponse) {
-          console.log('💾 Serving from cache:', request.url);
-          return cachedResponse;
-        }
-        
-        console.log('🌐 Fetching from network:', request.url);
-        return fetch(request)
-          .then(networkResponse => {
-            // Cache successful responses
-            if (networkResponse.ok) {
-              console.log('✅ Network fetch successful, caching:', request.url);
-              const responseClone = networkResponse.clone();
-              caches.open(CACHE_NAME)
-                .then(cache => cache.put(request, responseClone))
-                .catch(cacheError => {
-                  console.error('❌ Cache put failed:', cacheError);
-                });
-            }
-            return networkResponse;
-          })
-          .catch(error => {
-            console.log('❌ Network failed for:', request.url);
-            // For non-navigation requests, return error or cached fallback
-            if (request.destination === 'style' || request.destination === 'script') {
-              return caches.match(request);
-            }
-            return Response.error();
-          });
-      })
-  );
+  // For other requests, use network first
+  event.respondWith(fetch(request));
 });
-
 // Check for updates
 self.addEventListener('message', (event) => {
   console.log('📨 Message received:', event.data);
