@@ -502,23 +502,19 @@
             console.log('📝 Last known state:', lastKnownState);
             
             // Wait 5 seconds then redirect to appropriate page
-            setTimeout(() => {
-                let redirectUrl = '/';
-                
-                // Smart redirect based on previous state
-                if (lastKnownState === 'dashboard-authenticated') {
-                    redirectUrl = '/'; // Will auto-redirect to dashboard
-                    console.log('🔄 Redirecting to dashboard');
-                } else if (lastKnownState === 'auth-page' || lastKnownState === 'logged-out') {
-                    redirectUrl = '/'; // Will show auth page
-                    console.log('🔄 Redirecting to auth page');
-                } else {
-                    redirectUrl = '/'; // Default to root
-                    console.log('🔄 Redirecting to default page');
-                }
-                
-                window.location.href = redirectUrl;
-            }, this.redirectDelay);
+// Replace the setTimeout redirect section with:
+setTimeout(() => {
+  const lastState = localStorage.getItem('lastKnownState');
+  let redirectUrl = '/';
+  
+  if (lastState === 'dashboard-authenticated') {
+    redirectUrl = '/'; // Will auto-go to dashboard
+  } else {
+    redirectUrl = '/'; // Will show auth page
+  }
+  
+  window.location.href = redirectUrl;
+}, this.redirectDelay);
         }
 
         handleOffline() {
