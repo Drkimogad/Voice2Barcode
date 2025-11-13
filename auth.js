@@ -29,6 +29,9 @@ function checkOnlineStatus() {
   return true;
 }
 
+
+
+
 // NEW FUNCTION: Track user state
 function trackUserState(state) {
   lastKnownState = state;
