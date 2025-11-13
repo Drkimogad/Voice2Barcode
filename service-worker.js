@@ -15,6 +15,8 @@ const URLS_TO_CACHE = [
   '/MemoryinQR/icons/icon-512x512.png'
 ];
 
+
+
 // External libraries to cache
 const EXTERNAL_LIBS = [
   'https://cdn.jsdelivr.net/npm/qrcode@1.5.0/build/qrcode.min.js',
