@@ -302,10 +302,27 @@
         </div>
     </div>
 </footer>
-
+            
     <!-- External Dependencies -->
     <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.0/build/qrcode.min.js"></script>
     <script src="https://unpkg.com/html5-qrcode"></script>
+    
+    <script>
+        // Add this script in your main HTML file
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('/sw.js')
+    .then(registration => {
+      console.log('SW registered: ', registration);
+      // Force it to control the page immediately
+      if (registration.waiting) {
+        registration.waiting.postMessage({type: 'SKIP_WAITING'});
+      }
+    })
+    .catch(error => {
+      console.log('SW registration failed: ', error);
+    });
+}
+    </script>
 
     <!-- Application Scripts (in order) -->
     <script defer src="utils.js"></script>
