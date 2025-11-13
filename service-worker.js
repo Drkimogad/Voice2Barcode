@@ -1,4 +1,10 @@
-const CACHE_NAME = 'memoryinqr-v1.1.2';
+// Add this immediately after install event
+self.addEventListener('activate', event => {
+  event.waitUntil(self.clients.claim());
+  console.log('Service Worker claiming control');
+});
+
+const CACHE_NAME = 'memoryinqr-v1.1.3';
 const URLS_TO_CACHE = [
   '/',
   '/index.html',
