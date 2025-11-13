@@ -12,7 +12,7 @@ function checkOnlineStatus() {
     const lastState = localStorage.getItem('lastKnownState');
     // Only redirect if user wasn't previously authenticated in dashboard
     if (lastState !== 'dashboard-authenticated') {
-      window.location.href = '/offline.html';
+      window.location.href = '/MemoryinQR/offline.html';
       return false;
     }
     // If authenticated, stay and show banner
@@ -114,11 +114,11 @@ function initAuth() {
         showOfflineBanner();
       } else if (!user) {
             // ADD THIS LINE:  
-      localStorage.setItem('lastKnownState', 'auth-page');
+      localStorage.setItem('lastKnownState', 'auth-page');   // i think this is wrong
         
         console.log('🔒 Offline and not authenticated - redirecting');
         trackUserState('offline-not-authenticated');
-        window.location.href = '/offline.html';
+        window.location.href = '/MemoryinQR/offline.html';
       }
     });
     return;
@@ -258,7 +258,7 @@ async function handleSignup(e) {
     e.preventDefault();
     // Add offline check
     if (!navigator.onLine) {
-        window.location.href = '/offline.html';
+        window.location.href = '/MemoryinQR/offline.html';
         return;
     }
     
@@ -315,7 +315,7 @@ async function handleSignin(e) {
     e.preventDefault();
     // Add offline check
     if (!navigator.onLine) {
-        window.location.href = '/offline.html';
+        window.location.href = '/MemoryinQR/offline.html';
         return;
     }
     
