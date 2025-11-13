@@ -1,4 +1,4 @@
-const CACHE_NAME = 'memoryinqr-v1.2.3';
+const CACHE_NAME = 'memoryinqr-v1.2.4';
 const URLS_TO_CACHE = [
   '/MemoryinQR/',
   '/MemoryinQR/index.html', 
@@ -44,19 +44,27 @@ self.addEventListener('install', (event) => {
   event.waitUntil(
     caches.open(CACHE_NAME)
       .then((cache) => {
-        console.log('💾 Attempting to cache critical files...');
+        console.log('💾 Opened cache, attempting to add files...');
         
-        // Test caching just ONE file to see if it works
+        // Cache critical files with proper error handling
         return cache.add('/MemoryinQR/offline.html')
-          .then(() => {
-            console.log('✅ SUCCESS: offline.html cached!');
-            return self.skipWaiting();
-          })
+          .then(() => console.log('✅ offline.html cached'))
+          .then(() => cache.add('/MemoryinQR/'))
+          .then(() => console.log('✅ root / cached'))
+          .then(() => cache.add('/MemoryinQR/index.html'))
+          .then(() => console.log('✅ index.html cached'))
           .catch(error => {
-            console.error('❌ FAILED to cache offline.html:', error);
-            console.error('Error details:', error.message, error.name);
-            return self.skipWaiting();
+            console.error('❌ Cache add failed:', error);
+            throw error; // Re-throw to see the actual error
           });
+      })
+      .then(() => {
+        console.log('⚡ skipWaiting called');
+        return self.skipWaiting();
+      })
+      .catch(error => {
+        console.error('🔥 INSTALL FAILED:', error);
+        return self.skipWaiting(); // Still activate even if cache fails
       })
   );
 });
