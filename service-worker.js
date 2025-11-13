@@ -1,4 +1,4 @@
-const CACHE_NAME = 'memoryinqr-v1.2.0';
+const CACHE_NAME = 'memoryinqr-v1.2.1';
 const URLS_TO_CACHE = [
   '/MemoryinQR/',
   '/MemoryinQR/index.html', 
@@ -27,27 +27,25 @@ const EXTERNAL_LIBS = [
 ];
 
 // Install event - cache all assets
+// Install event - cache all assets
 self.addEventListener('install', (event) => {
   console.log('🛠️ Service Worker installing...');
   event.waitUntil(
     caches.open(CACHE_NAME)
       .then((cache) => {
         console.log('💾 Caching app shell and external libs');
-        // Cache core app files first, then external libs
-        return cache.addAll(URLS_TO_CACHE)
-          .then(() => {
-            console.log('✅ Core app files cached');
-            return cache.addAll(EXTERNAL_LIBS);
-          })
-          .then(() => {
-            console.log('✅ External libs cached');
-          });
+        // Cache ONLY the critical files first
+        return cache.addAll([
+          '/MemoryinQR/',
+          '/MemoryinQR/offline.html',
+          '/MemoryinQR/index.html'
+        ]).then(() => {
+          console.log('✅ Critical files cached');
+          return self.skipWaiting();
+        });
       })
       .catch(error => {
         console.error('❌ Cache failed:', error);
-      })
-      .then(() => {
-        console.log('⚡ skipWaiting called');
         return self.skipWaiting();
       })
   );
