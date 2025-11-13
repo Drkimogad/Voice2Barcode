@@ -441,7 +441,7 @@
 
         async testConnection() {
             try {
-                const response = await fetch('/', { method: 'HEAD', cache: 'no-store' });
+                const response = await fetch('/MemoryinQR/', { method: 'HEAD', cache: 'no-store' });
                 return response.ok;
             } catch (error) {
                 return false;
