@@ -381,7 +381,7 @@
             verifyRealConnection()
                 .then(() => {
                     console.log('✅ Real connection verified - redirecting immediately');
-                    window.location.href = '/MemoryinQR/index.html?recovered=' + Date.now();
+                    window.location.href = 'index.html?recovered=' + Date.now();
                 })
                 .catch(() => {
                     console.log('❌ Browser online but no real connection');
@@ -449,7 +449,7 @@
     function performRedirect() {
         console.log('🔄 Performing redirect to main app...');
         // Use replace to avoid adding to history
-        window.location.replace('/MemoryinQR/index.html?recovered=' + Date.now());
+        window.location.replace('index.html?recovered=' + Date.now());
     }
 
     // ===== MANUAL CONNECTION CHECK =====
