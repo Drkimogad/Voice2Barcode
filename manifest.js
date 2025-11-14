@@ -2,7 +2,7 @@
   "name": "MemoryinQR",
   "short_name": "MemoryinQR",
   "description": "Capture life's precious moments with beautiful QR code cards",
-  "start_url": "/",
+  "start_url": ".",
   "display": "standalone",
   "background_color": "#F5F5DC",
   "theme_color": "#CB4154",
@@ -23,4 +23,5 @@
   ],
   "categories": ["utilities", "productivity"],
   "lang": "en"
+
 }
