@@ -274,28 +274,6 @@
             0%, 80%, 100% { transform: scale(0); }
             40% { transform: scale(1); }
         }
-        /* Online Notification - POSITION FIX */
-.online-notification {
-    position: fixed;
-    top: 80px; /* 👈 CHANGED FROM 20px to 80px - pushes it lower */
-    left: 50%;
-    transform: translateX(-50%) translateY(-100px);
-    background: #059669;
-    color: white;
-    padding: 1rem 2rem;
-    border-radius: 10px;
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
-    z-index: 10000;
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    font-weight: 600;
-    transition: transform 0.5s ease;
-}
-
-.online-notification.show {
-    transform: translateX(-50%) translateY(0); /* 👈 Now appears at 80px from top */
-}
     </style>
 </head>
 <body>
@@ -375,8 +353,11 @@
 
     // ===== GLOBAL VARIABLES =====
     let checkInterval;
+    let autoRedirectTimer;
     let retryCount = 0;
-    const AUTO_CHECK_INTERVAL = 5000;
+    const MAX_RETRIES = 10;
+    const AUTO_CHECK_INTERVAL = 5000; // 5 seconds
+    const REDIRECT_DELAY = 5000; // 5 seconds countdown
 
     // ===== DOM ELEMENTS =====
     const elements = {
@@ -385,122 +366,212 @@
         connectionStatus: document.getElementById('connectionStatus'),
         retryBtn: document.getElementById('retryBtn'),
         refreshBtn: document.getElementById('refreshBtn'),
+        retryCount: document.getElementById('retryCount'),
+        countdownDisplay: document.getElementById('countdownDisplay'),
+        countdown: document.getElementById('countdown'),
         btnText: document.querySelector('.btn-text')
     };
 
+    // ===== IMMEDIATE REDIRECT CHECK =====
+    function checkIfActuallyOnline() {
+        console.log('🔍 Performing immediate online status check...');
+        
+        if (navigator.onLine) {
+            console.log('✅ Browser reports online - verifying with network request...');
+            verifyRealConnection()
+                .then(() => {
+                    console.log('✅ Real connection verified - redirecting immediately');
+                    window.location.href = '/MemoryinQR/index.html?recovered=' + Date.now();
+                })
+                .catch(() => {
+                    console.log('❌ Browser online but no real connection');
+                });
+        } else {
+            console.log('❌ Confirmed offline - starting recovery system');
+        }
+    }
+
     // ===== RELIABLE CONNECTION VERIFICATION =====
     function verifyRealConnection() {
-        console.log('🌐 Testing actual connectivity...');
+        console.log('🌐 Verifying real internet connection...');
         
-        return new Promise((resolve, reject) => {
-            const timeout = setTimeout(() => reject(new Error('Timeout')), 3000);
-            
-            // Test Firebase connectivity (what your app actually needs)
-            fetch('https://www.googleapis.com/identitytoolkit/v3/relyingparty/getAccountInfo?key=AIzaSyAcHV1_wbQjAojF9rBZHZ9Sg2LOYcPqde8', {
-                method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({}),
-                mode: 'cors'
+        // Test multiple endpoints for reliability
+        const connectionTests = [
+            fetch('/', { 
+                method: 'HEAD',
+                cache: 'no-store',
+                mode: 'no-cors'
+            }),
+            fetch('https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js', {
+                method: 'HEAD',
+                cache: 'no-store',
+                mode: 'no-cors'
+            }),
+            fetch('https://httpbin.org/status/200', {
+                method: 'HEAD',
+                cache: 'no-store',
+                mode: 'no-cors'
             })
+        ];
+
+        return Promise.race(connectionTests.map(p => p.catch(() => false)))
             .then(response => {
-                clearTimeout(timeout);
-                // Even if it fails with auth error, we have connectivity
-                console.log('✅ Real connection verified - Firebase reachable');
-                resolve(true);
-            })
-            .catch(error => {
-                clearTimeout(timeout);
-                console.log('❌ No real connection - Firebase unreachable');
-                reject(error);
+                if (response && response.ok) {
+                    console.log('✅ Real connection verified successfully');
+                    return true;
+                }
+                throw new Error('No successful connection tests');
             });
-        });
     }
 
     // ===== ONLINE NOTIFICATION & REDIRECT =====
     function showOnlineNotificationAndRedirect() {
-        console.log('🎉 Real connection restored - showing notification');
+        console.log('🎉 Showing online notification and starting redirect countdown...');
+        
+        // Show notification
         elements.onlineNotification.classList.add('show');
         
-        setTimeout(() => {
-            console.log('🔄 Redirecting to main app...');
-            window.location.replace('index.html?recovered=' + Date.now());
-        }, 3000);
+        // Start countdown
+        let countdown = 5;
+        elements.countdown.textContent = countdown;
+        
+        const countdownInterval = setInterval(() => {
+            countdown--;
+            elements.countdown.textContent = countdown;
+            
+            if (countdown <= 0) {
+                clearInterval(countdownInterval);
+                performRedirect();
+            }
+        }, 1000);
+    }
+
+    function performRedirect() {
+        console.log('🔄 Performing redirect to main app...');
+        // Use replace to avoid adding to history
+        window.location.replace('/MemoryinQR/index.html?recovered=' + Date.now());
     }
 
     // ===== MANUAL CONNECTION CHECK =====
     function manualConnectionCheck() {
         console.log('🔄 Manual connection check triggered');
+        retryCount++;
         
+        // Update button state
         elements.retryBtn.disabled = true;
         elements.btnText.innerHTML = 'Checking<span class="loading-dots"><span></span><span></span><span></span></span>';
         
         verifyRealConnection()
             .then(() => {
+                console.log('✅ Manual check: Connection restored!');
                 elements.retryBtn.disabled = false;
                 elements.btnText.textContent = '🔄 Retry Connection';
                 showOnlineNotificationAndRedirect();
-                clearInterval(checkInterval);
+                clearInterval(checkInterval); // Stop auto-checking
             })
-            .catch(() => {
+            .catch((error) => {
+                console.log('❌ Manual check: Still offline');
                 elements.retryBtn.disabled = false;
                 elements.btnText.textContent = '🔄 Retry Connection';
-                alert('Still offline. Firebase services unavailable.');
+                
+                // Show still offline message
+                alert('You\'re still offline. Please check your internet connection.');
+                
+                if (retryCount >= MAX_RETRIES) {
+                    elements.retryBtn.disabled = true;
+                    elements.btnText.textContent = '❌ Max retries reached';
+                }
             });
     }
 
     // ===== AUTOMATIC CONNECTION CHECKING =====
     function startAutoConnectionChecking() {
-        console.log('⏰ Starting reliable connection checking...');
+        console.log('⏰ Starting automatic connection checking every 5 seconds...');
         
         checkInterval = setInterval(() => {
-            verifyRealConnection()
-                .then(() => {
-                    console.log('✅ Auto-check: Real connection verified!');
-                    showOnlineNotificationAndRedirect();
-                    clearInterval(checkInterval);
-                })
-                .catch(() => {
-                    console.log('❌ Auto-check: Still offline');
-                });
+            console.log('🤖 Auto-check: Testing connection...');
+            
+            if (navigator.onLine) {
+                verifyRealConnection()
+                    .then(() => {
+                        console.log('✅ Auto-check: Connection verified!');
+                        showOnlineNotificationAndRedirect();
+                        clearInterval(checkInterval);
+                    })
+                    .catch((error) => {
+                        console.log('❌ Auto-check: Still offline');
+                        updateCountdownDisplay();
+                    });
+            } else {
+                console.log('❌ Auto-check: Browser reports offline');
+                updateCountdownDisplay();
+            }
         }, AUTO_CHECK_INTERVAL);
+    }
+
+    // ===== COUNTDOWN DISPLAY UPDATE =====
+    function updateCountdownDisplay() {
+        const nextCheck = AUTO_CHECK_INTERVAL / 1000;
+        elements.countdownDisplay.textContent = nextCheck;
     }
 
     // ===== EVENT LISTENERS =====
     function setupEventListeners() {
-        elements.retryBtn.addEventListener('click', manualConnectionCheck);
-        elements.refreshBtn.addEventListener('click', () => window.location.reload());
+        console.log('🎧 Setting up event listeners...');
         
-        window.addEventListener('online', () => {
-            console.log('📶 Browser online event - verifying real connection...');
-            verifyRealConnection()
-                .then(() => {
-                    showOnlineNotificationAndRedirect();
-                    clearInterval(checkInterval);
-                });
+        // Manual retry button
+        elements.retryBtn.addEventListener('click', manualConnectionCheck);
+        
+        // Refresh page button
+        elements.refreshBtn.addEventListener('click', () => {
+            console.log('🔄 Manual refresh triggered');
+            window.location.reload();
         });
+        
+        // Browser online/offline events
+        window.addEventListener('online', () => {
+            console.log('📶 Browser online event received');
+            // Let auto-check handle the verification
+        });
+        
+        window.addEventListener('offline', () => {
+            console.log('📵 Browser offline event received');
+            // Update UI to reflect offline status
+            elements.connectionStatus.textContent = '❌ Connection lost - attempting to reconnect...';
+        });
+        
+        console.log('✅ Event listeners setup complete');
     }
 
     // ===== INITIALIZATION =====
     function initializeOfflinePage() {
-        console.log('🚀 Initializing reliable offline recovery...');
+        console.log('🚀 Initializing offline page recovery system...');
         
-        // Check immediately with real connectivity test
-        verifyRealConnection()
-            .then(() => {
-                console.log('✅ Already have real connection - redirecting');
-                window.location.replace('index.html?recovered=' + Date.now());
-            })
-            .catch(() => {
-                console.log('❌ Confirmed offline - starting recovery');
-                setupEventListeners();
-                startAutoConnectionChecking();
-            });
+        // Check if we should redirect immediately
+        checkIfActuallyOnline();
+        
+        // Setup event listeners
+        setupEventListeners();
+        
+        // Start automatic connection checking
+        startAutoConnectionChecking();
+        
+        // Initial countdown display
+        updateCountdownDisplay();
+        
+        console.log('✅ Offline page initialization complete');
+        console.log('🔄 Auto-recovery active - checking every 5 seconds');
     }
 
+    // ===== START EVERYTHING =====
     document.addEventListener('DOMContentLoaded', initializeOfflinePage);
+
+    // Fallback initialization
+    if (document.readyState === 'complete' || document.readyState === 'interactive') {
+        setTimeout(initializeOfflinePage, 100);
+    }
+
     console.log('✅ Offline.html script loaded successfully');
 </script>
-    
-    
 </body>
 </html>
