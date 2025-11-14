@@ -5,8 +5,8 @@
 // Version: v2.1
 // ========================================
 
-const CACHE_NAME = 'memoryinqr-cache-v5.1';
-const OFFLINE_CACHE = 'memoryinqr-offline-v4.1';
+const CACHE_NAME = 'memoryinqr-cache-v5.2';
+const OFFLINE_CACHE = 'memoryinqr-offline-v4.2';
 
 // Core app assets - relative paths (suitable for GitHub Pages)
 const urlsToCache = [
@@ -19,7 +19,7 @@ const urlsToCache = [
   'authstyles.css',
   'dashboardstyles.css',
   'manifest.json',
- // 'favicon.ico',
+  'favicon.ico',
   'icons/icon-192x192.png',
   'icons/icon-512x512.png',
   'privacy.html',
