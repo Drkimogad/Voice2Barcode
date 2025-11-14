@@ -5,7 +5,7 @@
 // Version: v2.1
 // ========================================
 
-const CACHE_NAME = 'memoryinqr-cache-v4';
+const CACHE_NAME = 'memoryinqr-cache-v5';
 const OFFLINE_CACHE = 'memoryinqr-offline-v4';
 
 // Core app assets - relative paths (suitable for GitHub Pages)
