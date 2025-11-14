@@ -370,16 +370,13 @@
         </div>
     </div>
 
-<script>
+    <script>
     console.log('🚀 OFFLINE.HTML: Starting offline recovery system...');
 
     // ===== GLOBAL VARIABLES =====
     let checkInterval;
-    let autoRedirectTimer;
     let retryCount = 0;
-    const MAX_RETRIES = 10;
-    const AUTO_CHECK_INTERVAL = 5000; // 5 seconds
-    const REDIRECT_DELAY = 5000; // 5 seconds countdown
+    const AUTO_CHECK_INTERVAL = 3000; // 3 seconds
 
     // ===== DOM ELEMENTS =====
     const elements = {
@@ -388,167 +385,72 @@
         connectionStatus: document.getElementById('connectionStatus'),
         retryBtn: document.getElementById('retryBtn'),
         refreshBtn: document.getElementById('refreshBtn'),
-        retryCount: document.getElementById('retryCount'),
-        countdownDisplay: document.getElementById('countdownDisplay'),
-        countdown: document.getElementById('countdown'),
         btnText: document.querySelector('.btn-text')
     };
 
-    // ===== IMMEDIATE REDIRECT CHECK =====
-    function checkIfActuallyOnline() {
-        console.log('🔍 Performing immediate online status check...');
-        
-        if (navigator.onLine) {
-            console.log('✅ Browser reports online - verifying with network request...');
-            verifyRealConnection()
-                .then(() => {
-                    console.log('✅ Real connection verified - redirecting immediately');
-                    window.location.href = 'index.html?recovered=' + Date.now();
-                })
-                .catch(() => {
-                    console.log('❌ Browser online but no real connection');
-                });
-        } else {
-            console.log('❌ Confirmed offline - starting recovery system');
-        }
+    // ===== SIMPLE CONNECTION CHECK =====
+    function checkConnection() {
+        console.log('🔍 Checking connection...');
+        return navigator.onLine;
     }
-
-    // ===== RELIABLE CONNECTION VERIFICATION =====
- function verifyRealConnection() {
-    console.log('🌐 Verifying connection to MemoryinQR app...');
-    
-    // ✅ TEST YOUR OWN APP - This is the most reliable check!
-    return fetch('index.html', {
-        method: 'HEAD',
-        cache: 'no-store'
-    })
-    .then(response => {
-        if (response.ok) {
-            console.log('✅ MemoryinQR app is accessible - connection verified!');
-            return true;
-        }
-        throw new Error('App not accessible');
-    })
-    .catch(error => {
-        console.log('❌ MemoryinQR app not accessible:', error);
-        throw new Error('No connection to app');
-    });
-}
 
     // ===== ONLINE NOTIFICATION & REDIRECT =====
     function showOnlineNotificationAndRedirect() {
-        console.log('🎉 Showing online notification and starting redirect countdown...');
+        console.log('🎉 Connection restored - showing notification');
         
         // Show notification
         elements.onlineNotification.classList.add('show');
         
-        // Start countdown
-        let countdown = 5;
-        elements.countdown.textContent = countdown;
-        
-        const countdownInterval = setInterval(() => {
-            countdown--;
-            elements.countdown.textContent = countdown;
-            
-            if (countdown <= 0) {
-                clearInterval(countdownInterval);
-                performRedirect();
-            }
-        }, 1000);
-    }
-
-    function performRedirect() {
-        console.log('🔄 Performing redirect to main app...');
-        // Use replace to avoid adding to history
-        window.location.replace('index.html?recovered=' + Date.now());
+        // Redirect after 3 seconds
+        setTimeout(() => {
+            console.log('🔄 Redirecting to main app...');
+            window.location.replace('index.html?recovered=' + Date.now());
+        }, 3000);
     }
 
     // ===== MANUAL CONNECTION CHECK =====
     function manualConnectionCheck() {
         console.log('🔄 Manual connection check triggered');
-        retryCount++;
         
-        // Update button state
-        elements.retryBtn.disabled = true;
-        elements.btnText.innerHTML = 'Checking<span class="loading-dots"><span></span><span></span><span></span></span>';
-        
-        verifyRealConnection()
-            .then(() => {
-                console.log('✅ Manual check: Connection restored!');
-                elements.retryBtn.disabled = false;
-                elements.btnText.textContent = '🔄 Retry Connection';
-                showOnlineNotificationAndRedirect();
-                clearInterval(checkInterval); // Stop auto-checking
-            })
-            .catch((error) => {
-                console.log('❌ Manual check: Still offline');
-                elements.retryBtn.disabled = false;
-                elements.btnText.textContent = '🔄 Retry Connection';
-                
-                // Show still offline message
-                alert('You\'re still offline. Please check your internet connection.');
-                
-                if (retryCount >= MAX_RETRIES) {
-                    elements.retryBtn.disabled = true;
-                    elements.btnText.textContent = '❌ Max retries reached';
-                }
-            });
+        if (checkConnection()) {
+            console.log('✅ Manual check: Connection restored!');
+            showOnlineNotificationAndRedirect();
+            clearInterval(checkInterval);
+        } else {
+            console.log('❌ Manual check: Still offline');
+            alert('You\'re still offline. Please check your internet connection.');
+        }
     }
 
     // ===== AUTOMATIC CONNECTION CHECKING =====
     function startAutoConnectionChecking() {
-        console.log('⏰ Starting automatic connection checking every 5 seconds...');
+        console.log('⏰ Starting automatic connection checking every 3 seconds...');
         
         checkInterval = setInterval(() => {
-            console.log('🤖 Auto-check: Testing connection...');
-            
-            if (navigator.onLine) {
-                verifyRealConnection()
-                    .then(() => {
-                        console.log('✅ Auto-check: Connection verified!');
-                        showOnlineNotificationAndRedirect();
-                        clearInterval(checkInterval);
-                    })
-                    .catch((error) => {
-                        console.log('❌ Auto-check: Still offline');
-                        updateCountdownDisplay();
-                    });
-            } else {
-                console.log('❌ Auto-check: Browser reports offline');
-                updateCountdownDisplay();
+            if (checkConnection()) {
+                console.log('✅ Auto-check: Connection verified!');
+                showOnlineNotificationAndRedirect();
+                clearInterval(checkInterval);
             }
         }, AUTO_CHECK_INTERVAL);
-    }
-
-    // ===== COUNTDOWN DISPLAY UPDATE =====
-    function updateCountdownDisplay() {
-        const nextCheck = AUTO_CHECK_INTERVAL / 1000;
-        elements.countdownDisplay.textContent = nextCheck;
     }
 
     // ===== EVENT LISTENERS =====
     function setupEventListeners() {
         console.log('🎧 Setting up event listeners...');
         
-        // Manual retry button
         elements.retryBtn.addEventListener('click', manualConnectionCheck);
         
-        // Refresh page button
         elements.refreshBtn.addEventListener('click', () => {
-            console.log('🔄 Manual refresh triggered');
             window.location.reload();
         });
         
-        // Browser online/offline events
         window.addEventListener('online', () => {
             console.log('📶 Browser online event received');
-            // Let auto-check handle the verification
-        });
-        
-        window.addEventListener('offline', () => {
-            console.log('📵 Browser offline event received');
-            // Update UI to reflect offline status
-            elements.connectionStatus.textContent = '❌ Connection lost - attempting to reconnect...';
+            if (checkConnection()) {
+                showOnlineNotificationAndRedirect();
+                clearInterval(checkInterval);
+            }
         });
         
         console.log('✅ Event listeners setup complete');
@@ -558,31 +460,27 @@
     function initializeOfflinePage() {
         console.log('🚀 Initializing offline page recovery system...');
         
-        // Check if we should redirect immediately
-        checkIfActuallyOnline();
+        if (checkConnection()) {
+            console.log('✅ Already online - redirecting immediately');
+            window.location.replace('index.html?recovered=' + Date.now());
+            return;
+        }
         
-        // Setup event listeners
         setupEventListeners();
-        
-        // Start automatic connection checking
         startAutoConnectionChecking();
-        
-        // Initial countdown display
-        updateCountdownDisplay();
-        
         console.log('✅ Offline page initialization complete');
-        console.log('🔄 Auto-recovery active - checking every 5 seconds');
     }
 
     // ===== START EVERYTHING =====
     document.addEventListener('DOMContentLoaded', initializeOfflinePage);
 
-    // Fallback initialization
     if (document.readyState === 'complete' || document.readyState === 'interactive') {
         setTimeout(initializeOfflinePage, 100);
     }
 
     console.log('✅ Offline.html script loaded successfully');
 </script>
+    
+    
 </body>
 </html>
