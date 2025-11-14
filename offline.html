@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Offline - MemoryinQR</title>
     <style>
-        /* [KEEP ALL YOUR EXISTING STYLES EXACTLY AS THEY ARE] */
         :root {
             --silver: #C0C0C0;
             --crimson: #CB4154;
@@ -44,7 +43,6 @@
             position: relative;
             overflow: hidden;
         }
-        
 
         .offline-container::before {
             content: '';
@@ -74,11 +72,6 @@
             0% { transform: scale(1); opacity: 1; }
             50% { transform: scale(1.05); opacity: 0.8; }
             100% { transform: scale(1); opacity: 1; }
-        }
-
-        .online .status-indicator {
-            background: #059669;
-            animation: none;
         }
 
         h1 {
@@ -185,18 +178,41 @@
             transform: translateY(-2px);
         }
 
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none !important;
+        }
+
+        /* Online Notification */
+        .online-notification {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%) translateY(-100px);
+            background: #059669;
+            color: white;
+            padding: 1rem 2rem;
+            border-radius: 10px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+            z-index: 10000;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-weight: 600;
+            transition: transform 0.5s ease;
+        }
+
+        .online-notification.show {
+            transform: translateX(-50%) translateY(0);
+        }
+
         .connection-status {
             margin-top: 1.5rem;
             padding: 1rem;
             border-radius: 8px;
             font-weight: 600;
             display: none;
-        }
-
-        .connection-status.online {
-            background: #059669;
-            color: white;
-            display: block;
         }
 
         .connection-status.offline {
@@ -210,6 +226,11 @@
             font-size: 0.9rem;
             color: var(--charcoal);
             opacity: 0.7;
+        }
+
+        .countdown {
+            font-weight: bold;
+            color: var(--crimson);
         }
 
         @media (max-width: 768px) {
@@ -253,37 +274,15 @@
             0%, 80%, 100% { transform: scale(0); }
             40% { transform: scale(1); }
         }
-
-        /* NEW: Recovery animation styles */
-        .recovery-sequence {
-            margin: 1rem 0;
-            padding: 1rem;
-            background: #E8F5E8;
-            border-radius: 8px;
-            border-left: 4px solid #059669;
-        }
-        
-        .recovery-step {
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-            margin: 0.5rem 0;
-            opacity: 0.7;
-        }
-        
-        .recovery-step.active {
-            opacity: 1;
-            font-weight: bold;
-            color: #059669;
-        }
-        
-        .recovery-step.completed {
-            opacity: 1;
-            color: #059669;
-        }
     </style>
 </head>
 <body>
+    <!-- Online Notification -->
+    <div class="online-notification" id="onlineNotification">
+        <span class="icon">✅</span>
+        <span class="message">Connection restored! Redirecting in <span id="countdown">5</span> seconds...</span>
+    </div>
+
     <div class="offline-container" id="offlineContainer">
         <div class="status-indicator" id="statusIndicator">📵</div>
         
@@ -331,14 +330,6 @@
             <p><strong>QR Scanning:</strong> You can still scan existing QR codes to view memory cards that were previously loaded.</p>
         </div>
 
-        <!-- NEW: Recovery Sequence Visual -->
-        <div class="recovery-sequence" id="recoverySequence" style="display: none;">
-            <h3 style="color: #059669; margin-bottom: 1rem;">🔄 Restoring Connection...</h3>
-            <div class="recovery-step" id="step1">⏳ Detecting network...</div>
-            <div class="recovery-step" id="step2">🔍 Checking authentication...</div>
-            <div class="recovery-step" id="step3">📱 Redirecting to app...</div>
-        </div>
-
         <div class="action-buttons">
             <button class="btn btn-primary" id="retryBtn">
                 <span class="btn-text">🔄 Retry Connection</span>
@@ -352,201 +343,235 @@
             ❌ No internet connection detected
         </div>
 
-        <div class="connection-status online" id="onlineStatus" style="display: none;">
-            ✅ Internet connection restored - Redirecting...
-        </div>
-
         <div class="retry-count" id="retryCount">
-            Retry attempts: <span id="attemptCount">0</span>
+            Auto-retry in <span class="countdown" id="countdownDisplay">5</span> seconds
         </div>
     </div>
 
 <script>
-    class OfflineManager {
-        constructor() {
-            this.retryCount = 0;
-            this.maxRetries = 5;
-            this.redirectDelay = 5000; // 5 seconds as requested
-            this.isChecking = false;
-            this.connectionChecked = false;
-            this.recoverySequenceStarted = false;
-            
-            this.initializeElements();
-            this.setupEventListeners();
-            this.startConnectionMonitoring();
-        }
+    console.log('🚀 OFFLINE.HTML: Starting offline recovery system...');
 
-        initializeElements() {
-            this.retryBtn = document.getElementById('retryBtn');
-            this.refreshBtn = document.getElementById('refreshBtn');
-            this.connectionStatus = document.getElementById('connectionStatus');
-            this.onlineStatus = document.getElementById('onlineStatus');
-            this.attemptCount = document.getElementById('attemptCount');
-            this.statusIndicator = document.getElementById('statusIndicator');
-            this.offlineContainer = document.getElementById('offlineContainer');
-            this.recoverySequence = document.getElementById('recoverySequence');
-            this.btnText = this.retryBtn?.querySelector('.btn-text');
-        }
+    // ===== GLOBAL VARIABLES =====
+    let checkInterval;
+    let autoRedirectTimer;
+    let retryCount = 0;
+    const MAX_RETRIES = 10;
+    const AUTO_CHECK_INTERVAL = 5000; // 5 seconds
+    const REDIRECT_DELAY = 5000; // 5 seconds countdown
 
-        setupEventListeners() {
-            this.retryBtn?.addEventListener('click', () => this.manualRetry());
-            this.refreshBtn?.addEventListener('click', () => location.reload());
-            
-            window.addEventListener('online', () => this.handleOnline());
-            window.addEventListener('offline', () => this.handleOffline());
-        }
+    // ===== DOM ELEMENTS =====
+    const elements = {
+        onlineNotification: document.getElementById('onlineNotification'),
+        statusIndicator: document.getElementById('statusIndicator'),
+        connectionStatus: document.getElementById('connectionStatus'),
+        retryBtn: document.getElementById('retryBtn'),
+        refreshBtn: document.getElementById('refreshBtn'),
+        retryCount: document.getElementById('retryCount'),
+        countdownDisplay: document.getElementById('countdownDisplay'),
+        countdown: document.getElementById('countdown'),
+        btnText: document.querySelector('.btn-text')
+    };
 
-        startConnectionMonitoring() {
-            console.log('🔍 Starting connection monitoring...');
-            
-            // Initial check
-            if (navigator.onLine) {
-                this.handleOnline();
-            } else {
-                this.handleOffline();
-            }
-        }
-
-        async manualRetry() {
-            if (this.isChecking) return;
-            
-            this.retryCount++;
-            if (this.attemptCount) {
-                this.attemptCount.textContent = this.retryCount;
-            }
-            
-            // Update button state
-            if (this.retryBtn && this.btnText) {
-                this.retryBtn.disabled = true;
-                this.btnText.innerHTML = 'Checking<span class="loading-dots"><span></span><span></span><span></span></span>';
-            }
-            
-            // Test connection
-            const isOnline = await this.testConnection();
-            
-            if (this.retryBtn && this.btnText) {
-                if (isOnline) {
-                    this.handleOnline();
-                } else {
-                    this.retryBtn.disabled = false;
-                    this.btnText.textContent = '🔄 Retry Connection';
-                    
-                    if (this.retryCount >= this.maxRetries) {
-                        this.retryBtn.disabled = true;
-                        this.btnText.textContent = '❌ Max retries reached';
-                    }
-                }
-            }
-        }
-
-        async testConnection() {
-            try {
-                const response = await fetch('/MemoryinQR/', { method: 'HEAD', cache: 'no-store' });
-                return response.ok;
-            } catch (error) {
-                return false;
-            }
-        }
-
-        startRecoverySequence() {
-            if (this.recoverySequenceStarted) return;
-            this.recoverySequenceStarted = true;
-            
-            this.recoverySequence.style.display = 'block';
-            
-            // Step 1: Detecting network
-            this.updateRecoveryStep('step1', 'active');
-            setTimeout(() => {
-                this.updateRecoveryStep('step1', 'completed');
-                this.updateRecoveryStep('step2', 'active');
-                
-                // Step 2: Checking authentication
-                setTimeout(() => {
-                    this.updateRecoveryStep('step2', 'completed');
-                    this.updateRecoveryStep('step3', 'active');
-                }, 1000);
-            }, 1000);
-        }
-
-        updateRecoveryStep(stepId, status) {
-            const step = document.getElementById(stepId);
-            if (step) {
-                step.className = `recovery-step ${status}`;
-            }
-        }
-
-        handleOnline() {
-            if (this.connectionChecked) return;
-            this.connectionChecked = true;
-            
-            console.log('✅ Internet connection restored');
-            
-            // Start recovery sequence visual
-            this.startRecoverySequence();
-            
-            // Update UI
-            if (this.offlineContainer) {
-                this.offlineContainer.classList.add('online');
-            }
-            if (this.connectionStatus) {
-                this.connectionStatus.style.display = 'none';
-            }
-            if (this.onlineStatus) {
-                this.onlineStatus.style.display = 'block';
-            }
-            if (this.statusIndicator) {
-                this.statusIndicator.textContent = '✅';
-            }
-            
-            // Check where to redirect based on previous state
-            const lastKnownState = localStorage.getItem('lastKnownState');
-            console.log('📝 Last known state:', lastKnownState);
-            
-            // Wait 5 seconds then redirect to appropriate page
-// Replace the setTimeout redirect section with:
-setTimeout(() => {
-  const lastState = localStorage.getItem('lastKnownState');
- // let redirectUrl = '/';      
-  let redirectUrl = '/MemoryinQR/';      
-    
-  if (lastState === 'dashboard-authenticated') {
-    redirectUrl = '/MemoryinQR/'; // Will auto-go to dashboard
-  } else {
-    redirectUrl = '/MemoryinQR/'; // Will show auth page
-  }
-  
-  window.location.href = redirectUrl;
-}, this.redirectDelay);
-        }
-
-        handleOffline() {
-            console.log('❌ Internet connection lost');
-            this.connectionChecked = false;
-            this.recoverySequenceStarted = false;
-            
-            // Update UI
-            if (this.offlineContainer) {
-                this.offlineContainer.classList.remove('online');
-            }
-            if (this.connectionStatus) {
-                this.connectionStatus.style.display = 'block';
-            }
-            if (this.onlineStatus) {
-                this.onlineStatus.style.display = 'none';
-            }
-            if (this.statusIndicator) {
-                this.statusIndicator.textContent = '📵';
-            }
-            if (this.recoverySequence) {
-                this.recoverySequence.style.display = 'none';
-            }
+    // ===== IMMEDIATE REDIRECT CHECK =====
+    function checkIfActuallyOnline() {
+        console.log('🔍 Performing immediate online status check...');
+        
+        if (navigator.onLine) {
+            console.log('✅ Browser reports online - verifying with network request...');
+            verifyRealConnection()
+                .then(() => {
+                    console.log('✅ Real connection verified - redirecting immediately');
+                    window.location.href = '/MemoryinQR/index.html?recovered=' + Date.now();
+                })
+                .catch(() => {
+                    console.log('❌ Browser online but no real connection');
+                });
+        } else {
+            console.log('❌ Confirmed offline - starting recovery system');
         }
     }
 
-    // Initialize when page loads
-    document.addEventListener('DOMContentLoaded', () => {
-        new OfflineManager();
-    });
+    // ===== RELIABLE CONNECTION VERIFICATION =====
+    function verifyRealConnection() {
+        console.log('🌐 Verifying real internet connection...');
+        
+        // Test multiple endpoints for reliability
+        const connectionTests = [
+            fetch('/', { 
+                method: 'HEAD',
+                cache: 'no-store',
+                mode: 'no-cors'
+            }),
+            fetch('https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js', {
+                method: 'HEAD',
+                cache: 'no-store',
+                mode: 'no-cors'
+            }),
+            fetch('https://httpbin.org/status/200', {
+                method: 'HEAD',
+                cache: 'no-store',
+                mode: 'no-cors'
+            })
+        ];
+
+        return Promise.race(connectionTests.map(p => p.catch(() => false)))
+            .then(response => {
+                if (response && response.ok) {
+                    console.log('✅ Real connection verified successfully');
+                    return true;
+                }
+                throw new Error('No successful connection tests');
+            });
+    }
+
+    // ===== ONLINE NOTIFICATION & REDIRECT =====
+    function showOnlineNotificationAndRedirect() {
+        console.log('🎉 Showing online notification and starting redirect countdown...');
+        
+        // Show notification
+        elements.onlineNotification.classList.add('show');
+        
+        // Start countdown
+        let countdown = 5;
+        elements.countdown.textContent = countdown;
+        
+        const countdownInterval = setInterval(() => {
+            countdown--;
+            elements.countdown.textContent = countdown;
+            
+            if (countdown <= 0) {
+                clearInterval(countdownInterval);
+                performRedirect();
+            }
+        }, 1000);
+    }
+
+    function performRedirect() {
+        console.log('🔄 Performing redirect to main app...');
+        // Use replace to avoid adding to history
+        window.location.replace('/MemoryinQR/index.html?recovered=' + Date.now());
+    }
+
+    // ===== MANUAL CONNECTION CHECK =====
+    function manualConnectionCheck() {
+        console.log('🔄 Manual connection check triggered');
+        retryCount++;
+        
+        // Update button state
+        elements.retryBtn.disabled = true;
+        elements.btnText.innerHTML = 'Checking<span class="loading-dots"><span></span><span></span><span></span></span>';
+        
+        verifyRealConnection()
+            .then(() => {
+                console.log('✅ Manual check: Connection restored!');
+                elements.retryBtn.disabled = false;
+                elements.btnText.textContent = '🔄 Retry Connection';
+                showOnlineNotificationAndRedirect();
+                clearInterval(checkInterval); // Stop auto-checking
+            })
+            .catch((error) => {
+                console.log('❌ Manual check: Still offline');
+                elements.retryBtn.disabled = false;
+                elements.btnText.textContent = '🔄 Retry Connection';
+                
+                // Show still offline message
+                alert('You\'re still offline. Please check your internet connection.');
+                
+                if (retryCount >= MAX_RETRIES) {
+                    elements.retryBtn.disabled = true;
+                    elements.btnText.textContent = '❌ Max retries reached';
+                }
+            });
+    }
+
+    // ===== AUTOMATIC CONNECTION CHECKING =====
+    function startAutoConnectionChecking() {
+        console.log('⏰ Starting automatic connection checking every 5 seconds...');
+        
+        checkInterval = setInterval(() => {
+            console.log('🤖 Auto-check: Testing connection...');
+            
+            if (navigator.onLine) {
+                verifyRealConnection()
+                    .then(() => {
+                        console.log('✅ Auto-check: Connection verified!');
+                        showOnlineNotificationAndRedirect();
+                        clearInterval(checkInterval);
+                    })
+                    .catch((error) => {
+                        console.log('❌ Auto-check: Still offline');
+                        updateCountdownDisplay();
+                    });
+            } else {
+                console.log('❌ Auto-check: Browser reports offline');
+                updateCountdownDisplay();
+            }
+        }, AUTO_CHECK_INTERVAL);
+    }
+
+    // ===== COUNTDOWN DISPLAY UPDATE =====
+    function updateCountdownDisplay() {
+        const nextCheck = AUTO_CHECK_INTERVAL / 1000;
+        elements.countdownDisplay.textContent = nextCheck;
+    }
+
+    // ===== EVENT LISTENERS =====
+    function setupEventListeners() {
+        console.log('🎧 Setting up event listeners...');
+        
+        // Manual retry button
+        elements.retryBtn.addEventListener('click', manualConnectionCheck);
+        
+        // Refresh page button
+        elements.refreshBtn.addEventListener('click', () => {
+            console.log('🔄 Manual refresh triggered');
+            window.location.reload();
+        });
+        
+        // Browser online/offline events
+        window.addEventListener('online', () => {
+            console.log('📶 Browser online event received');
+            // Let auto-check handle the verification
+        });
+        
+        window.addEventListener('offline', () => {
+            console.log('📵 Browser offline event received');
+            // Update UI to reflect offline status
+            elements.connectionStatus.textContent = '❌ Connection lost - attempting to reconnect...';
+        });
+        
+        console.log('✅ Event listeners setup complete');
+    }
+
+    // ===== INITIALIZATION =====
+    function initializeOfflinePage() {
+        console.log('🚀 Initializing offline page recovery system...');
+        
+        // Check if we should redirect immediately
+        checkIfActuallyOnline();
+        
+        // Setup event listeners
+        setupEventListeners();
+        
+        // Start automatic connection checking
+        startAutoConnectionChecking();
+        
+        // Initial countdown display
+        updateCountdownDisplay();
+        
+        console.log('✅ Offline page initialization complete');
+        console.log('🔄 Auto-recovery active - checking every 5 seconds');
+    }
+
+    // ===== START EVERYTHING =====
+    document.addEventListener('DOMContentLoaded', initializeOfflinePage);
+
+    // Fallback initialization
+    if (document.readyState === 'complete' || document.readyState === 'interactive') {
+        setTimeout(initializeOfflinePage, 100);
+    }
+
+    console.log('✅ Offline.html script loaded successfully');
 </script>
 </body>
 </html>
