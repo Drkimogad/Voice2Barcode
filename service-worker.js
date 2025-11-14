@@ -1,18 +1,26 @@
-const CACHE_NAME = 'memoryinqr-v1.2.6';
-const URLS_TO_CACHE = [
-  '/MemoryinQR/',
-  '/MemoryinQR/index.html', 
-  '/MemoryinQR/view.html',
-  '/MemoryinQR/offline.html',
-  '/MemoryinQR/auth.js',
-  '/MemoryinQR/dashboard.js',
-  '/MemoryinQR/utils.js',
-  '/MemoryinQR/authstyles.css',
-  '/MemoryinQR/dashboardstyles.css',
-  '/MemoryinQR/manifest.json',
-  '/MemoryinQR/favicon.ico',
-  '/MemoryinQR/icons/icon-192x192.png',
-  '/MemoryinQR/icons/icon-512x512.png'
+// ========================================
+// SERVICE WORKER - MemoryinQR
+// Version: v2.0 (aligned with enhanced offline system)
+// ========================================
+const CACHE_NAME = 'memoryinqr-cache-v2';
+const OFFLINE_CACHE = 'memoryinqr-offline-v2';
+
+// Core app assets - USE RELATIVE PATHS FOR GITHUB PAGES
+const urlsToCache = [
+  '.',
+  'index.html',
+  'offline.html',
+  'auth.js',
+  'dashboard.js', 
+  'utils.js',
+  'authstyles.css',
+  'dashboardstyles.css',
+  'manifest.json',
+  'favicon.ico',
+  'icons/icon-192x192.png',
+  'icons/icon-512x512.png',
+  'privacy.html',
+  'terms.html'
 ];
 
 // External libraries to cache
@@ -24,183 +32,254 @@ const EXTERNAL_LIBS = [
   'https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js'
 ];
 
-// Install event - cache all assets
-// Install event - cache all assets
+// ======== INSTALL EVENT ========
 self.addEventListener('install', (event) => {
-  console.log('🛠️ Service Worker installing...');
+  console.log('🛠️ SERVICE WORKER: Installing...');
+  self.skipWaiting(); // Activate immediately
+
   event.waitUntil(
     (async () => {
-      const cache = await caches.open(CACHE_NAME);
-      
-      // Cache local assets with same-origin mode (CRITICAL FIX)
-      const localRequests = URLS_TO_CACHE.map(url => 
-        new Request(url, { mode: 'same-origin' })
-      );
-      
-      await cache.addAll(localRequests);
-      console.log('✅ Local assets cached successfully');
-      
-      // Cache external libs separately with no-cors
-      const externalCache = await caches.open(OFFLINE_CACHE);
-      for (const url of EXTERNAL_LIBS) {
-        try {
-          await externalCache.add(new Request(url, { mode: 'no-cors' }));
-        } catch (err) {
-          console.warn(`⚠️ Could not cache: ${url}`, err);
-        }
-      }
-      
-      console.log('✅ Installation completed');
-    })().catch(error => {
-      console.error('🔥 Installation failed:', error);
-    })
-  );
-  self.skipWaiting();
-});
+      try {
+        // 1. Cache local assets
+        const cache = await caches.open(CACHE_NAME);
+        console.log('📦 Caching local assets...');
+        await cache.addAll(urlsToCache.map(url => new Request(url, { mode: 'same-origin' })));
+        console.log('✅ Local assets cached successfully');
 
-// Activate event - clean up old caches
-self.addEventListener('activate', (event) => {
-  console.log('🎯 Service Worker activating...');
-  event.waitUntil(
-    caches.keys().then((cacheNames) => {
-      console.log('🗑️ Cleaning old caches:', cacheNames);
-      return Promise.all(
-        cacheNames.map((cacheName) => {
-          if (cacheName !== CACHE_NAME) {
-            console.log('🚮 Deleting old cache:', cacheName);
-            return caches.delete(cacheName);
-          } else {
-            // Check what's in current cache
-            return caches.open(cacheName).then(cache => {
-              return cache.keys().then(requests => {
-                console.log('📦 Currently cached files in', cacheName, ':');
-                requests.forEach(request => {
-                  console.log('   -', request.url);
-                });
-                return true;
-              });
-            });
+        // 2. Cache external libraries safely
+        const externalCache = await caches.open(OFFLINE_CACHE);
+        console.log('🌐 Caching external libraries...');
+        
+        for (const url of EXTERNAL_LIBS) {
+          try {
+            await externalCache.add(new Request(url, { mode: 'no-cors', credentials: 'omit' }));
+            console.log(`✅ Cached external lib: ${url}`);
+          } catch (err) {
+            console.warn(`⚠️ Could not cache external library: ${url}`, err);
           }
-        })
-      );
-    })
-    .then(() => {
-      console.log('👑 Claiming clients');
-      return self.clients.claim();
-    })
-    .then(() => {
-      console.log('✅ Service Worker fully activated');
-    })
+        }
+
+        console.log('✅ Service worker installation completed');
+      } catch (error) {
+        console.error('❌ Service worker installation failed:', error);
+      }
+    })()
   );
 });
 
-// FIXED Fetch event - handle offline properly
+// ======== ACTIVATE EVENT ========
+self.addEventListener('activate', (event) => {
+  console.log('🔄 SERVICE WORKER: Activating...');
+  
+  event.waitUntil(
+    (async () => {
+      try {
+        // Clean up old caches
+        const cacheKeys = await caches.keys();
+        await Promise.all(
+          cacheKeys.map(key => {
+            if (key !== CACHE_NAME && key !== OFFLINE_CACHE) {
+              console.log(`🗑️ Deleting old cache: ${key}`);
+              return caches.delete(key);
+            }
+          })
+        );
+
+        // Take control immediately
+        await self.clients.claim();
+        console.log('✅ Service worker activated and ready');
+        
+        // Notify all clients about activation
+        const clients = await self.clients.matchAll();
+        clients.forEach(client => {
+          client.postMessage({ type: 'SW_ACTIVATED' });
+        });
+      } catch (error) {
+        console.error('❌ Service worker activation failed:', error);
+      }
+    })()
+  );
+});
+
+// ======== FETCH EVENT - ENHANCED OFFLINE HANDLING ========
 self.addEventListener('fetch', (event) => {
   const request = event.request;
-  
-  console.log('🌐 Fetch event:', request.url, 'Mode:', request.mode);
-  
-  // Handle navigation requests (page loads) - CRITICAL FIX
+  const url = new URL(request.url);
+
+  console.log(`🌐 SERVICE WORKER: Fetching ${request.url}`);
+
+  // Skip non-GET requests and browser extensions
+  if (request.method !== 'GET' || url.protocol === 'chrome-extension:') {
+    return;
+  }
+
+  // 🎯 NAVIGATION REQUESTS (Pages) - Enhanced offline handling
   if (request.mode === 'navigate') {
-    console.log('🧭 Navigation request detected, handling offline...');
+    console.log('🧭 Navigation request detected');
+    
     event.respondWith(
-      fetch(request)
-        .then(response => {
-          console.log('✅ Navigation fetch successful');
-          return response;
-        })
-        .catch(error => {
-          console.log('❌ Navigation failed, serving offline.html');
-          return caches.match('/MemoryinQR/offline.html')
-            .then(offlineResponse => {
-              if (offlineResponse) {
-                console.log('✅ Serving cached offline.html');
-                return offlineResponse;
-              }
-              console.log('⚠️ offline.html not available, fallback to error');
-              return Response.error();
-            });
-        })
+      (async () => {
+        try {
+          // ✅ ALWAYS TRY NETWORK FIRST for fresh content
+          console.log('🌐 Trying network first for navigation...');
+          const networkResponse = await fetch(request);
+          
+          // Cache the successful response for future offline use
+          if (networkResponse && networkResponse.status === 200) {
+            const cache = await caches.open(CACHE_NAME);
+            cache.put(request, networkResponse.clone());
+          }
+          
+          console.log('✅ Network response successful');
+          return networkResponse;
+          
+        } catch (networkError) {
+          console.log('❌ Network failed, checking cache...');
+          
+          // ✅ NETWORK FAILED - CHECK CACHE
+          const cachedResponse = await caches.match(request);
+          if (cachedResponse) {
+            console.log('✅ Serving cached page');
+            return cachedResponse;
+          }
+          
+          // ✅ NO CACHE - SERVE OFFLINE.HTML
+          console.log('📴 No cache available, serving offline.html');
+          return await caches.match('offline.html');
+        }
+      })()
     );
     return;
   }
-  
-  // For all other requests (CSS, JS, images, etc.)
-  event.respondWith(
-    caches.match(request)
-      .then(cachedResponse => {
-        if (cachedResponse) {
-          console.log('💾 Serving from cache:', request.url);
-          return cachedResponse;
+
+  // 🎯 EXTERNAL LIBRARIES (Stale-while-revalidate)
+  if (EXTERNAL_LIBS.some(libUrl => request.url.includes(libUrl))) {
+    console.log('📚 External library request detected');
+    
+    event.respondWith(
+      (async () => {
+        const cache = await caches.open(OFFLINE_CACHE);
+        const cachedResponse = await cache.match(request);
+        
+        // Always try to update cache in background
+        if (navigator.onLine) {
+          fetch(request)
+            .then(response => {
+              if (response && response.status === 200) {
+                cache.put(request, response.clone());
+                console.log(`✅ Updated cache for: ${request.url}`);
+              }
+            })
+            .catch(err => console.warn(`⚠️ Cache update failed for: ${request.url}`, err));
         }
         
-        console.log('🌐 Fetching from network:', request.url);
-        return fetch(request)
-          .then(networkResponse => {
-            // Cache successful responses
-            if (networkResponse.ok) {
-              console.log('✅ Network fetch successful, caching:', request.url);
-              const responseClone = networkResponse.clone();
-              caches.open(CACHE_NAME)
-                .then(cache => cache.put(request, responseClone))
-                .catch(cacheError => {
-                  console.error('❌ Cache put failed:', cacheError);
-                });
-            }
-            return networkResponse;
-          })
-          .catch(error => {
-            console.log('❌ Network failed for:', request.url);
-            // For non-navigation requests, return error or cached fallback
-            if (request.destination === 'style' || request.destination === 'script') {
-              return caches.match(request);
-            }
-            return Response.error();
-          });
-      })
+        // Return cached version if available, otherwise fetch
+        return cachedResponse || fetch(request);
+      })()
+    );
+    return;
+  }
+
+  // 🎯 STATIC ASSETS (Cache First)
+  console.log('🖼️ Static asset request detected');
+  event.respondWith(
+    (async () => {
+      // First, try cache
+      const cachedResponse = await caches.match(request);
+      if (cachedResponse) {
+        console.log('✅ Serving from cache:', request.url);
+        return cachedResponse;
+      }
+
+      // Then, try network
+      try {
+        const networkResponse = await fetch(request);
+        if (networkResponse && networkResponse.status === 200) {
+          const cache = await caches.open(CACHE_NAME);
+          cache.put(request, networkResponse.clone());
+          console.log('✅ Cached new asset:', request.url);
+        }
+        return networkResponse;
+      } catch (error) {
+        console.log('❌ Network failed for asset:', request.url);
+        
+        // Return fallback for images
+        if (request.destination === 'image') {
+          const fallback = await caches.match('icons/icon-192x192.png');
+          if (fallback) {
+            console.log('🖼️ Serving image fallback');
+            return fallback;
+          }
+        }
+        
+        return Response.error();
+      }
+    })()
   );
 });
 
-// Check for updates
+// ======== MESSAGE HANDLING ========
 self.addEventListener('message', (event) => {
-  console.log('📨 Message received:', event.data);
+  console.log('📨 SERVICE WORKER: Message received:', event.data);
+  
   if (event.data && event.data.type === 'SKIP_WAITING') {
-    console.log('🔄 Skip waiting requested');
+    console.log('⏩ Skipping waiting phase');
     self.skipWaiting();
+  }
+  
+  if (event.data && event.data.type === 'TRIGGER_SYNC') {
+    console.log('🔄 Sync triggered via message');
+    event.waitUntil(triggerBackgroundSync());
+  }
+  
+  // Handle update notifications
+  if (event.data === 'updateAvailable') {
+    console.log('🔄 Update available notification received');
   }
 });
 
-// Global error handling
-self.addEventListener('error', (event) => {
-  console.error('🔥 Service Worker error:', event.error);
+// ======== BACKGROUND SYNC ========
+self.addEventListener('sync', (event) => {
+  console.log('🔄 SERVICE WORKER: Background sync event:', event.tag);
+  
+  if (event.tag === 'memoryinqr-sync') {
+    console.log('🔄 Starting background sync for MemoryinQR');
+    event.waitUntil(triggerBackgroundSync());
+  }
 });
 
-self.addEventListener('unhandledrejection', (event) => {
-  console.error('🔥 Service Worker promise rejection:', event.reason);
+// Background sync function
+async function triggerBackgroundSync() {
+  try {
+    console.log('🔄 SERVICE WORKER: Starting background sync...');
+    
+    // Here you can add sync logic for:
+    // - Syncing offline memory cards
+    // - Uploading pending QR codes
+    // - Syncing user data
+    
+    console.log('✅ Background sync completed');
+    
+    // Notify clients about sync completion
+    const clients = await self.clients.matchAll();
+    clients.forEach(client => {
+      client.postMessage({ type: 'SYNC_COMPLETED' });
+    });
+    
+  } catch (error) {
+    console.error('❌ Background sync failed:', error);
+  }
+}
+
+// ======== UPDATE NOTIFICATION ========
+self.addEventListener('controllerchange', () => {
+  console.log('🔄 SERVICE WORKER: Controller changed - notifying clients...');
+  
+  self.clients.matchAll().then(clients => {
+    clients.forEach(client => {
+      client.postMessage({ type: 'UPDATE_AVAILABLE' });
+    });
+  });
 });
 
-console.log('✅ Service Worker script loaded');
-
-// =============================================================================
-// SUMMARY OF FIXES APPLIED:
-// =============================================================================
-// 
-// MAIN ISSUES RESOLVED:
-// 1. ✅ CACHE EMPTY PROBLEM - Fixed install event to properly cache critical files
-// 2. ✅ NAVIGATION HANDLING - Added proper navigation request interception
-// 3. ✅ GITHUB PAGES PATHS - All paths updated to /MemoryinQR/ subdirectory
-// 4. ✅ SERVICE WORKER SCOPE - Correct registration and activation
-//
-// CURRENT STATUS:
-// - Service worker successfully caches offline.html, /, and index.html
-// - Navigation requests now properly serve offline.html when offline
-// - Assets are cached and served from cache when available
-// - Works with GitHub Pages subdirectory structure
-//
-// BEHAVIOR NOW:
-// - Online: Normal app functionality
-// - Offline + Authenticated: Stays in dashboard with offline banner
-// - Offline + Not authenticated: Serves offline.html instead of browser error page
-// - Back online: Auto-recovers to appropriate state
-//
-// =============================================================================
+console.log('✅ MemoryinQR Service Worker loaded successfully');
