@@ -274,6 +274,28 @@
             0%, 80%, 100% { transform: scale(0); }
             40% { transform: scale(1); }
         }
+        /* Online Notification - POSITION FIX */
+.online-notification {
+    position: fixed;
+    top: 80px; /* 👈 CHANGED FROM 20px to 80px - pushes it lower */
+    left: 50%;
+    transform: translateX(-50%) translateY(-100px);
+    background: #059669;
+    color: white;
+    padding: 1rem 2rem;
+    border-radius: 10px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+    z-index: 10000;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-weight: 600;
+    transition: transform 0.5s ease;
+}
+
+.online-notification.show {
+    transform: translateX(-50%) translateY(0); /* 👈 Now appears at 80px from top */
+}
     </style>
 </head>
 <body>
@@ -392,37 +414,26 @@
     }
 
     // ===== RELIABLE CONNECTION VERIFICATION =====
-    function verifyRealConnection() {
-        console.log('🌐 Verifying real internet connection...');
-        
-        // Test multiple endpoints for reliability
-        const connectionTests = [
-            fetch('/', { 
-                method: 'HEAD',
-                cache: 'no-store',
-                mode: 'no-cors'
-            }),
-            fetch('https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js', {
-                method: 'HEAD',
-                cache: 'no-store',
-                mode: 'no-cors'
-            }),
-            fetch('https://httpbin.org/status/200', {
-                method: 'HEAD',
-                cache: 'no-store',
-                mode: 'no-cors'
-            })
-        ];
-
-        return Promise.race(connectionTests.map(p => p.catch(() => false)))
-            .then(response => {
-                if (response && response.ok) {
-                    console.log('✅ Real connection verified successfully');
-                    return true;
-                }
-                throw new Error('No successful connection tests');
-            });
-    }
+ function verifyRealConnection() {
+    console.log('🌐 Verifying connection to MemoryinQR app...');
+    
+    // ✅ TEST YOUR OWN APP - This is the most reliable check!
+    return fetch('index.html', {
+        method: 'HEAD',
+        cache: 'no-store'
+    })
+    .then(response => {
+        if (response.ok) {
+            console.log('✅ MemoryinQR app is accessible - connection verified!');
+            return true;
+        }
+        throw new Error('App not accessible');
+    })
+    .catch(error => {
+        console.log('❌ MemoryinQR app not accessible:', error);
+        throw new Error('No connection to app');
+    });
+}
 
     // ===== ONLINE NOTIFICATION & REDIRECT =====
     function showOnlineNotificationAndRedirect() {
