@@ -2,8 +2,8 @@
 // SERVICE WORKER - MemoryinQR
 // Version: v2.0 (aligned with enhanced offline system)
 // ========================================
-const CACHE_NAME = 'memoryinqr-cache-v2';
-const OFFLINE_CACHE = 'memoryinqr-offline-v2';
+const CACHE_NAME = 'memoryinqr-cache-v3';
+const OFFLINE_CACHE = 'memoryinqr-offline-v3';
 
 // Core app assets - USE RELATIVE PATHS FOR GITHUB PAGES
 const urlsToCache = [
@@ -238,38 +238,6 @@ self.addEventListener('message', (event) => {
   }
 });
 
-// ======== BACKGROUND SYNC ========
-self.addEventListener('sync', (event) => {
-  console.log('🔄 SERVICE WORKER: Background sync event:', event.tag);
-  
-  if (event.tag === 'memoryinqr-sync') {
-    console.log('🔄 Starting background sync for MemoryinQR');
-    event.waitUntil(triggerBackgroundSync());
-  }
-});
-
-// Background sync function
-async function triggerBackgroundSync() {
-  try {
-    console.log('🔄 SERVICE WORKER: Starting background sync...');
-    
-    // Here you can add sync logic for:
-    // - Syncing offline memory cards
-    // - Uploading pending QR codes
-    // - Syncing user data
-    
-    console.log('✅ Background sync completed');
-    
-    // Notify clients about sync completion
-    const clients = await self.clients.matchAll();
-    clients.forEach(client => {
-      client.postMessage({ type: 'SYNC_COMPLETED' });
-    });
-    
-  } catch (error) {
-    console.error('❌ Background sync failed:', error);
-  }
-}
 
 // ======== UPDATE NOTIFICATION ========
 self.addEventListener('controllerchange', () => {
