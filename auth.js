@@ -90,13 +90,13 @@ function showConnectionRecovery() {
   }, 3000);
 }
 
+// Setup connection event listeners MOVED OUTSIDE INITAUTH()
+  window.addEventListener('online', handleOnlineEvent);
+  window.addEventListener('offline', handleOfflineEvent);
+
 // ENHANCE LINES 19-32 - OFFLINE-AWARE INIT
 function initAuth() {
   console.log('🔐 Initializing authentication...');
-  
-  // Setup connection event listeners FIRST
-  window.addEventListener('online', handleOnlineEvent);
-  window.addEventListener('offline', handleOfflineEvent);
   
   // Check online status without immediate redirect
   if (!navigator.onLine) {
