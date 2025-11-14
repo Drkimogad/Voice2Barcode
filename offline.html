@@ -370,13 +370,13 @@
         </div>
     </div>
 
-    <script>
+<script>
     console.log('🚀 OFFLINE.HTML: Starting offline recovery system...');
 
     // ===== GLOBAL VARIABLES =====
     let checkInterval;
     let retryCount = 0;
-    const AUTO_CHECK_INTERVAL = 3000; // 3 seconds
+    const AUTO_CHECK_INTERVAL = 5000;
 
     // ===== DOM ELEMENTS =====
     const elements = {
@@ -388,20 +388,39 @@
         btnText: document.querySelector('.btn-text')
     };
 
-    // ===== SIMPLE CONNECTION CHECK =====
-    function checkConnection() {
-        console.log('🔍 Checking connection...');
-        return navigator.onLine;
+    // ===== RELIABLE CONNECTION VERIFICATION =====
+    function verifyRealConnection() {
+        console.log('🌐 Testing actual connectivity...');
+        
+        return new Promise((resolve, reject) => {
+            const timeout = setTimeout(() => reject(new Error('Timeout')), 3000);
+            
+            // Test Firebase connectivity (what your app actually needs)
+            fetch('https://www.googleapis.com/identitytoolkit/v3/relyingparty/getAccountInfo?key=AIzaSyAcHV1_wbQjAojF9rBZHZ9Sg2LOYcPqde8', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({}),
+                mode: 'cors'
+            })
+            .then(response => {
+                clearTimeout(timeout);
+                // Even if it fails with auth error, we have connectivity
+                console.log('✅ Real connection verified - Firebase reachable');
+                resolve(true);
+            })
+            .catch(error => {
+                clearTimeout(timeout);
+                console.log('❌ No real connection - Firebase unreachable');
+                reject(error);
+            });
+        });
     }
 
     // ===== ONLINE NOTIFICATION & REDIRECT =====
     function showOnlineNotificationAndRedirect() {
-        console.log('🎉 Connection restored - showing notification');
-        
-        // Show notification
+        console.log('🎉 Real connection restored - showing notification');
         elements.onlineNotification.classList.add('show');
         
-        // Redirect after 3 seconds
         setTimeout(() => {
             console.log('🔄 Redirecting to main app...');
             window.location.replace('index.html?recovered=' + Date.now());
@@ -412,72 +431,73 @@
     function manualConnectionCheck() {
         console.log('🔄 Manual connection check triggered');
         
-        if (checkConnection()) {
-            console.log('✅ Manual check: Connection restored!');
-            showOnlineNotificationAndRedirect();
-            clearInterval(checkInterval);
-        } else {
-            console.log('❌ Manual check: Still offline');
-            alert('You\'re still offline. Please check your internet connection.');
-        }
+        elements.retryBtn.disabled = true;
+        elements.btnText.innerHTML = 'Checking<span class="loading-dots"><span></span><span></span><span></span></span>';
+        
+        verifyRealConnection()
+            .then(() => {
+                elements.retryBtn.disabled = false;
+                elements.btnText.textContent = '🔄 Retry Connection';
+                showOnlineNotificationAndRedirect();
+                clearInterval(checkInterval);
+            })
+            .catch(() => {
+                elements.retryBtn.disabled = false;
+                elements.btnText.textContent = '🔄 Retry Connection';
+                alert('Still offline. Firebase services unavailable.');
+            });
     }
 
     // ===== AUTOMATIC CONNECTION CHECKING =====
     function startAutoConnectionChecking() {
-        console.log('⏰ Starting automatic connection checking every 3 seconds...');
+        console.log('⏰ Starting reliable connection checking...');
         
         checkInterval = setInterval(() => {
-            if (checkConnection()) {
-                console.log('✅ Auto-check: Connection verified!');
-                showOnlineNotificationAndRedirect();
-                clearInterval(checkInterval);
-            }
+            verifyRealConnection()
+                .then(() => {
+                    console.log('✅ Auto-check: Real connection verified!');
+                    showOnlineNotificationAndRedirect();
+                    clearInterval(checkInterval);
+                })
+                .catch(() => {
+                    console.log('❌ Auto-check: Still offline');
+                });
         }, AUTO_CHECK_INTERVAL);
     }
 
     // ===== EVENT LISTENERS =====
     function setupEventListeners() {
-        console.log('🎧 Setting up event listeners...');
-        
         elements.retryBtn.addEventListener('click', manualConnectionCheck);
-        
-        elements.refreshBtn.addEventListener('click', () => {
-            window.location.reload();
-        });
+        elements.refreshBtn.addEventListener('click', () => window.location.reload());
         
         window.addEventListener('online', () => {
-            console.log('📶 Browser online event received');
-            if (checkConnection()) {
-                showOnlineNotificationAndRedirect();
-                clearInterval(checkInterval);
-            }
+            console.log('📶 Browser online event - verifying real connection...');
+            verifyRealConnection()
+                .then(() => {
+                    showOnlineNotificationAndRedirect();
+                    clearInterval(checkInterval);
+                });
         });
-        
-        console.log('✅ Event listeners setup complete');
     }
 
     // ===== INITIALIZATION =====
     function initializeOfflinePage() {
-        console.log('🚀 Initializing offline page recovery system...');
+        console.log('🚀 Initializing reliable offline recovery...');
         
-        if (checkConnection()) {
-            console.log('✅ Already online - redirecting immediately');
-            window.location.replace('index.html?recovered=' + Date.now());
-            return;
-        }
-        
-        setupEventListeners();
-        startAutoConnectionChecking();
-        console.log('✅ Offline page initialization complete');
+        // Check immediately with real connectivity test
+        verifyRealConnection()
+            .then(() => {
+                console.log('✅ Already have real connection - redirecting');
+                window.location.replace('index.html?recovered=' + Date.now());
+            })
+            .catch(() => {
+                console.log('❌ Confirmed offline - starting recovery');
+                setupEventListeners();
+                startAutoConnectionChecking();
+            });
     }
 
-    // ===== START EVERYTHING =====
     document.addEventListener('DOMContentLoaded', initializeOfflinePage);
-
-    if (document.readyState === 'complete' || document.readyState === 'interactive') {
-        setTimeout(initializeOfflinePage, 100);
-    }
-
     console.log('✅ Offline.html script loaded successfully');
 </script>
     
