@@ -1,264 +1,146 @@
 // ========================================
-// AUTHENTICATION MODULE - OFFLINE FIXED
+
+/*DOM Ready → Initialize Connection Monitor → initAuth → Check Status → Show UI
+     ↑                                                                  ↓
+     └── Online/Offline Events ←── Real-time Monitoring ←── Firebase Auth*/
+
+// AUTHENTICATION MODULE - OFFLINE FORTIFIED
 // ========================================
 
-// STATE TRACKING FOR OFFLINE RECOVERY
-let lastKnownState = localStorage.getItem('lastKnownState') || 'unknown';
-let isCheckingOnlineStatus = false;
+// 🔧 GLOBAL OFFLINE MANAGEMENT SYSTEM
+console.log('🛠️ Initializing Offline Management System...');
 
-// REPLACE LINES 7-14 with this SMART ONLINE CHECK
+// Global connection state
+window.connectionState = {
+    isOnline: navigator.onLine,
+    lastChecked: new Date().toISOString(),
+    retryCount: 0
+};
+
+// 🎯 CORE OFFLINE CHECK FUNCTION (GLOBAL)
 function checkOnlineStatus() {
-  if (!navigator.onLine) {
-    const lastState = localStorage.getItem('lastKnownState');
-    // Only redirect if user wasn't previously authenticated in dashboard
-    if (lastState !== 'dashboard-authenticated') {
-      window.location.href = '/MemoryinQR/offline.html';
-      return false;
-    }
-    // If authenticated, stay and show banner
-    return false;
-  }
-  return true;
-}
-
-
-// NEW FUNCTION: Track user state
-function trackUserState(state) {
-  lastKnownState = state;
-  localStorage.setItem('lastKnownState', state);
-  localStorage.setItem('lastStateTimestamp', Date.now());
-  console.log('📝 State tracked:', state);
-}
-
-// NEW FUNCTION: Show offline banner in dashboard
-function showOfflineBanner() {
-  // Create or show offline banner if in dashboard
-  const dashboardSection = document.getElementById('dashboardSection');
-  if (dashboardSection && !document.getElementById('offlineBanner')) {
-    const offlineBanner = document.createElement('div');
-    offlineBanner.id = 'offlineBanner';
-    offlineBanner.style.cssText = `
-      background: #ff6b35;
-      color: white;
-      padding: 10px;
-      text-align: center;
-      position: fixed;
-      top: 0;
-      left: 0;
-      right: 0;
-      z-index: 1000;
-      font-weight: bold;
-    `;
-    offlineBanner.textContent = '📵 You are currently offline. Some features may be unavailable.';
-    document.body.appendChild(offlineBanner);
-  }
-}
-
-// NEW FUNCTION: Remove offline banner
-function hideOfflineBanner() {
-  const offlineBanner = document.getElementById('offlineBanner');
-  if (offlineBanner) {
-    offlineBanner.remove();
-  }
-}
-
-// NEW FUNCTION: Show connection recovery visual
-function showConnectionRecovery() {
-  const recoveryBanner = document.createElement('div');
-  recoveryBanner.id = 'connectionRecovery';
-  recoveryBanner.style.cssText = `
-    background: #059669;
-    color: white;
-    padding: 15px;
-    text-align: center;
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    z-index: 1001;
-    font-weight: bold;
-    font-size: 16px;
-  `;
-  recoveryBanner.innerHTML = '✅ Connection restored! Syncing data... <span class="loading-dots"><span></span><span></span><span></span></span>';
-  document.body.appendChild(recoveryBanner);
-  
-  // Remove after 3 seconds
-  setTimeout(() => {
-    if (recoveryBanner.parentNode) {
-      recoveryBanner.remove();
-    }
-  }, 3000);
-}
-
-// Setup connection event listeners MOVED OUTSIDE INITAUTH()
-  window.addEventListener('online', handleOnlineEvent);
-  window.addEventListener('offline', handleOfflineEvent);
-
-// ENHANCE LINES 19-32 - OFFLINE-AWARE INIT
-function initAuth() {
-  console.log('🔐 Initializing authentication...');
-  
-  // Check online status without immediate redirect
-  if (!navigator.onLine) {
-    console.log('🔌 Starting offline - using last known state:', lastKnownState);
+    const wasOnline = window.connectionState.isOnline;
+    window.connectionState.isOnline = navigator.onLine;
+    window.connectionState.lastChecked = new Date().toISOString();
     
-    // If we have Firebase user but offline, show dashboard
-    firebase.auth().onAuthStateChanged((user) => {
-      if (user && lastKnownState === 'dashboard-authenticated') {
-            // ADD THIS LINE:
-      localStorage.setItem('lastKnownState', 'dashboard-authenticated');
-        
-        console.log('✅ Offline but authenticated - showing dashboard');
-        trackUserState('dashboard-authenticated');
-        showDashboard();
-        showOfflineBanner();
-      } else if (!user) {
-            // ADD THIS LINE:  
-      localStorage.setItem('lastKnownState', 'auth-page');   // i think this is wrong
-        
-        console.log('🔒 Offline and not authenticated - redirecting');
-        trackUserState('offline-not-authenticated');
-        window.location.href = '/MemoryinQR/offline.html';
-      }
+    console.log(`🌐 Connection Check: ${window.connectionState.isOnline ? 'ONLINE ✅' : 'OFFLINE ❌'}`);
+    console.log(`🕒 Last Check: ${window.connectionState.lastChecked}`);
+    console.log(`🔄 Previous State: ${wasOnline ? 'Online' : 'Offline'}`);
+    
+    // 🚨 CRITICAL: Redirect to offline.html if offline
+    if (!window.connectionState.isOnline) {
+        console.log('🚨 Offline detected - redirecting to offline.html');
+        // Use replace to avoid adding to history
+        window.location.replace('/offline.html');
+        return false;
+    }
+    
+    console.log('✅ Online - proceeding with normal operations');
+    return true;
+}
+
+// 🎯 ENHANCED OFFLINE CHECK WITH FALLBACK
+function checkOnlineStatusWithFallback() {
+    const isOnline = checkOnlineStatus();
+    
+    if (!isOnline) {
+        console.log('📴 Operating in offline mode - using fallback strategies');
+        // Additional offline logic can go here
+        return false;
+    }
+    
+    return true;
+}
+
+// 🔄 CONNECTION EVENT HANDLERS
+function setupConnectionMonitoring() {
+    console.log('📡 Setting up connection event monitors...');
+    
+    window.addEventListener('online', () => {
+        console.log('📶 Online event fired - rechecking connection...');
+        window.connectionState.retryCount++;
+        checkOnlineStatus(); // This will cancel redirect if online
     });
-    return;
-  }
-  
-  // ONLINE: Normal Firebase auth flow
-  firebase.auth().onAuthStateChanged((user) => {
-    if (user) {
-      console.log('✅ Firebase user logged in:', user.email);
-      trackUserState('dashboard-authenticated');
-      hideOfflineBanner();
-      showDashboard();
-    } else {
-      console.log('🔒 No Firebase user');
-      trackUserState('auth-page');
-      showAuth();
-    }
-  });
-  
-  // Setup event listeners
-  setupAuthListeners();
+    
+    window.addEventListener('offline', () => {
+        console.log('📵 Offline event fired - updating state...');
+        window.connectionState.isOnline = false;
+        window.connectionState.lastChecked = new Date().toISOString();
+        
+        // Immediate redirect on offline detection
+        console.log('🚨 Immediate offline redirect triggered');
+        window.location.replace('/offline.html');
+    });
+    
+    console.log('✅ Connection monitoring active');
 }
 
-// NEW FUNCTION: Handle online event
-function handleOnlineEvent() {
-  console.log('✅ Online event - hiding offline banner');
-  showConnectionRecovery();
-  hideOfflineBanner();
-  
-  // If we're in dashboard, refresh data if needed
-  if (lastKnownState === 'dashboard-authenticated' && typeof initDashboard === 'function') {
-    console.log('🔄 Online - refreshing dashboard data');
-    setTimeout(() => {
-      initDashboard();
-    }, 1000);
-  }
-}
-
-// NEW FUNCTION: Handle offline event  
-function handleOfflineEvent() {
-  console.log('🔌 Offline event detected');
-  
-  // If we're authenticated and in dashboard, show banner but don't redirect
-  const user = firebase.auth().currentUser;
-  if (user && document.getElementById('dashboardSection')?.style.display !== 'none') {
-    console.log('📱 Offline but authenticated in dashboard - showing banner');
-    trackUserState('dashboard-authenticated');
-    showOfflineBanner();
-  } else {
-    console.log('🔄 Offline and not in dashboard - tracking state');
-    trackUserState('offline-not-authenticated');
-  }
-}
-
-// KEEP ALL YOUR EXISTING FUNCTIONS BELOW EXACTLY AS THEY ARE - ONLY MODIFY handleLogout:
-
-/**
- * Handle user logout - ENHANCE OFFLINE SUPPORT
- */
-async function handleLogout() {
-  try {
-    // Clear local session data
-    localStorage.removeItem('lastKnownPage');
-    localStorage.setItem('lastKnownState', 'logged-out');
+// 🔥 FIREBASE OFFLINE PERSISTENCE
+function setupFirebaseOfflinePersistence() {
+    console.log('💾 Setting up Firebase offline persistence...');
     
-    // Track logout state
-    trackUserState('logged-out');
-    
-    // Try Firebase signOut if online
-    if (navigator.onLine) {
-      await firebase.auth().signOut();
-      console.log('✅ Firebase user logged out');
-      updateStatus('Logged out successfully', 'success');
-    } else {
-      // Offline logout - clear local state only
-      console.log('🔌 Offline logout - local state cleared');
-      updateStatus('Logged out (offline mode)', 'success');
-      
-      // Redirect to auth page immediately for offline logout
-      showAuth();
-    }
-    
-  } catch (error) {
-    console.error('Logout error:', error);
-    updateStatus('Logout completed', 'success');
-    showAuth(); // Ensure we show auth page even on error
-  }
-}
-
-// [KEEP ALL YOUR EXISTING FUNCTIONS FROM setupAuthListeners() THROUGH toggleAuthView() EXACTLY AS THEY WERE]
-
-/**
- * Setup authentication event listeners
- */
-function setupAuthListeners() {
-    // Sign Up Form
-    const signupForm = document.getElementById('signupForm');
-    if (signupForm) {
-        signupForm.addEventListener('submit', handleSignup);
-    }
-    
-    // Sign In Form
-    const signinForm = document.getElementById('signinForm');
-    if (signinForm) {
-        signinForm.addEventListener('submit', handleSignin);
-    }
-    
-    // Toggle between signup and signin
-    const showSigninBtn = document.getElementById('showSignin');
-    if (showSigninBtn) {
-        showSigninBtn.addEventListener('click', (e) => {
-            e.preventDefault();
-            toggleAuthView('signin');
+    firebase.firestore().enablePersistence()
+        .then(() => {
+            console.log('✅ Firebase offline persistence enabled');
+        })
+        .catch((err) => {
+            if (err.code === 'failed-precondition') {
+                console.warn('⚠️ Multiple tabs open - persistence limited to one tab');
+            } else if (err.code === 'unimplemented') {
+                console.warn('⚠️ Browser lacks persistence support');
+            } else {
+                console.warn('⚠️ Firestore persistence error:', err);
+            }
         });
+}
+
+// ========================================
+// EXISTING AUTH FUNCTIONS - OFFLINE FORTIFIED
+// ========================================
+
+function initAuth() {
+    console.log('🔐 INIT AUTH: Starting authentication initialization...');
+    
+    // 🎯 CRITICAL OFFLINE CHECK - FIRST THING
+    if (!checkOnlineStatusWithFallback()) {
+        console.log('⏸️ Auth initialization paused - offline detected');
+        return; // Stop here if offline
     }
     
-    const showSignupBtn = document.getElementById('showSignup');
-    if (showSignupBtn) {
-        showSignupBtn.addEventListener('click', (e) => {
-            e.preventDefault();
-            toggleAuthView('signup');
-        });
-    }
+    console.log('✅ Online confirmed - proceeding with Firebase auth...');
     
-    // Logout button
-    const logoutBtn = document.getElementById('logoutBtn');
-    if (logoutBtn) {
-        logoutBtn.addEventListener('click', handleLogout);
-    }
+    // Firebase auth state listener
+    firebase.auth().onAuthStateChanged((user) => {
+        console.log(`👤 Auth State Changed: ${user ? 'User logged in: ' + user.email : 'No user'}`);
+        
+        if (user) {
+            console.log('✅ Firebase user authenticated, showing dashboard...');
+            showDashboard();
+        } else {
+            console.log('🔒 No Firebase user, showing auth UI...');
+            showAuth();
+        }
+    });
+    
+    // Setup Firebase offline support
+    setupFirebaseOfflinePersistence();
+    
+    // Setup event listeners
+    setupAuthListeners();
+    
+    console.log('✅ Auth initialization complete');
 }
 
 /**
- * Handle user signup
- * @param {Event} e - Form submit event
+ * Handle user signup - OFFLINE FORTIFIED
  */
 async function handleSignup(e) {
     e.preventDefault();
-    // Add offline check
-    if (!navigator.onLine) {
-        window.location.href = '/MemoryinQR/offline.html';
+    console.log('📝 SIGNUP: Processing signup request...');
+    
+    // 🎯 CRITICAL OFFLINE CHECK
+    if (!checkOnlineStatusWithFallback()) {
+        console.log('❌ Signup blocked - offline detected');
         return;
     }
     
@@ -266,10 +148,14 @@ async function handleSignup(e) {
     errorDisplay.textContent = '';
     
     try {
+        console.log('✅ Online confirmed - proceeding with signup...');
+        
         // Get form values
         const username = document.getElementById('signupUsername').value.trim();
         const email = document.getElementById('signupEmail').value.trim();
         const password = document.getElementById('signupPassword').value;
+        
+        console.log(`📧 Signup attempt for: ${email}, Username: ${username}`);
         
         // Validation
         if (!username || !email || !password) {
@@ -288,7 +174,8 @@ async function handleSignup(e) {
             throw new Error('Password must be at least 6 characters');
         }
         
-          // REPLACE localStorage with Firebase Auth
+        // Firebase Auth
+        console.log('🔥 Creating Firebase user...');
         const userCredential = await firebase.auth().createUserWithEmailAndPassword(email, password);
         console.log('✅ Firebase user registered:', email);
         
@@ -297,25 +184,26 @@ async function handleSignup(e) {
         
         // Show success and switch to signin
         updateStatus('Account created successfully! Please sign in.', 'success');
-        setTimeout(() => toggleAuthView('signin'), 1500);  // switches between signup and signin 
+        setTimeout(() => toggleAuthView('signin'), 1500);
         
-        console.log('✅ User registered:', username);
+        console.log('✅ User registration complete');
         
     } catch (error) {
+        console.error('❌ Signup error:', error);
         errorDisplay.textContent = error.message;
-        console.error('Signup error:', error);
     }
 }
 
 /**
- * Handle user signin
- * @param {Event} e - Form submit event
+ * Handle user signin - OFFLINE FORTIFIED  
  */
 async function handleSignin(e) {
     e.preventDefault();
-    // Add offline check
-    if (!navigator.onLine) {
-        window.location.href = '/MemoryinQR/offline.html';
+    console.log('🔑 SIGNIN: Processing signin request...');
+    
+    // 🎯 CRITICAL OFFLINE CHECK
+    if (!checkOnlineStatusWithFallback()) {
+        console.log('❌ Signin blocked - offline detected');
         return;
     }
     
@@ -323,17 +211,23 @@ async function handleSignin(e) {
     errorDisplay.textContent = '';
     
     try {
+        console.log('✅ Online confirmed - proceeding with signin...');
+        
         // Get form values
         const email = document.getElementById('signinEmail').value.trim();
         const password = document.getElementById('signinPassword').value;
+        
+        console.log(`🔑 Signin attempt for: ${email}`);
         
         // Validation
         if (!email || !password) {
             throw new Error('All fields are required');
         }
-        // REPLACE localStorage check with Firebase Auth
+        
+        // Firebase Auth
+        console.log('🔥 Authenticating with Firebase...');
         const userCredential = await firebase.auth().signInWithEmailAndPassword(email, password);
-        console.log('✅ Firebase user logged in:', email);
+        console.log('✅ Firebase user authenticated:', email);
         
         // Clear form
         document.getElementById('signinForm').reset();
@@ -341,86 +235,172 @@ async function handleSignin(e) {
         // Show dashboard
         updateStatus('Welcome back!', 'success');
         
-        // FIXED: Remove undefined username reference
-        console.log('✅ User logged in:', email);
+        console.log('✅ User signin complete');
         
     } catch (error) {
+        console.error('❌ Firebase signin error:', error);
         errorDisplay.textContent = error.message;
         document.getElementById('signinPassword').value = '';
-        console.error('Firebase signin error:', error);
     }
 }
 
 /**
- * Get current logged in user
- * @returns {object|null} User object or null
+ * Handle user logout - OFFLINE FORTIFIED
  */
-function getCurrentUser() {
-    // REPLACE localStorage with Firebase currentUser
-    return firebase.auth().currentUser;
+async function handleLogout() {
+    console.log('🚪 LOGOUT: Processing logout request...');
+    
+    try {
+        // Clear local session data
+        localStorage.removeItem('lastActivePage');
+        console.log('🧹 Local storage cleaned');
+        
+        // 🎯 OFFLINE-AWARE LOGOUT
+        if (navigator.onLine) {
+            console.log('🌐 Online logout - signing out from Firebase...');
+            await firebase.auth().signOut();
+            console.log('✅ Firebase user logged out');
+            updateStatus('Logged out successfully', 'success');
+        } else {
+            console.log('📴 Offline logout - clearing local data only');
+            console.log('✅ Local data cleared');
+            updateStatus('Logged out (offline mode)', 'success');
+        }
+        
+        // Firebase auth state listener will handle UI automatically
+        console.log('✅ Logout process complete');
+        
+    } catch (error) {
+        console.error('❌ Logout error:', error);
+        updateStatus('Logout completed', 'success');
+    }
 }
 
-/**
- * Check if user is authenticated
- * @returns {boolean} True if authenticated
- */
-function isAuthenticated() {
-    // REPLACE localStorage check with Firebase currentUser
-    return !!firebase.auth().currentUser;
+// ========================================
+// EXISTING AUTH FUNCTIONS (UNCHANGED)
+// ========================================
+
+function setupAuthListeners() {
+    console.log('🎧 Setting up auth event listeners...');
+    
+    // Sign Up Form
+    const signupForm = document.getElementById('signupForm');
+    if (signupForm) {
+        signupForm.addEventListener('submit', handleSignup);
+        console.log('✅ Signup form listener added');
+    }
+    
+    // Sign In Form
+    const signinForm = document.getElementById('signinForm');
+    if (signinForm) {
+        signinForm.addEventListener('submit', handleSignin);
+        console.log('✅ Signin form listener added');
+    }
+    
+    // Toggle between signup and signin
+    const showSigninBtn = document.getElementById('showSignin');
+    if (showSigninBtn) {
+        showSigninBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            toggleAuthView('signin');
+        });
+        console.log('✅ Show signin listener added');
+    }
+    
+    const showSignupBtn = document.getElementById('showSignup');
+    if (showSignupBtn) {
+        showSignupBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            toggleAuthView('signup');
+        });
+        console.log('✅ Show signup listener added');
+    }
+    
+    // Logout button
+    const logoutBtn = document.getElementById('logoutBtn');
+    if (logoutBtn) {
+        logoutBtn.addEventListener('click', handleLogout);
+        console.log('✅ Logout listener added');
+    }
+    
+    console.log('✅ All auth listeners setup complete');
 }
 
-/**
- * Show authentication section
- */
 function showAuth() {
+    console.log('👤 Showing authentication UI...');
     document.getElementById('authSection').style.display = 'block';
     document.getElementById('dashboardSection').style.display = 'none';
     document.getElementById('infoBanner').style.display = 'block';
     
     // Show signup by default
     toggleAuthView('signup');
+    console.log('✅ Auth UI displayed');
 }
 
-/**
- * Show dashboard section
- */
 function showDashboard() {
+    console.log('📊 Showing dashboard UI...');
     document.getElementById('authSection').style.display = 'none';
     document.getElementById('dashboardSection').style.display = 'block';
     document.getElementById('infoBanner').style.display = 'none';
     
     // Initialize dashboard if function exists
     if (typeof initDashboard === 'function') {
+        console.log('🚀 Initializing dashboard...');
         initDashboard();
     }
+    console.log('✅ Dashboard UI displayed');
 }
 
-/**
- * Toggle between signup and signin views
- * @param {string} view - 'signup' or 'signin'
- */
 function toggleAuthView(view) {
+    console.log(`🔄 Toggling auth view to: ${view}`);
     const signupContainer = document.getElementById('signupContainer');
     const signinContainer = document.getElementById('signinContainer');
     
     if (view === 'signup') {
         signupContainer.style.display = 'block';
         signinContainer.style.display = 'none';
-        // Clear errors
         document.getElementById('signupError').textContent = '';
+        console.log('✅ Signup view activated');
     } else {
         signupContainer.style.display = 'none';
         signinContainer.style.display = 'block';
-        // Clear errors
         document.getElementById('signinError').textContent = '';
+        console.log('✅ Signin view activated');
     }
 }
 
+function getCurrentUser() {
+    return firebase.auth().currentUser;
+}
+
+function isAuthenticated() {
+    return !!firebase.auth().currentUser;
+}
+
+// ========================================
+// INITIALIZATION - OFFLINE FORTIFIED
+// ========================================
+
+console.log('🚀 AUTH.JS: Starting initialization process...');
+
+// 🎯 CRITICAL: Initialize connection monitoring immediately
+console.log('🔧 Phase 1: Setting up connection monitoring...');
+setupConnectionMonitoring();
+
+// 🎯 Initial connection check
+console.log('🔧 Phase 2: Performing initial connection check...');
+checkOnlineStatus();
+
 // Initialize auth when DOM is ready
 if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', initAuth);
+    console.log('📄 DOM loading - waiting for DOMContentLoaded...');
+    document.addEventListener('DOMContentLoaded', () => {
+        console.log('✅ DOM Content Loaded - initializing auth...');
+        initAuth();
+    });
 } else {
+    console.log('✅ DOM already ready - initializing auth immediately...');
     initAuth();
 }
 
-console.log('✅ Auth.js loaded successfully - OFFLINE FIXED');
+console.log('✅ Auth.js loaded successfully - offline system active');
