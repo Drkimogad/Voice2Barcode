@@ -1111,5 +1111,14 @@ textarea:focus {
     }
 }
 
+/* 
+🔧 Stop Success Messages on Offline Page
+*/
+/* Hide success notifications when on offline page */
+body.offline-page .success-notification {
+    display: none !important;
+}
+
+
 
 
