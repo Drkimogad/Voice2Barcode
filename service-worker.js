@@ -19,19 +19,17 @@ Your app code (auth.js, offline.html) stays exactly the same - they use relative
 // SERVICE WORKER - MemoryinQR (Multi-Platform)
 // Version: v5.4 - GitHub Pages & Firebase Compatible
 // ========================================
-// Add this helper at the top:
-function getOfflinePage() {
-    return CURRENT_ENV === 'GITHUB' ? '/MemoryinQR/offline.html' : '/offline.html';
-}
-// Then use it everywhere:
-//.catch(() => caches.match(getOfflinePage())); // ✅ Consistent
-//const offline = await caches.match(getOfflinePage()); // ✅ Consistent
-
-const CACHE_NAME = 'memoryinqr-cache-v5.6';
+const CACHE_NAME = 'memoryinqr-cache-v5.7';
 const OFFLINE_CACHE = 'memoryinqr-offline-v4.5';
 
 // ✅ ONE-LINE SWITCH - Change this for deployment!
 const CURRENT_ENV = 'GITHUB'; // Change to 'FIREBASE' for Firebase hosting
+//const CURRENT_ENV = 'FIREBASE';
+
+//GET OFFLINE PATH
+function getOfflinePage() {
+    return CURRENT_ENV === 'GITHUB' ? '/MemoryinQR/offline.html' : '/offline.html';
+}
 
 // ✅ ENVIRONMENT CONFIG
 const ENV_CONFIG = {
@@ -152,14 +150,14 @@ if (url.pathname.endsWith('/online.txt')) {
     // do not cache this file; always try network
     event.respondWith(
         fetch(request, { cache: 'no-store', credentials: 'omit' })
-      .catch(() => caches.match(getOfflinePage())); // ✅ Consistent
+        .catch(() => caches.match(getOfflinePage())) // ✅ Now works!
     );
     return;
-}
+  }
     // do not cache this file; always try network
     event.respondWith(
       fetch(request, { cache: 'no-store', credentials: 'omit' })
-     .catch(() => caches.match(getOfflinePage())); // ✅ Consistent
+     .catch(() => caches.match(getOfflinePage())) // fallback
     );
     return;
   }
@@ -186,7 +184,7 @@ if (url.pathname.endsWith('/online.txt')) {
           return cached;
         }
         // Final fallback: offline.html
-        const offline = await caches.match(getOfflinePage()); // ✅ Consistent
+        const offline = await caches.match(getOfflinePage()); // ✅ Consistent!
         return offline || new Response('<h1>Offline</h1>', { headers: { 'Content-Type': 'text/html' } });
       }
     })());
