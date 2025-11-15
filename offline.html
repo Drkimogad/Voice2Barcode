@@ -187,7 +187,7 @@
         /* Online Notification */
         .online-notification {
             position: fixed;
-            top: 20px;
+            top: 80px; /* ✅ Pushed down from top */
             left: 50%;
             transform: translateX(-50%) translateY(-100px);
             background: #059669;
@@ -201,7 +201,11 @@
             gap: 0.5rem;
             font-weight: 600;
             transition: transform 0.5s ease;
-        }
+           }
+         /* ✅ Add this to prevent body scroll when notification shows */
+            body.notification-visible {
+            padding-top: 120px; /* Makes space for notification */
+           }
 
         .online-notification.show {
             transform: translateX(-50%) translateY(0);
@@ -390,8 +394,7 @@ function fetchWithTimeout(resource, options = {}) {
 function verifyRealConnection() {
   // Uses a tiny network-only endpoint that returns "OK" (online.txt)
   // Add a cache-busting timestamp
-  const url = 'online.txt?ts=' + Date.now();
-
+  const url = '/MemoryinQR/online.txt?ts=' + Date.now(); // ✅ ABSOLUTE path
   console.log('🌐 verifyRealConnection -> fetching', url);
 
   return fetchWithTimeout(url, { cache: 'no-store', credentials: 'omit' })
