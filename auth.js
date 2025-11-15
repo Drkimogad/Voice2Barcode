@@ -31,7 +31,7 @@ function checkOnlineStatus() {
     if (!window.connectionState.isOnline) {
         console.log('🚨 Offline detected - redirecting to offline.html');
         // Use replace to avoid adding to history
-        window.location.replace('offline.html');
+        window.location.replace('./offline.html');
         return false;
     }
     
@@ -69,7 +69,7 @@ function setupConnectionMonitoring() {
         
         // Immediate redirect on offline detection
         console.log('🚨 Immediate offline redirect triggered');
-        window.location.replace('offline.html');
+        window.location.replace('./offline.html');
     });
     
     console.log('✅ Connection monitoring active');
