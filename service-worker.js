@@ -5,36 +5,59 @@ Cache files individually with try/catch
 Be consistent with path patterns
 Handle failures gracefully - don't break the whole install
 This pattern works reliably for GitHub Pages' specific URL structure! 🚀
+
+NB: SO REGISTERATION ALWAYS USE ABSOLUTE PATH TO WHETHER GITHUB OR FIREBASE
+GitHub Pages Registration:
+navigator.serviceWorker.register('/MemoryinQR/service-worker.js');
+Firebase Registration:
+navigator.serviceWorker.register('/service-worker.js');
 */
+
 // ========================================
-// SERVICE WORKER - MemoryinQR (FIXED for GitHub Pages)
-// Version: v5.3 - GitHub Pages Optimized
+// SERVICE WORKER - MemoryinQR (Multi-Platform)
+// Version: v5.4 - GitHub Pages & Firebase Compatible
 // ========================================
 
-const CACHE_NAME = 'memoryinqr-cache-v5.3';
-const OFFLINE_CACHE = 'memoryinqr-offline-v4.3';
+const CACHE_NAME = 'memoryinqr-cache-v5.5';
+const OFFLINE_CACHE = 'memoryinqr-offline-v4.5';
 
-// ✅ GITHUB PAGES CONFIG - UPDATE THIS FOR YOUR REPO
-const GITHUB_REPO = '/MemoryinQR/'; // Change to your repo name
+// ✅ ONE-LINE SWITCH - Change this for deployment!
+const CURRENT_ENV = 'GITHUB'; // Change to 'FIREBASE' for Firebase hosting
 
-// Core app assets - GitHub Pages compatible paths
+// ✅ ENVIRONMENT CONFIG
+const ENV_CONFIG = {
+    GITHUB: {
+        root: '/MemoryinQR/',  // ✅ GitHub Pages subdirectory
+    },
+    FIREBASE: {
+        root: '/',  // ✅ Firebase root domain
+    }
+};
+
+// ✅ Helper function to get correct paths
+function getPath(path) {
+    const root = ENV_CONFIG[CURRENT_ENV].root;
+    return root + path.replace(/^\//, ''); // Remove leading slash if present
+}
+
+// Core app assets - Environment-aware paths
 const urlsToCache = [
-    GITHUB_REPO + 'index.html',
-    GITHUB_REPO + 'offline.html', 
-    GITHUB_REPO + 'auth.js',
-    GITHUB_REPO + 'dashboard.js',
-    GITHUB_REPO + 'utils.js',
-    GITHUB_REPO + 'authstyles.css',
-    GITHUB_REPO + 'dashboardstyles.css',
-    GITHUB_REPO + 'manifest.json',
-    GITHUB_REPO + 'favicon.ico',
-    GITHUB_REPO + 'icons/icon-192x192.png',
-    GITHUB_REPO + 'icons/icon-512x512.png',
-    GITHUB_REPO + 'privacy.html',
-    GITHUB_REPO + 'terms.html'
-];
+    'index.html',
+    'offline.html', 
+    'auth.js',
+    'dashboard.js',
+    'utils.js',
+    'authstyles.css',
+    'dashboardstyles.css',
+    'manifest.json',
+    'favicon.ico',
+    'icons/icon-192x192.png',
+    'icons/icon-512x512.png',
+    'privacy.html',
+    'terms.html'
+].map(getPath); // ✅ Automatically applies correct root
 
-// External libs
+// External libs (unchanged)
 const EXTERNAL_LIBS = [
     'https://cdn.jsdelivr.net/npm/qrcode@1.5.0/build/qrcode.min.js',
     'https://unpkg.com/html5-qrcode',
@@ -45,7 +68,7 @@ const EXTERNAL_LIBS = [
 
 // ✅ FIXED INSTALL: Individual caching with try/catch
 self.addEventListener('install', (event) => {
-    console.log('🛠️ SERVICE WORKER: Installing and caching core assets...');
+    console.log(`🛠️ SERVICE WORKER: Installing for ${CURRENT_ENV}...`);
     self.skipWaiting();
 
     event.waitUntil((async () => {
@@ -73,7 +96,7 @@ self.addEventListener('install', (event) => {
                 }
             }
             
-            console.log('✅ Installation completed successfully');
+            console.log(`✅ Installation completed for ${CURRENT_ENV}`);
         } catch (err) {
             console.error('❌ Install failed', err);
         }
