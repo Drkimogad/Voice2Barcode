@@ -11,6 +11,8 @@ GitHub Pages Registration:
 navigator.serviceWorker.register('/MemoryinQR/service-worker.js');
 Firebase Registration:
 navigator.serviceWorker.register('/service-worker.js');
+
+Your app code (auth.js, offline.html) stays exactly the same - they use relative paths (./file.js) that work on both platforms! 🚀
 */
 
 // ========================================
