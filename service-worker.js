@@ -1,82 +1,85 @@
+/*Key Lessons:
+Never use cache.addAll() - it fails if ANY file fails
+Use new Request() with same-origin mode
+Cache files individually with try/catch
+Be consistent with path patterns
+Handle failures gracefully - don't break the whole install
+This pattern works reliably for GitHub Pages' specific URL structure! 🚀
+*/
 // ========================================
-// SERVICE WORKER - MemoryinQR (Fixed)
-// Purpose: Network-first for navigations & dynamic content,
-//          cache-fallback for offline usage.
-// Version: v2.1
+// SERVICE WORKER - MemoryinQR (FIXED for GitHub Pages)
+// Version: v5.3 - GitHub Pages Optimized
 // ========================================
 
-const CACHE_NAME = 'memoryinqr-cache-v5.2';
-const OFFLINE_CACHE = 'memoryinqr-offline-v4.2';
+const CACHE_NAME = 'memoryinqr-cache-v5.3';
+const OFFLINE_CACHE = 'memoryinqr-offline-v4.3';
 
-// Core app assets - relative paths (suitable for GitHub Pages)
+// ✅ GITHUB PAGES CONFIG - UPDATE THIS FOR YOUR REPO
+const GITHUB_REPO = '/MemoryinQR/'; // Change to your repo name
+
+// Core app assets - GitHub Pages compatible paths
 const urlsToCache = [
-  '.',
-  'index.html',
-  'offline.html',
-  'auth.js',
-  'dashboard.js',
-  'utils.js',
-  'authstyles.css',
-  'dashboardstyles.css',
-  'manifest.json',
-  'favicon.ico',
-  'icons/icon-192x192.png',
-  'icons/icon-512x512.png',
-  'privacy.html',
-  'terms.html'
+    GITHUB_REPO + 'index.html',
+    GITHUB_REPO + 'offline.html', 
+    GITHUB_REPO + 'auth.js',
+    GITHUB_REPO + 'dashboard.js',
+    GITHUB_REPO + 'utils.js',
+    GITHUB_REPO + 'authstyles.css',
+    GITHUB_REPO + 'dashboardstyles.css',
+    GITHUB_REPO + 'manifest.json',
+    GITHUB_REPO + 'favicon.ico',
+    GITHUB_REPO + 'icons/icon-192x192.png',
+    GITHUB_REPO + 'icons/icon-512x512.png',
+    GITHUB_REPO + 'privacy.html',
+    GITHUB_REPO + 'terms.html'
 ];
 
-// External libs - we will try to cache, but these are handled as opaque responses
+// External libs
 const EXTERNAL_LIBS = [
-  'https://cdn.jsdelivr.net/npm/qrcode@1.5.0/build/qrcode.min.js',
-  'https://unpkg.com/html5-qrcode',
-  'https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js',
-  'https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js',
-  'https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js'
+    'https://cdn.jsdelivr.net/npm/qrcode@1.5.0/build/qrcode.min.js',
+    'https://unpkg.com/html5-qrcode',
+    'https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js',
+    'https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js',
+    'https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js'
 ];
 
-// Helper: timeout for fetch so network-first doesn't hang forever
-function fetchWithTimeout(request, timeout = 7000) {
-  return new Promise((resolve, reject) => {
-    const timer = setTimeout(() => {
-      reject(new Error('Network timeout'));
-    }, timeout);
-
-    fetch(request).then(response => {
-      clearTimeout(timer);
-      resolve(response);
-    }).catch(err => {
-      clearTimeout(timer);
-      reject(err);
-    });
-  });
-}
-
-// INSTALL: cache core assets (including offline.html)
+// ✅ FIXED INSTALL: Individual caching with try/catch
 self.addEventListener('install', (event) => {
-  console.log('🛠️ SERVICE WORKER: Installing and caching core assets...');
-  self.skipWaiting();
+    console.log('🛠️ SERVICE WORKER: Installing and caching core assets...');
+    self.skipWaiting();
 
-  event.waitUntil((async () => {
-    try {
-      const cache = await caches.open(CACHE_NAME);
-      await cache.addAll(urlsToCache);
-      // Cache external libs in separate OFFLINE_CACHE (best-effort)
-      const extCache = await caches.open(OFFLINE_CACHE);
-      for (const lib of EXTERNAL_LIBS) {
+    event.waitUntil((async () => {
         try {
-          // try to cache external lib (no-cors may produce opaque response)
-          await extCache.add(new Request(lib, { mode: 'no-cors', credentials: 'omit' }));
+            const cache = await caches.open(CACHE_NAME);
+            
+            // ✅ CACHE LOCAL ASSETS INDIVIDUALLY
+            for (const url of urlsToCache) {
+                try {
+                    await cache.add(new Request(url, { mode: 'same-origin' }));
+                    console.log('✅ Cached:', url);
+                } catch (err) {
+                    console.warn('⚠️ Failed to cache:', url, err);
+                }
+            }
+
+            // ✅ CACHE EXTERNAL LIBS INDIVIDUALLY  
+            const extCache = await caches.open(OFFLINE_CACHE);
+            for (const lib of EXTERNAL_LIBS) {
+                try {
+                    await extCache.add(new Request(lib, { mode: 'no-cors', credentials: 'omit' }));
+                    console.log('✅ Cached external:', lib);
+                } catch (err) {
+                    console.warn('⚠️ Could not cache external lib:', lib, err);
+                }
+            }
+            
+            console.log('✅ Installation completed successfully');
         } catch (err) {
-          console.warn('⚠️ Could not cache external lib (best-effort):', lib, err);
+            console.error('❌ Install failed', err);
         }
-      }
-      console.log('✅ Installation caching complete');
-    } catch (err) {
-      console.error('❌ Install failed', err);
-    }
-  })());
+    })());
 });
+
 
 // ACTIVATE: clean old caches and take control
 self.addEventListener('activate', (event) => {
