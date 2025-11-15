@@ -20,7 +20,7 @@ Your app code (auth.js, offline.html) stays exactly the same - they use relative
 // Version: v5.4 - GitHub Pages & Firebase Compatible
 // ========================================
 
-const CACHE_NAME = 'memoryinqr-cache-v5.5';
+const CACHE_NAME = 'memoryinqr-cache-v5.6';
 const OFFLINE_CACHE = 'memoryinqr-offline-v4.5';
 
 // ✅ ONE-LINE SWITCH - Change this for deployment!
@@ -141,12 +141,18 @@ self.addEventListener('fetch', (event) => {
   }
 
   // Bypass SW for a dedicated online check endpoint (online.txt)
-  // Put an "online.txt" file at your project root with text "OK"
-  if (url.pathname.endsWith('/online.txt')) {
+if (url.pathname.endsWith('/online.txt')) {
+    // do not cache this file; always try network
+    event.respondWith(
+        fetch(request, { cache: 'no-store', credentials: 'omit' })
+        .catch(() => caches.match('/MemoryinQR/offline.html')) // ✅ ABSOLUTE
+    );
+    return;
+}
     // do not cache this file; always try network
     event.respondWith(
       fetch(request, { cache: 'no-store', credentials: 'omit' })
-        .catch(() => caches.match('offline.html')) // fallback if even online.txt fails
+        .catch(() => caches.match('/MemoryinQR/offline.html')) // fallback if even online.txt fails
     );
     return;
   }
@@ -173,7 +179,7 @@ self.addEventListener('fetch', (event) => {
           return cached;
         }
         // Final fallback: offline.html
-        const offline = await caches.match('offline.html');
+        const offline = await caches.match('/MemoryinQR/offline.html'); // ✅ ABSOLUTE
         return offline || new Response('<h1>Offline</h1>', { headers: { 'Content-Type': 'text/html' } });
       }
     })());
