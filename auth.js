@@ -24,13 +24,10 @@ function checkOnlineStatus() {
     window.connectionState.lastChecked = new Date().toISOString();
     
     console.log(`🌐 Connection Check: ${window.connectionState.isOnline ? 'ONLINE ✅' : 'OFFLINE ❌'}`);
-    console.log(`🕒 Last Check: ${window.connectionState.lastChecked}`);
-    console.log(`🔄 Previous State: ${wasOnline ? 'Online' : 'Offline'}`);
     
-    // 🚨 CRITICAL: Redirect to offline.html if offline
-    if (!window.connectionState.isOnline) {
+    // 🚨 CRITICAL FIX: Don't redirect immediately - let offline.html handle it
+    if (!window.connectionState.isOnline && !window.location.pathname.includes('offline.html')) {
         console.log('🚨 Offline detected - redirecting to offline.html');
-        // Use replace to avoid adding to history
         window.location.replace('./offline.html');
         return false;
     }
@@ -57,9 +54,13 @@ function setupConnectionMonitoring() {
     console.log('📡 Setting up connection event monitors...');
     
     window.addEventListener('online', () => {
-        console.log('📶 Online event fired - rechecking connection...');
+        console.log('📶 Online event fired - checking real connection...');
         window.connectionState.retryCount++;
-        checkOnlineStatus(); // This will cancel redirect if online
+        
+        // ✅ FIX: Only redirect if we're NOT already on offline.html
+        if (!window.location.pathname.includes('offline.html')) {
+            checkOnlineStatus();
+        }
     });
     
     window.addEventListener('offline', () => {
@@ -67,12 +68,28 @@ function setupConnectionMonitoring() {
         window.connectionState.isOnline = false;
         window.connectionState.lastChecked = new Date().toISOString();
         
-        // Immediate redirect on offline detection
-        console.log('🚨 Immediate offline redirect triggered');
-        window.location.replace('./offline.html');
+        // ✅ FIX: Only redirect if we're NOT already on offline.html
+        if (!window.location.pathname.includes('offline.html')) {
+            console.log('🚨 Immediate offline redirect triggered');
+            window.location.replace('./offline.html');
+        }
     });
     
     console.log('✅ Connection monitoring active');
+}
+
+// 🎯 REAL CONNECTION CHECK (like in offline.html)
+async function checkRealConnection() {
+    try {
+        const response = await fetch('/MemoryinQR/online.txt?ts=' + Date.now(), {
+            method: 'HEAD',
+            cache: 'no-store',
+            credentials: 'omit'
+        });
+        return response.ok;
+    } catch (error) {
+        return false;
+    }
 }
 
 // 🔥 FIREBASE OFFLINE PERSISTENCE
@@ -201,9 +218,11 @@ async function handleSignin(e) {
     e.preventDefault();
     console.log('🔑 SIGNIN: Processing signin request...');
     
-    // 🎯 CRITICAL OFFLINE CHECK
-    if (!checkOnlineStatusWithFallback()) {
-        console.log('❌ Signin blocked - offline detected');
+    // 🎯 FIX: Use REAL connection check, not just navigator.onLine
+    const isReallyOnline = await checkRealConnection();
+    if (!isReallyOnline) {
+        console.log('❌ Signin blocked - real connection check failed');
+        updateStatus('No internet connection detected', 'error');
         return;
     }
     
