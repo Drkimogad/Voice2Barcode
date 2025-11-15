@@ -26,10 +26,6 @@ const OFFLINE_CACHE = 'memoryinqr-offline-v4.5';
 const CURRENT_ENV = 'GITHUB'; // Change to 'FIREBASE' for Firebase hosting
 //const CURRENT_ENV = 'FIREBASE';
 
-//GET OFFLINE PATH
-function getOfflinePage() {
-    return CURRENT_ENV === 'GITHUB' ? '/MemoryinQR/offline.html' : '/offline.html';
-}
 
 // ✅ ENVIRONMENT CONFIG
 const ENV_CONFIG = {
@@ -145,53 +141,46 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // Bypass SW for a dedicated online check endpoint (online.txt)
-if (url.pathname.endsWith('/online.txt')) {
-    // do not cache this file; always try network
-    event.respondWith(
-        fetch(request, { cache: 'no-store', credentials: 'omit' })
-        .catch(() => caches.match(getOfflinePage())) // ✅ Now works!
-    );
+  // ✅ FIXED: Skip favicon to avoid 404 errors
+  if (url.pathname.endsWith('/favicon.ico')) { //Absolute path from root 
     return;
   }
-    // do not cache this file; always try network
+
+  // ✅ FIXED: Bypass SW for online.txt - SIMPLIFIED
+  if (url.pathname.endsWith('/online.txt')) {
     event.respondWith(
       fetch(request, { cache: 'no-store', credentials: 'omit' })
-     .catch(() => caches.match(getOfflinePage())) // fallback
     );
     return;
   }
 
-  // NAVIGATION REQUESTS (pages) -> NETWORK FIRST (with timeout) then CACHE then offline.html
+  // ✅ FIXED: NAVIGATION REQUESTS - PROPER STRUCTURE
   if (request.mode === 'navigate') {
     event.respondWith((async () => {
       try {
-        // Try network first, but ensure it times out if slow
+        // Try network first
         const networkResponse = await fetchWithTimeout(request, 7000);
         // Only cache valid 200/html responses
         if (networkResponse && networkResponse.status === 200 && networkResponse.type !== 'opaque') {
           const cache = await caches.open(CACHE_NAME);
           cache.put(request, networkResponse.clone());
-        } else if (networkResponse && networkResponse.status === 200 && networkResponse.type === 'opaque') {
-          // opaque responses (from no-cors) can still be used but avoid caching as main HTML
-          // (skip caching to avoid serving opaque HTML later)
         }
         return networkResponse;
       } catch (networkError) {
-        // Network failed or timed out -> try cache
+        // Network failed -> try cache
         const cached = await caches.match(request);
         if (cached) {
           return cached;
         }
-        // Final fallback: offline.html
-        const offline = await caches.match(getOfflinePage()); // ✅ Consistent!
+        // ✅ FIXED: Final fallback - ABSOLUTE PATH
+        const offline = await caches.match('/MemoryinQR/offline.html');
         return offline || new Response('<h1>Offline</h1>', { headers: { 'Content-Type': 'text/html' } });
       }
     })());
     return;
   }
 
-  // EXTERNAL LIBRARIES -> STALE-WHILE-REVALIDATE
+  // ✅ FIXED: EXTERNAL LIBRARIES
   if (EXTERNAL_LIBS.some(lib => request.url.startsWith(lib))) {
     event.respondWith((async () => {
       const cache = await caches.open(OFFLINE_CACHE);
@@ -204,16 +193,16 @@ if (url.pathname.endsWith('/online.txt')) {
           }
         }).catch(() => { /* silent fail */ });
       }
-      return cached || fetch(request).catch(() => cached) ;
+      return cached || fetch(request);
     })());
     return;
   }
 
-  // STATIC ASSETS -> CACHE FIRST then network update
+  // ✅ FIXED: STATIC ASSETS
   event.respondWith((async () => {
     const cachedResponse = await caches.match(request);
     if (cachedResponse) {
-      // Background update to refresh cache (non-blocking)
+      // Background update
       if (navigator.onLine) {
         fetch(request).then(async (networkResp) => {
           try {
@@ -222,14 +211,14 @@ if (url.pathname.endsWith('/online.txt')) {
               cache.put(request, networkResp.clone());
             }
           } catch (e) {
-            // swallow caching errors
+            // ignore errors
           }
-        }).catch(() => { /* ignore update errors */ });
+        }).catch(() => {});
       }
       return cachedResponse;
     }
 
-    // No cache -> try network then cache result for next time
+    // No cache -> try network
     try {
       const networkResp = await fetch(request);
       if (networkResp && networkResp.status === 200) {
@@ -238,12 +227,11 @@ if (url.pathname.endsWith('/online.txt')) {
       }
       return networkResp;
     } catch (err) {
-      // If request is an image, serve a fallback icon if present
+      // ✅ FIXED: Image fallback - ABSOLUTE PATH
       if (request.destination === 'image') {
-        const fallback = await caches.match('icons/icon-192x192.png');
+        const fallback = await caches.match('/MemoryinQR/icons/icon-192x192.png');
         if (fallback) return fallback;
       }
-      // Generic network error fallback
       return Response.error();
     }
   })());
