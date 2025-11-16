@@ -1,13 +1,4 @@
 // ========================================
-
-/*DOM Ready → Initialize Connection Monitor → initAuth → Check Status → Show UI
-     ↑                                                                  ↓
-     └── Online/Offline Events ←── Real-time Monitoring ←── Firebase Auth*/
-
-// AUTHENTICATION MODULE - OFFLINE FORTIFIED
-// ========================================
-
-// ========================================
 // 🆕 SIMPLIFIED CONNECTION UI CONTROLLER
 // ========================================
 
