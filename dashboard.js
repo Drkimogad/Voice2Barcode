@@ -1,9 +1,20 @@
 // ========================================
 // DASHBOARD MODULE
 // ========================================
-// Add this at the top of dashboard.js
+// ✅ PROFESSIONAL SOLUTION FOR DOMAINS SWITCHING
 const APP_CONFIG = {
-  baseUrl: window.location.origin // Auto-detects current domain
+    getBaseUrl: function() {
+        if (window.location.hostname.includes('github.io')) {
+            return 'https://drkimogad.github.io/MemoryinQR';
+        } else if (window.location.hostname.includes('web.app') || 
+                   window.location.hostname.includes('firebaseapp.com')) {
+            return 'https://pet-exercise-log.web.app';
+        } else if (window.location.hostname.includes('localhost')) {
+            return 'http://localhost:3000';
+        } else {
+            return window.location.origin;
+        }
+    }
 };
 
 const DASHBOARD_CONFIG = {
@@ -30,7 +41,7 @@ function initDashboard() {
     setupModeSwitching();
     
     // Initialize text mode by default
-    switchToMode('links');
+    switchToMode('text');
     
     // Setup global handlers
     setupGlobalHandlers();
