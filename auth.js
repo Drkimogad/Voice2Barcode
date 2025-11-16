@@ -25,61 +25,131 @@ function checkOnlineStatus() {
     
     console.log(`🌐 Connection Check: ${window.connectionState.isOnline ? 'ONLINE ✅' : 'OFFLINE ❌'}`);
     
-    // 🚨 CRITICAL FIX: Stop execution if redirecting
-    if (!window.connectionState.isOnline && !window.location.pathname.includes('offline.html')) {
-        console.log('🚨 Offline detected - redirecting to offline.html');
+    // 🆕 CRITICAL FIX: Only redirect from auth pages, NOT dashboard
+    const isOnAuthPage = window.location.pathname.includes('index.html') || 
+                         window.location.pathname === '/' || 
+                         window.location.pathname.includes('/MemoryinQR/');
+    const isOnOfflinePage = window.location.pathname.includes('offline.html');
+    
+    if (!window.connectionState.isOnline && isOnAuthPage && !isOnOfflinePage) {
+        console.log('🚨 Offline on auth page - redirecting to offline.html');
         window.location.replace('offline.html');
-        throw new Error('OFFLINE_REDIRECT'); // 🛑 STOP EXECUTION
+        throw new Error('OFFLINE_REDIRECT');
+    }
+    
+    // 🆕 On dashboard, stay there and handle offline gracefully
+    if (!window.connectionState.isOnline && !isOnAuthPage && !isOnOfflinePage) {
+        console.log('📴 Offline on dashboard - staying put with offline UI');
+        showOfflineDashboardUI();
+        return false;
     }
     
     console.log('✅ Online - proceeding with normal operations');
     return true;
 }
-
-// 🎯 ENHANCED OFFLINE CHECK WITH FALLBACK
-function checkOnlineStatusWithFallback() {
-    const isOnline = checkOnlineStatus();
+/**
+ * 🆕 Show offline UI on dashboard without redirecting
+ */
+function showOfflineDashboardUI() {
+    // Only show if we're actually on a dashboard page
+    const dashboardSection = document.getElementById('dashboardSection');
+    const authSection = document.getElementById('authSection');
     
-    if (!isOnline) {
-        console.log('📴 Operating in offline mode - using fallback strategies');
-        // Additional offline logic can go here
-        return false;
+    if (dashboardSection && dashboardSection.style.display !== 'none') {
+        console.log('🎨 Showing offline dashboard UI');
+        
+        // Create or update offline banner
+        let offlineBanner = document.getElementById('dashboardOfflineBanner');
+        if (!offlineBanner) {
+            offlineBanner = document.createElement('div');
+            offlineBanner.id = 'dashboardOfflineBanner';
+            offlineBanner.style.cssText = `
+                background: #fef3cd;
+                border: 1px solid #ffc107;
+                color: #856404;
+                padding: 12px;
+                text-align: center;
+                font-weight: bold;
+                position: sticky;
+                top: 0;
+                z-index: 1000;
+            `;
+            document.body.insertBefore(offlineBanner, document.body.firstChild);
+        }
+        
+        offlineBanner.innerHTML = '📵 Offline Mode - Some features limited. Working to restore connection...';
+        offlineBanner.style.display = 'block';
+        
+        // Disable online-only features
+        const onlineOnlyButtons = document.querySelectorAll('#generateLinkQRBtn, #textConvertBtn');
+        onlineOnlyButtons.forEach(btn => {
+            if (btn) btn.disabled = true;
+        });
+    }
+}
+
+/**
+ * 🆕 Hide offline UI when back online
+ */
+function hideOfflineDashboardUI() {
+    const offlineBanner = document.getElementById('dashboardOfflineBanner');
+    if (offlineBanner) {
+        offlineBanner.style.display = 'none';
     }
     
-    return true;
+    // Re-enable online-only features
+    const onlineOnlyButtons = document.querySelectorAll('#generateLinkQRBtn, #textConvertBtn');
+    onlineOnlyButtons.forEach(btn => {
+        if (btn) btn.disabled = false;
+    });
 }
 
 // 🔄 CONNECTION EVENT HANDLERS
 function setupConnectionMonitoring() {
-    console.log('📡 Setting up connection event monitors...');
+    console.log('📡 Setting up SMART connection monitoring...');
     
- // ✅ FIX: Enhanced online event with real verification
-window.addEventListener('online', async () => {
-    console.log('📶 Online event fired - verifying real connection...');
-    
-    // Wait a moment for network stabilization
-    setTimeout(async () => {
-        const isReallyOnline = await checkRealConnection();
-        if (isReallyOnline && window.location.pathname.includes('offline.html')) {
-            console.log('✅ Real connection verified - redirecting to app...');
-            window.location.replace('index.html?recovered=' + Date.now());
-        }
-    }, 1000);
-});
-    
-    window.addEventListener('offline', () => {
-        console.log('📵 Offline event fired - updating state...');
-        window.connectionState.isOnline = false;
-        window.connectionState.lastChecked = new Date().toISOString();
+    window.addEventListener('online', async () => {
+        console.log('📶 Online event fired - handling intelligently...');
+        window.connectionState.retryCount++;
         
-        // ✅ FIX: Only redirect if we're NOT already on offline.html
-        if (!window.location.pathname.includes('offline.html')) {
-            console.log('🚨 Immediate offline redirect triggered');
-            window.location.replace('offline.html');
+        // 🆕 Hide offline UI on dashboard
+        hideOfflineDashboardUI();
+        
+        // 🆕 Process any offline queue
+        if (typeof processOfflineQueue === 'function') {
+            setTimeout(processOfflineQueue, 1000);
+        }
+        
+        // 🆕 Only redirect from offline.html, never from dashboard
+        if (window.location.pathname.includes('offline.html')) {
+            console.log('🔄 On offline page - redirecting back to app...');
+            setTimeout(() => {
+                window.location.replace('index.html?recovered=' + Date.now());
+            }, 2000);
         }
     });
     
-    console.log('✅ Connection monitoring active');
+    window.addEventListener('offline', () => {
+        console.log('📵 Offline event fired - handling intelligently...');
+        window.connectionState.isOnline = false;
+        window.connectionState.lastChecked = new Date().toISOString();
+        
+        // 🆕 CRITICAL: Only redirect from AUTH pages, never from dashboard
+        const isOnAuthPage = window.location.pathname.includes('index.html') || 
+                            window.location.pathname === '/' || 
+                            window.location.pathname.includes('/MemoryinQR/');
+        const isOnOfflinePage = window.location.pathname.includes('offline.html');
+        
+        if (isOnAuthPage && !isOnOfflinePage) {
+            console.log('🚨 Offline on auth page - redirecting to offline.html');
+            window.location.replace('offline.html');
+        } else if (!isOnAuthPage && !isOnOfflinePage) {
+            console.log('📴 Offline on dashboard - showing offline UI');
+            showOfflineDashboardUI();
+        }
+    });
+    
+    console.log('✅ SMART connection monitoring active');
 }
 
 // 🎯 REAL CONNECTION CHECK (like in offline.html)
@@ -119,17 +189,20 @@ function setupFirebaseOfflinePersistence() {
 // ========================================
 // EXISTING AUTH FUNCTIONS - OFFLINE FORTIFIED
 // ========================================
-
 function initAuth() {
     console.log('🔐 INIT AUTH: Starting authentication initialization...');
     
-    // 🎯 CRITICAL OFFLINE CHECK - FIRST THING
-    if (!checkOnlineStatusWithFallback()) {
-        console.log('⏸️ Auth initialization paused - offline detected');
-        return; // Stop here if offline
+    // 🆕 SMARTER OFFLINE CHECK - Don't stop initialization on dashboard
+    const isOnAuthPage = window.location.pathname.includes('index.html') || 
+                        window.location.pathname === '/' || 
+                        window.location.pathname.includes('/MemoryinQR/');
+    
+    if (isOnAuthPage && !checkOnlineStatusWithFallback()) {
+        console.log('⏸️ Auth initialization paused - offline detected on auth page');
+        return;
     }
     
-    console.log('✅ Online confirmed - proceeding with Firebase auth...');
+    console.log('✅ Proceeding with auth initialization...');
     
     // Firebase auth state listener
     firebase.auth().onAuthStateChanged((user) => {
