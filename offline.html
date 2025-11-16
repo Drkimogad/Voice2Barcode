@@ -438,7 +438,7 @@ function showOnlineNotificationAndRedirect() {
 function performRedirect() {
   console.log('🔄 Redirecting to index.html (replace history)');
   // Use replace to avoid back navigation to offline page
-  window.location.replace('./index.html?recovered=' + Date.now());
+  window.location.replace('index.html?recovered=' + Date.now());
 }
 
 // ===== MANUAL CONNECTION CHECK =====
