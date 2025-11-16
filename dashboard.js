@@ -251,27 +251,28 @@ async function generateQRFromUrl(url) {
 // ========================================
 // TEXT MODE - MODIFIED FOR FIRESTORE
 // ========================================
-// FIRESTORE FUNCTIONS
+// ONLINE FIRESTORE SAVING FUNCTION
 /**
  * Save message to Firestore and return document ID
  * @param {object} messageData - Message data to save
  * @returns {string} Document ID
  */
 async function saveMessageToFirestore(messageData) {
-        // Add offline check
+    const db = firebase.firestore();
+    const user = firebase.auth().currentUser;
+    
+    if (!user) {
+        throw new Error('User must be logged in to save messages');
+    }
+    
+    // 🆕 OFFLINE QUEUE SYSTEM
     if (!navigator.onLine) {
-        updateStatus('You are offline - cannot save message', 'error');
-        throw new Error('Offline - cannot save to Firestore');
+        console.log('📴 OFFLINE: Queueing message for later sync');
+        return queueOfflineMessage(messageData, user.uid);
     }
     
     try {
-        const db = firebase.firestore();
-        const user = firebase.auth().currentUser;
-        
-        if (!user) {
-            throw new Error('User must be logged in to save messages');
-        }
-        
+        // 🆕 ONLINE: Save directly to Firestore
         const docRef = await db.collection('messages').add({
             type: messageData.type,
             content: messageData.content,
@@ -279,18 +280,125 @@ async function saveMessageToFirestore(messageData) {
             title: messageData.title,
             createdBy: user.uid,
             createdAt: firebase.firestore.FieldValue.serverTimestamp(),
-            views: 0
+            views: 0,
+            status: 'synced' // 🆕 Track sync status
         });
         
         console.log('✅ Message saved to Firestore with ID:', docRef.id);
         return docRef.id;
         
     } catch (error) {
-        console.error('❌ Error saving to Firestore:', error);
-        throw error;
+        console.error('❌ Online save failed, queueing offline:', error);
+        // 🆕 FALLBACK: If online save fails, queue for retry
+        return queueOfflineMessage(messageData, user.uid);
     }
 }
 
+// ========================================
+// 🆕 OFFLINE QUEUE SYSTEM
+// ========================================
+
+const OFFLINE_QUEUE_KEY = 'memoryinqr_offline_queue';
+
+/**
+ * Queue message for offline sync
+ */
+function queueOfflineMessage(messageData, userId) {
+    return new Promise((resolve) => {
+        // Generate temporary ID for offline use
+        const tempId = 'offline_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+        
+        // Get existing queue
+        const queue = JSON.parse(localStorage.getItem(OFFLINE_QUEUE_KEY) || '[]');
+        
+        // Add to queue
+        queue.push({
+            id: tempId,
+            data: messageData,
+            userId: userId,
+            timestamp: new Date().toISOString(),
+            status: 'pending'
+        });
+        
+        // Save back to localStorage
+        localStorage.setItem(OFFLINE_QUEUE_KEY, JSON.stringify(queue));
+        
+        console.log('💾 Message queued offline. Queue size:', queue.length);
+        updateStatus('Message saved offline. Will sync when connected.', 'success');
+        
+        // Return temp ID for QR generation
+        resolve(tempId);
+    });
+}
+
+/**
+ * Process offline queue when back online
+ */
+async function processOfflineQueue() {
+    if (!navigator.onLine) {
+        console.log('📴 Still offline, skipping queue processing');
+        return;
+    }
+    
+    const queue = JSON.parse(localStorage.getItem(OFFLINE_QUEUE_KEY) || '[]');
+    if (queue.length === 0) return;
+    
+    console.log('🔄 Processing offline queue:', queue.length, 'items');
+    
+    const db = firebase.firestore();
+    const successfulSyncs = [];
+    const failedSyncs = [];
+    
+    for (const item of queue) {
+        try {
+            // Skip if already processed
+            if (item.status === 'synced') continue;
+            
+            const docRef = await db.collection('messages').add({
+                ...item.data,
+                createdBy: item.userId,
+                createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+                views: 0,
+                status: 'synced',
+                originallyQueuedAt: item.timestamp
+            });
+            
+            console.log('✅ Synced queued message:', item.id, '->', docRef.id);
+            successfulSyncs.push(item.id);
+            
+        } catch (error) {
+            console.error('❌ Failed to sync queued message:', item.id, error);
+            failedSyncs.push(item.id);
+        }
+    }
+    
+    // Update queue - remove successful, keep failed for retry
+    const updatedQueue = queue.filter(item => 
+        !successfulSyncs.includes(item.id) && item.status !== 'synced'
+    );
+    
+    localStorage.setItem(OFFLINE_QUEUE_KEY, JSON.stringify(updatedQueue));
+    
+    if (successfulSyncs.length > 0) {
+        updateStatus(`Synced ${successfulSyncs.length} offline messages`, 'success');
+    }
+    
+    console.log('✅ Queue processing complete. Successful:', successfulSyncs.length, 'Failed:', failedSyncs.length);
+}
+
+/**
+ * Get queue status for UI display
+ */
+function getOfflineQueueStatus() {
+    const queue = JSON.parse(localStorage.getItem(OFFLINE_QUEUE_KEY) || '[]');
+    const pending = queue.filter(item => item.status === 'pending');
+    
+    return {
+        total: queue.length,
+        pending: pending.length,
+        hasPending: pending.length > 0
+    };
+}
 function initTextMode() {
     const convertBtn = document.getElementById('textConvertBtn');
     convertBtn.onclick = handleTextConversion;
@@ -364,20 +472,23 @@ async function handleTextConversion() {
     }
 }
 
-// Replace the old generateQRFromText function
+
+
+// Replace the old generateQRFromText function UPDATED
 async function generateQRFromDocumentId(documentId) {
     try {
         toggleLoading(true, 'Generating QR code...');
         
-    // Create URL for your domain - we'll use memoryinqr.com for now
-    // const qrContent = `https://drkimogad.github.io/MemoryinQR/view.html?id=${documentId}`;   // REPLACE LATER FOR FIREBASE DEPLOYMENT 
+        // �URL for your domain
         const qrContent = `${APP_CONFIG.baseUrl}/view.html?id=${documentId}`;
         
-        // Store document ID for download reference
+        // 🆕 Store document ID for download reference
         lastQRData = {
             documentId: documentId,
             type: 'firestore',
-            timestamp: getTimestamp()
+            timestamp: getTimestamp(),
+            // 🆕 Add offline indicator for queued messages
+            isOffline: documentId.startsWith('offline_')
         };
         
         // Generate QR code with the URL
@@ -390,7 +501,12 @@ async function generateQRFromDocumentId(documentId) {
         // Enable download button
         document.getElementById('downloadQRCodeBtn').disabled = false;
         
-        updateStatus('QR code generated successfully!', 'success');
+        // 🆕 Show offline warning if queued
+        if (documentId.startsWith('offline_')) {
+            updateStatus('QR generated (offline mode - will sync when connected)', 'warning');
+        } else {
+            updateStatus('QR code generated successfully!', 'success');
+        }
         
     } catch (error) {
         handleError('QR generation failed', error);
