@@ -2,6 +2,14 @@
    DASHBOARD STYLES
    Color Scheme: Cream, Silver-Metallic, Brick, Charcoal
    ======================================== */
+ :root {
+            --silver: #C0C0C0;
+            --crimson: #CB4154;
+            --charcoal: #36454F;
+            --cream: #F5F5DC;
+            --mustard: #FFDB58;
+        }
+
 /* App Header */
 .app-header {
     background: linear-gradient(135deg, #C0C0C0 0%, #D3D3D3 100%);
@@ -869,7 +877,9 @@ textarea:focus {
 }
 
 
-/* Admin Mode Styles */
+/* ===============================
+    Admin Mode Styles
+===============================*/
 .admin-container {
     max-width: 800px;
     margin: 0 auto;
@@ -877,11 +887,11 @@ textarea:focus {
 }
 
 .admin-search-box {
-    background: white;
+    background: var(--cream);
     border-radius: 12px;
     padding: 30px;
     box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
-    border: 2px solid var(--charcoal);
+    border: 2px solid var(--silver);
     margin-bottom: 20px;
 }
 
@@ -890,6 +900,8 @@ textarea:focus {
     margin-bottom: 25px;
     text-align: center;
     font-size: 1.4em;
+    border-bottom: 2px solid var(--crimson);
+    padding-bottom: 10px;
 }
 
 .search-group {
@@ -917,9 +929,10 @@ textarea:focus {
     border: 2px solid var(--silver);
     border-radius: 8px;
     font-size: 15px;
-    background: var(--cream);
+    background: white;
     color: var(--charcoal);
     margin-bottom: 12px;
+    transition: all 0.3s ease;
 }
 
 .search-input:focus, .theme-select:focus {
@@ -940,8 +953,14 @@ textarea:focus {
     padding: 12px;
     border: 2px solid var(--silver);
     border-radius: 8px;
-    background: var(--cream);
+    background: white;
     color: var(--charcoal);
+    transition: all 0.3s ease;
+}
+
+.date-input:focus {
+    outline: none;
+    border-color: var(--crimson);
 }
 
 .date-inputs span {
@@ -959,20 +978,26 @@ textarea:focus {
     cursor: pointer;
     width: 100%;
     transition: all 0.3s ease;
+    font-size: 15px;
 }
 
 .search-btn:hover {
     background: linear-gradient(135deg, #B22222 0%, #8B0000 100%);
     transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(203, 65, 84, 0.3);
+}
+
+.search-btn:active {
+    transform: translateY(0);
 }
 
 /* Results Styles */
 .admin-results {
-    background: white;
+    background: var(--cream);
     border-radius: 12px;
     padding: 25px;
     box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
-    border: 2px solid var(--charcoal);
+    border: 2px solid var(--silver);
     margin-bottom: 20px;
 }
 
@@ -980,26 +1005,47 @@ textarea:focus {
     color: var(--charcoal);
     margin-bottom: 20px;
     text-align: center;
+    border-bottom: 2px solid var(--mustard);
+    padding-bottom: 10px;
 }
 
 .results-list {
     max-height: 300px;
     overflow-y: auto;
+    padding-right: 10px;
+}
+
+/* Scrollbar styling */
+.results-list::-webkit-scrollbar {
+    width: 6px;
+}
+
+.results-list::-webkit-scrollbar-track {
+    background: var(--silver);
+    border-radius: 3px;
+}
+
+.results-list::-webkit-scrollbar-thumb {
+    background: var(--crimson);
+    border-radius: 3px;
 }
 
 .result-item {
-    background: var(--cream);
+    background: white;
     border-radius: 8px;
     padding: 15px;
     margin-bottom: 10px;
     border-left: 4px solid var(--mustard);
     cursor: pointer;
     transition: all 0.3s ease;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
 }
 
 .result-item:hover {
-    background: #f0f0e0;
+    background: #f8f8f8;
     transform: translateX(5px);
+    border-left-color: var(--crimson);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
 }
 
 .result-item:last-child {
@@ -1011,6 +1057,7 @@ textarea:focus {
     font-size: 14px;
     line-height: 1.4;
     margin-bottom: 8px;
+    font-weight: 500;
 }
 
 .result-meta {
@@ -1018,39 +1065,52 @@ textarea:focus {
     justify-content: space-between;
     font-size: 12px;
     color: var(--charcoal);
-    opacity: 0.7;
+    opacity: 0.8;
+}
+
+.result-meta span:first-child {
+    background: var(--silver);
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-weight: 600;
 }
 
 /* Regenerate Styles */
 .admin-regenerate {
-    background: white;
+    background: var(--cream);
     border-radius: 12px;
     padding: 25px;
     box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
-    border: 2px solid var(--charcoal);
+    border: 2px solid var(--silver);
     text-align: center;
 }
 
 .admin-regenerate h4 {
     color: var(--charcoal);
     margin-bottom: 20px;
+    border-bottom: 2px solid var(--crimson);
+    padding-bottom: 10px;
 }
 
 .message-preview {
-    background: var(--cream);
+    background: white;
     border-radius: 8px;
     padding: 20px;
     margin-bottom: 20px;
     text-align: left;
+    border-left: 4px solid var(--crimson);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
 }
 
 .message-preview p {
     margin-bottom: 10px;
     color: var(--charcoal);
+    line-height: 1.5;
 }
 
 .message-preview strong {
     color: var(--crimson);
+    font-weight: 600;
 }
 
 .regenerate-btn {
@@ -1063,12 +1123,26 @@ textarea:focus {
     cursor: pointer;
     font-size: 16px;
     transition: all 0.3s ease;
+    box-shadow: 0 4px 12px rgba(203, 65, 84, 0.2);
 }
 
 .regenerate-btn:hover {
     background: linear-gradient(135deg, #B22222 0%, #8B0000 100%);
     transform: translateY(-2px);
     box-shadow: 0 6px 16px rgba(203, 65, 84, 0.3);
+}
+
+.regenerate-btn:active {
+    transform: translateY(0);
+}
+
+/* No Results State */
+.no-results {
+    text-align: center;
+    color: var(--charcoal);
+    padding: 40px 20px;
+    font-style: italic;
+    opacity: 0.7;
 }
 
 /* Responsive Design */
@@ -1089,6 +1163,16 @@ textarea:focus {
     .date-inputs span {
         display: none;
     }
+    
+    .result-meta {
+        flex-direction: column;
+        gap: 5px;
+        align-items: flex-start;
+    }
+    
+    .result-meta span:first-child {
+        margin-bottom: 5px;
+    }
 }
 
 @media (max-width: 480px) {
@@ -1105,19 +1189,17 @@ textarea:focus {
         padding-bottom: 15px;
     }
     
-    .result-meta {
-        flex-direction: column;
-        gap: 5px;
+    .search-input, .theme-select, .date-input {
+        padding: 10px 12px;
+        font-size: 14px;
+    }
+    
+    .search-btn, .regenerate-btn {
+        padding: 12px 20px;
+        font-size: 14px;
     }
 }
 
-/* 
-🔧 Stop Success Messages on Offline Page
-*/
-/* Hide success notifications when on offline page */
-body.offline-page .success-notification {
-    display: none !important;
-}
 
 
 
