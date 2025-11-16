@@ -28,7 +28,7 @@ function checkOnlineStatus() {
     // 🚨 CRITICAL FIX: Don't redirect immediately - let offline.html handle it
     if (!window.connectionState.isOnline && !window.location.pathname.includes('offline.html')) {
         console.log('🚨 Offline detected - redirecting to offline.html');
-        window.location.replace('./offline.html');
+        window.location.replace('offline.html');
         return false;
     }
     
@@ -71,7 +71,7 @@ function setupConnectionMonitoring() {
         // ✅ FIX: Only redirect if we're NOT already on offline.html
         if (!window.location.pathname.includes('offline.html')) {
             console.log('🚨 Immediate offline redirect triggered');
-            window.location.replace('./offline.html');
+            window.location.replace('offline.html');
         }
     });
     
@@ -81,7 +81,8 @@ function setupConnectionMonitoring() {
 // 🎯 REAL CONNECTION CHECK (like in offline.html)
 async function checkRealConnection() {
     try {
-        const response = await fetch('/MemoryinQR/online.txt?ts=' + Date.now(), {
+       // const response = await fetch('/MemoryinQR/online.txt?ts=' + Date.now(), {
+                 const response = await fetch('online.txt?ts=' + Date.now(), {
             method: 'HEAD',
             cache: 'no-store',
             credentials: 'omit'
