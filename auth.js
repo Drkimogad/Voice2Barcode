@@ -197,7 +197,7 @@ function initAuth() {
                         window.location.pathname === '/' || 
                         window.location.pathname.includes('/MemoryinQR/');
     
-    if (isOnAuthPage && !checkOnlineStatusWithFallback()) {
+    if (isOnAuthPage && !checkOnlineStatus()) {
         console.log('⏸️ Auth initialization paused - offline detected on auth page');
         return;
     }
