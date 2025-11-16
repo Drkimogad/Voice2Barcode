@@ -249,13 +249,9 @@ async function generateQRFromUrl(url) {
 
 
 // ========================================
-// TEXT MODE
-// ========================================
-
+// TEXT MODE - MODIFIED FOR FIRESTORE
 // ========================================
 // FIRESTORE FUNCTIONS
-// ========================================
-
 /**
  * Save message to Firestore and return document ID
  * @param {object} messageData - Message data to save
@@ -333,44 +329,6 @@ async function handleTextConversion() {
         handleError('Text conversion failed', error);
     }
 }
-
-// Replace the old generateQRFromText function
-async function generateQRFromDocumentId(documentId) {
-    try {
-        toggleLoading(true, 'Generating QR code...');
-        
-        // Create URL for your domain - we'll use memoryinqr.com for now
-        const qrContent = `https://memoryinqr.com/view.html?id=${documentId}`;
-        
-        // Store document ID for download reference
-        lastQRData = {
-            documentId: documentId,
-            type: 'firestore',
-            timestamp: getTimestamp()
-        };
-        
-        // Generate QR code with the URL
-        const canvas = document.getElementById('qrcode');
-        await QRCode.toCanvas(canvas, qrContent, {
-            width: DASHBOARD_CONFIG.QR_SIZE,
-            errorCorrectionLevel: DASHBOARD_CONFIG.QR_ERROR_CORRECTION
-        });
-        
-        // Enable download button
-        document.getElementById('downloadQRCodeBtn').disabled = false;
-        
-        updateStatus('QR code generated successfully!', 'success');
-        
-    } catch (error) {
-        handleError('QR generation failed', error);
-    } finally {
-        toggleLoading(false);
-    }
-}
-
-// ========================================
-// TEXT MODE - MODIFIED FOR FIRESTORE
-// ========================================
 
 async function handleTextConversion() {
     try {
