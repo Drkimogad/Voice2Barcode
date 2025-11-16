@@ -17,7 +17,7 @@ window.connectionState = {
     retryCount: 0
 };
 
-// 🎯 CORE OFFLINE CHECK FUNCTION (GLOBAL)
+// ✅ FIX: Synchronized offline redirect with execution stop
 function checkOnlineStatus() {
     const wasOnline = window.connectionState.isOnline;
     window.connectionState.isOnline = navigator.onLine;
@@ -25,11 +25,11 @@ function checkOnlineStatus() {
     
     console.log(`🌐 Connection Check: ${window.connectionState.isOnline ? 'ONLINE ✅' : 'OFFLINE ❌'}`);
     
-    // 🚨 CRITICAL FIX: Don't redirect immediately - let offline.html handle it
+    // 🚨 CRITICAL FIX: Stop execution if redirecting
     if (!window.connectionState.isOnline && !window.location.pathname.includes('offline.html')) {
         console.log('🚨 Offline detected - redirecting to offline.html');
         window.location.replace('offline.html');
-        return false;
+        throw new Error('OFFLINE_REDIRECT'); // 🛑 STOP EXECUTION
     }
     
     console.log('✅ Online - proceeding with normal operations');
@@ -53,15 +53,19 @@ function checkOnlineStatusWithFallback() {
 function setupConnectionMonitoring() {
     console.log('📡 Setting up connection event monitors...');
     
-    window.addEventListener('online', () => {
-        console.log('📶 Online event fired - checking real connection...');
-        window.connectionState.retryCount++;
-        
-        // ✅ FIX: Only redirect if we're NOT already on offline.html
-        if (!window.location.pathname.includes('offline.html')) {
-            checkOnlineStatus();
+ // ✅ FIX: Enhanced online event with real verification
+window.addEventListener('online', async () => {
+    console.log('📶 Online event fired - verifying real connection...');
+    
+    // Wait a moment for network stabilization
+    setTimeout(async () => {
+        const isReallyOnline = await checkRealConnection();
+        if (isReallyOnline && window.location.pathname.includes('offline.html')) {
+            console.log('✅ Real connection verified - redirecting to app...');
+            window.location.replace('index.html?recovered=' + Date.now());
         }
-    });
+    }, 1000);
+});
     
     window.addEventListener('offline', () => {
         console.log('📵 Offline event fired - updating state...');
@@ -156,11 +160,13 @@ async function handleSignup(e) {
     e.preventDefault();
     console.log('📝 SIGNUP: Processing signup request...');
     
-    // 🎯 CRITICAL OFFLINE CHECK
-    if (!checkOnlineStatusWithFallback()) {
-        console.log('❌ Signup blocked - offline detected');
-        return;
-    }
+// ✅ FIX: Use REAL connection check for all auth operations
+const isReallyOnline = await checkRealConnection();
+if (!isReallyOnline) {
+    console.log('❌ Signup blocked - real connection check failed');
+    updateStatus('No internet connection detected', 'error');
+    return;
+}
     
     const errorDisplay = document.getElementById('signupError');
     errorDisplay.textContent = '';
