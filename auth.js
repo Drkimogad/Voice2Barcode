@@ -7,46 +7,50 @@
 // AUTHENTICATION MODULE - OFFLINE FORTIFIED
 // ========================================
 
-// 🔧 GLOBAL OFFLINE MANAGEMENT SYSTEM
-console.log('🛠️ Initializing Offline Management System...');
+// ========================================
+// 🆕 SIMPLIFIED CONNECTION UI CONTROLLER
+// ========================================
 
-// Global connection state
-window.connectionState = {
-    isOnline: navigator.onLine,
-    lastChecked: new Date().toISOString(),
-    retryCount: 0
-};
-
-// ✅ FIX: Synchronized offline redirect with execution stop
-function checkOnlineStatus() {
-    const wasOnline = window.connectionState.isOnline;
-    window.connectionState.isOnline = navigator.onLine;
-    window.connectionState.lastChecked = new Date().toISOString();
+/**
+ * 🆕 ONLY controls UI - NEVER redirects
+ */
+function handleConnectionChange(isOnline) {
+    console.log(`🌐 UI Controller: ${isOnline ? 'ONLINE ✅' : 'OFFLINE ❌'}`);
     
-    console.log(`🌐 Connection Check: ${window.connectionState.isOnline ? 'ONLINE ✅' : 'OFFLINE ❌'}`);
-    
-    // 🆕 CRITICAL FIX: Only redirect from auth pages, NOT dashboard
-    const isOnAuthPage = window.location.pathname.includes('index.html') || 
-                         window.location.pathname === '/' || 
-                         window.location.pathname.includes('/MemoryinQR/');
-    const isOnOfflinePage = window.location.pathname.includes('offline.html');
-    
-    if (!window.connectionState.isOnline && isOnAuthPage && !isOnOfflinePage) {
-        console.log('🚨 Offline on auth page - redirecting to offline.html');
-        window.location.replace('offline.html');
-        throw new Error('OFFLINE_REDIRECT');
-    }
-    
-    // 🆕 On dashboard, stay there and handle offline gracefully
-    if (!window.connectionState.isOnline && !isOnAuthPage && !isOnOfflinePage) {
-        console.log('📴 Offline on dashboard - staying put with offline UI');
+    if (isOnline) {
+        hideOfflineDashboardUI();
+        // Process any pending offline messages
+        if (typeof processOfflineQueue === 'function') {
+            setTimeout(processOfflineQueue, 1000);
+        }
+    } else {
         showOfflineDashboardUI();
-        return false;
     }
-    
-    console.log('✅ Online - proceeding with normal operations');
-    return true;
 }
+
+/**
+ * 🆕 Initialize SIMPLE connection monitoring
+ */
+function initConnectionUI() {
+    console.log('📡 Initializing Connection UI Controller...');
+    
+    // Set initial state
+    handleConnectionChange(navigator.onLine);
+    
+    // Simple event listeners - ONLY for UI updates
+    window.addEventListener('online', () => {
+        console.log('📶 Online - Updating UI only');
+        handleConnectionChange(true);
+    });
+    
+    window.addEventListener('offline', () => {
+        console.log('📵 Offline - Updating UI only');
+        handleConnectionChange(false);
+    });
+    
+    console.log('✅ Connection UI Controller ready');
+}
+
 /**
  * 🆕 Show offline UI on dashboard without redirecting
  */
@@ -104,53 +108,6 @@ function hideOfflineDashboardUI() {
     });
 }
 
-// 🔄 CONNECTION EVENT HANDLERS
-function setupConnectionMonitoring() {
-    console.log('📡 Setting up SMART connection monitoring...');
-    
-    window.addEventListener('online', async () => {
-        console.log('📶 Online event fired - handling intelligently...');
-        window.connectionState.retryCount++;
-        
-        // 🆕 Hide offline UI on dashboard
-        hideOfflineDashboardUI();
-        
-        // 🆕 Process any offline queue
-        if (typeof processOfflineQueue === 'function') {
-            setTimeout(processOfflineQueue, 1000);
-        }
-        
-        // 🆕 Only redirect from offline.html, never from dashboard
-        if (window.location.pathname.includes('offline.html')) {
-            console.log('🔄 On offline page - redirecting back to app...');
-            setTimeout(() => {
-                window.location.replace('index.html?recovered=' + Date.now());
-            }, 2000);
-        }
-    });
-    
-    window.addEventListener('offline', () => {
-        console.log('📵 Offline event fired - handling intelligently...');
-        window.connectionState.isOnline = false;
-        window.connectionState.lastChecked = new Date().toISOString();
-        
-        // 🆕 CRITICAL: Only redirect from AUTH pages, never from dashboard
-        const isOnAuthPage = window.location.pathname.includes('index.html') || 
-                            window.location.pathname === '/' || 
-                            window.location.pathname.includes('/MemoryinQR/');
-        const isOnOfflinePage = window.location.pathname.includes('offline.html');
-        
-        if (isOnAuthPage && !isOnOfflinePage) {
-            console.log('🚨 Offline on auth page - redirecting to offline.html');
-            window.location.replace('offline.html');
-        } else if (!isOnAuthPage && !isOnOfflinePage) {
-            console.log('📴 Offline on dashboard - showing offline UI');
-            showOfflineDashboardUI();
-        }
-    });
-    
-    console.log('✅ SMART connection monitoring active');
-}
 
 // 🎯 REAL CONNECTION CHECK (like in offline.html)
 async function checkRealConnection() {
@@ -190,29 +147,20 @@ function setupFirebaseOfflinePersistence() {
 // EXISTING AUTH FUNCTIONS - OFFLINE FORTIFIED
 // ========================================
 function initAuth() {
-    console.log('🔐 INIT AUTH: Starting authentication initialization...');
+    console.log('🔐 INIT AUTH: Starting authentication...');
     
-    // 🆕 SMARTER OFFLINE CHECK - Don't stop initialization on dashboard
-    const isOnAuthPage = window.location.pathname.includes('index.html') || 
-                        window.location.pathname === '/' || 
-                        window.location.pathname.includes('/MemoryinQR/');
-    
-    if (isOnAuthPage && !checkOnlineStatus()) {
-        console.log('⏸️ Auth initialization paused - offline detected on auth page');
-        return;
-    }
-    
-    console.log('✅ Proceeding with auth initialization...');
+    // 🆕 Initialize SIMPLE UI controller
+    initConnectionUI();
     
     // Firebase auth state listener
     firebase.auth().onAuthStateChanged((user) => {
-        console.log(`👤 Auth State Changed: ${user ? 'User logged in: ' + user.email : 'No user'}`);
+        console.log(`👤 Auth State: ${user ? 'User: ' + user.email : 'No user'}`);
         
         if (user) {
-            console.log('✅ Firebase user authenticated, showing dashboard...');
+            console.log('✅ User authenticated, showing dashboard...');
             showDashboard();
         } else {
-            console.log('🔒 No Firebase user, showing auth UI...');
+            console.log('🔒 No user, showing auth UI...');
             showAuth();
         }
     });
@@ -233,10 +181,10 @@ async function handleSignup(e) {
     e.preventDefault();
     console.log('📝 SIGNUP: Processing signup request...');
     
-// ✅ FIX: Use REAL connection check for all auth operations
+// 🆕 SIMPLIFIED OFFLINE CHECK - Just show error, don't redirect
 const isReallyOnline = await checkRealConnection();
 if (!isReallyOnline) {
-    console.log('❌ Signup blocked - real connection check failed');
+    console.log('❌ Auth blocked - no connection');
     updateStatus('No internet connection detected', 'error');
     return;
 }
@@ -298,13 +246,13 @@ async function handleSignin(e) {
     e.preventDefault();
     console.log('🔑 SIGNIN: Processing signin request...');
     
-    // 🎯 FIX: Use REAL connection check, not just navigator.onLine
-    const isReallyOnline = await checkRealConnection();
-    if (!isReallyOnline) {
-        console.log('❌ Signin blocked - real connection check failed');
-        updateStatus('No internet connection detected', 'error');
-        return;
-    }
+   // 🆕 SIMPLIFIED OFFLINE CHECK - Just show error, don't redirect
+const isReallyOnline = await checkRealConnection();
+if (!isReallyOnline) {
+    console.log('❌ Auth blocked - no connection');
+    updateStatus('No internet connection detected', 'error');
+    return;
+}
     
     const errorDisplay = document.getElementById('signinError');
     errorDisplay.textContent = '';
@@ -477,29 +425,19 @@ function isAuthenticated() {
 }
 
 // ========================================
-// INITIALIZATION - OFFLINE FORTIFIED
+// 🆕 CLEAN INITIALIZATION
 // ========================================
+console.log('🚀 AUTH.JS: Loading...');
 
-console.log('🚀 AUTH.JS: Starting initialization process...');
-
-// 🎯 CRITICAL: Initialize connection monitoring immediately
-console.log('🔧 Phase 1: Setting up connection monitoring...');
-setupConnectionMonitoring();
-
-// 🎯 Initial connection check
-console.log('🔧 Phase 2: Performing initial connection check...');
-checkOnlineStatus();
-
-// Initialize auth when DOM is ready
+// Initialize when DOM is ready
 if (document.readyState === 'loading') {
-    console.log('📄 DOM loading - waiting for DOMContentLoaded...');
     document.addEventListener('DOMContentLoaded', () => {
-        console.log('✅ DOM Content Loaded - initializing auth...');
+        console.log('✅ DOM Ready - Starting auth...');
         initAuth();
     });
 } else {
-    console.log('✅ DOM already ready - initializing auth immediately...');
+    console.log('✅ DOM Already Ready - Starting auth...');
     initAuth();
 }
 
-console.log('✅ Auth.js loaded successfully - offline system active');
+console.log('✅ Auth.js loaded - UI controller active');
