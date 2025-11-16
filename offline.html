@@ -392,10 +392,14 @@ function fetchWithTimeout(resource, options = {}) {
 }
 
 function verifyRealConnection() {
-  // Uses a tiny network-only endpoint that returns "OK" (online.txt)
-  // Add a cache-busting timestamp
-  const url = '/MemoryinQR/online.txt?ts=' + Date.now(); // ✅ ABSOLUTE path
-  console.log('🌐 verifyRealConnection -> fetching', url);
+    
+// ✅ FIX: Environment-aware online.txt path
+const isGitHub = window.location.hostname.includes('github.io');
+const isFirebase = window.location.hostname.includes('web.app') || 
+                  window.location.hostname.includes('firebaseapp.com');
+const basePath = isGitHub ? '/MemoryinQR' : '';
+const url = basePath + '/online.txt?ts=' + Date.now();
+console.log('🌐 verifyRealConnection -> fetching', url);
 
   return fetchWithTimeout(url, { cache: 'no-store', credentials: 'omit' })
     .then(resp => {
