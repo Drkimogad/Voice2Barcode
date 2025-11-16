@@ -42,6 +42,11 @@ function getPath(path) {
     const root = ENV_CONFIG[CURRENT_ENV].root;
     return root + path.replace(/^\//, ''); // Remove leading slash if present
 }
+// ✅ FIX: Environment-aware path resolver for runtime
+function getRuntimePath(path) {
+    const root = ENV_CONFIG[CURRENT_ENV].root;
+    return root + path.replace(/^\//, '');
+}
 
 // Core app assets - Environment-aware paths
 const urlsToCache = [
@@ -173,8 +178,9 @@ self.addEventListener('fetch', (event) => {
           return cached;
         }
         // ✅ FIXED: Final fallback - ABSOLUTE PATH
-        const offline = await caches.match('/MemoryinQR/offline.html');
-        return offline || new Response('<h1>Offline</h1>', { headers: { 'Content-Type': 'text/html' } });
+// ✅ FIX: Environment-aware offline page
+     const offline = await caches.match(getRuntimePath('offline.html'));
+      return offline || new Response('<h1>Offline</h1>', { headers: { 'Content-Type': 'text/html' } });
       }
     })());
     return;
@@ -229,8 +235,9 @@ self.addEventListener('fetch', (event) => {
     } catch (err) {
       // ✅ FIXED: Image fallback - ABSOLUTE PATH
       if (request.destination === 'image') {
-        const fallback = await caches.match('/MemoryinQR/icons/icon-192x192.png');
-        if (fallback) return fallback;
+// ✅ FIX: Environment-aware fallback image
+   const fallback = await caches.match(getRuntimePath('icons/icon-192x192.png'));
+    if (fallback) return fallback;
       }
       return Response.error();
     }
