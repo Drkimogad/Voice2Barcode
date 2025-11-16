@@ -23,6 +23,8 @@ let isProcessing = false;
  */
 function initDashboard() {
     console.log('📊 Initializing dashboard...');
+  // 🆕 ADD THIS LINE: Start offline queue monitoring
+    startOfflineQueueMonitoring();
     
     // Setup mode switching
     setupModeSwitching();
@@ -108,6 +110,31 @@ function cleanupMode() {
     // Stop scanner
     if (html5QrCode && html5QrCode.isScanning) {
         html5QrCode.stop().catch(err => console.error('Scanner stop error:', err));
+    }
+}
+
+/**
+ * 🆕 Monitor connection and sync offline queue
+ */
+function startOfflineQueueMonitoring() {
+    // Check for pending sync on startup
+    const queueStatus = getOfflineQueueStatus();
+    if (queueStatus.hasPending && navigator.onLine) {
+        console.log('🔄 Found pending offline messages, syncing...');
+        processOfflineQueue();
+    }
+    
+    // Sync when coming back online
+    window.addEventListener('online', () => {
+        setTimeout(() => {
+            console.log('📶 Online - checking for offline queue...');
+            processOfflineQueue();
+        }, 2000); // Wait for stable connection
+    });
+    
+    // Show queue status in UI
+    if (queueStatus.hasPending) {
+        updateStatus(`${queueStatus.pending} messages waiting to sync`, 'warning');
     }
 }
 
