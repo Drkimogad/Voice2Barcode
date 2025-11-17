@@ -19,8 +19,8 @@ Your app code (auth.js, offline.html) stays exactly the same - they use relative
 // SERVICE WORKER - MemoryinQR (Multi-Platform)
 // Version: v5.4 - GitHub Pages & Firebase Compatible
 // ========================================
-const CACHE_NAME = 'memoryinqr-cache-v5.7';
-const OFFLINE_CACHE = 'memoryinqr-offline-v4.5';
+const CACHE_NAME = 'memoryinqr-cache-v5.6';
+const OFFLINE_CACHE = 'memoryinqr-offline-v4.6';
 
 // ✅ ONE-LINE SWITCH - Change this for deployment!
 const CURRENT_ENV = 'GITHUB'; // Change to 'FIREBASE' for Firebase hosting
@@ -143,11 +143,6 @@ self.addEventListener('fetch', (event) => {
 
   // skip non-GET or chrome-extension requests
   if (request.method !== 'GET' || url.protocol === 'chrome-extension:') {
-    return;
-  }
-
-  // ✅ FIXED: Skip favicon to avoid 404 errors
-  if (url.pathname.endsWith('/favicon.ico')) { //Absolute path from root 
     return;
   }
 
