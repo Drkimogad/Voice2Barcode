@@ -17,63 +17,49 @@ Your app code (auth.js, offline.html) stays exactly the same - they use relative
 
 // ========================================
 // SERVICE WORKER - MemoryinQR (Multi-Platform)
-// Version: v5.4 - GitHub Pages & Firebase Compatible
+// Version: v5.8 - With Debug Logging
 // ========================================
-const CACHE_NAME = 'memoryinqr-cache-v5.7';
-const OFFLINE_CACHE = 'memoryinqr-offline-v4.7';
+const CACHE_NAME = 'memoryinqr-cache-v5.8';
+const OFFLINE_CACHE = 'memoryinqr-offline-v4.8';
+const CURRENT_ENV = 'GITHUB';
 
-// ✅ ONE-LINE SWITCH - Change this for deployment!
-const CURRENT_ENV = 'GITHUB'; // Change to 'FIREBASE' for Firebase hosting
-//const CURRENT_ENV = 'FIREBASE';
+console.log('🛠️ SERVICE WORKER: Script loading...');
 
-
-// ✅ ENVIRONMENT CONFIG
 const ENV_CONFIG = {
-    GITHUB: {
-        root: '/MemoryinQR/',  // ✅ GitHub Pages subdirectory
-    },
-    FIREBASE: {
-        root: '/',  // ✅ Firebase root domain
-    }
+    GITHUB: { root: '/MemoryinQR/' },
+    FIREBASE: { root: '/' }
 };
 
-// ✅ Helper function to get correct paths
 function getPath(path) {
     const root = ENV_CONFIG[CURRENT_ENV].root;
-    return root + path.replace(/^\//, ''); // Remove leading slash if present
+    return root + path.replace(/^\//, '');
 }
-// ✅ FIX: Environment-aware path resolver for runtime
+
 function getRuntimePath(path) {
     const root = ENV_CONFIG[CURRENT_ENV].root;
     return root + path.replace(/^\//, '');
 }
-// ✅ ADD THIS FUNCTION TO SERVICE WORKER
+
 function fetchWithTimeout(resource, timeout = 7000) {
-  const controller = new AbortController();
-  const id = setTimeout(() => controller.abort(), timeout);
-  return fetch(resource, { 
-    signal: controller.signal 
-  }).finally(() => clearTimeout(id));
+    console.log('⏱️ fetchWithTimeout:', resource, timeout);
+    const controller = new AbortController();
+    const id = setTimeout(() => {
+        console.log('⏰ Fetch timeout reached');
+        controller.abort();
+    }, timeout);
+    return fetch(resource, { signal: controller.signal })
+        .finally(() => {
+            clearTimeout(id);
+            console.log('🧹 Fetch timeout cleared');
+        });
 }
 
-// Core app assets - Environment-aware paths
 const urlsToCache = [
-    'index.html',
-    'offline.html', 
-    'auth.js',
-    'dashboard.js',
-    'utils.js',
-    'authstyles.css',
-    'dashboardstyles.css',
-    'manifest.json',
-    'favicon.ico',
-    'icons/icon-192x192.png',
-    'icons/icon-512x512.png',
-    'privacy.html',
-    'terms.html'
-].map(getPath); // ✅ Automatically applies correct root
+    'index.html', 'offline.html', 'auth.js', 'dashboard.js', 'utils.js',
+    'authstyles.css', 'dashboardstyles.css', 'manifest.json', 'favicon.ico',
+    'icons/icon-192x192.png', 'icons/icon-512x512.png', 'privacy.html', 'terms.html'
+].map(getPath);
 
-// External libs (unchanged)
 const EXTERNAL_LIBS = [
     'https://cdn.jsdelivr.net/npm/qrcode@1.5.0/build/qrcode.min.js',
     'https://unpkg.com/html5-qrcode',
@@ -82,18 +68,19 @@ const EXTERNAL_LIBS = [
     'https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js'
 ];
 
-// ✅ FIXED INSTALL: Individual caching with try/catch
+// INSTALL
 self.addEventListener('install', (event) => {
-    console.log(`🛠️ SERVICE WORKER: Installing for ${CURRENT_ENV}...`);
+    console.log('🛠️ SERVICE WORKER: Installing for', CURRENT_ENV);
     self.skipWaiting();
 
     event.waitUntil((async () => {
         try {
             const cache = await caches.open(CACHE_NAME);
+            console.log('📦 Opening cache:', CACHE_NAME);
             
-            // ✅ CACHE LOCAL ASSETS INDIVIDUALLY
             for (const url of urlsToCache) {
                 try {
+                    console.log('🔍 Attempting to cache:', url);
                     await cache.add(new Request(url, { mode: 'same-origin' }));
                     console.log('✅ Cached:', url);
                 } catch (err) {
@@ -101,10 +88,12 @@ self.addEventListener('install', (event) => {
                 }
             }
 
-            // ✅ CACHE EXTERNAL LIBS INDIVIDUALLY  
             const extCache = await caches.open(OFFLINE_CACHE);
+            console.log('📦 Opening external cache:', OFFLINE_CACHE);
+            
             for (const lib of EXTERNAL_LIBS) {
                 try {
+                    console.log('🔍 Attempting to cache external:', lib);
                     await extCache.add(new Request(lib, { mode: 'no-cors', credentials: 'omit' }));
                     console.log('✅ Cached external:', lib);
                 } catch (err) {
@@ -112,161 +101,159 @@ self.addEventListener('install', (event) => {
                 }
             }
             
-            console.log(`✅ Installation completed for ${CURRENT_ENV}`);
+            console.log('✅ Installation completed');
         } catch (err) {
             console.error('❌ Install failed', err);
         }
     })());
 });
 
-
-// ACTIVATE: clean old caches and take control
+// ACTIVATE
 self.addEventListener('activate', (event) => {
-  console.log('🔄 SERVICE WORKER: Activating...');
-  event.waitUntil((async () => {
-    try {
-      const keys = await caches.keys();
-      await Promise.all(keys.map(k => {
-        if (k !== CACHE_NAME && k !== OFFLINE_CACHE) {
-          console.log('🗑️ Deleting old cache:', k);
-          return caches.delete(k);
+    console.log('🔄 SERVICE WORKER: Activating...');
+    event.waitUntil((async () => {
+        try {
+            const keys = await caches.keys();
+            console.log('🗑️ Checking old caches:', keys);
+            
+            await Promise.all(keys.map(k => {
+                if (k !== CACHE_NAME && k !== OFFLINE_CACHE) {
+                    console.log('🗑️ Deleting old cache:', k);
+                    return caches.delete(k);
+                }
+            }));
+            
+            await self.clients.claim();
+            console.log('✅ Service worker activated and controlling clients');
+            
+        } catch (err) {
+            console.error('❌ Activate failed', err);
         }
-      }));
-      await self.clients.claim();
-      console.log('✅ Service worker activated');
-      // notify clients if needed
-      const allClients = await self.clients.matchAll();
-      allClients.forEach(c => c.postMessage({ type: 'SW_ACTIVATED' }));
-    } catch (err) {
-      console.error('❌ Activate failed', err);
-    }
-  })());
+    })());
 });
 
-// FETCH: network-first for navigations, stale-while-revalidate for external libs,
-// cache-first for static assets with network update fallback.
+// FETCH
 self.addEventListener('fetch', (event) => {
-  const request = event.request;
-  const url = new URL(request.url);
+    const request = event.request;
+    const url = new URL(request.url);
 
-  // skip non-GET or chrome-extension requests
-  if (request.method !== 'GET' || url.protocol === 'chrome-extension:') {
-    return;
-  }
+    console.log('🌐 FETCH:', request.method, url.pathname, 'mode:', request.mode);
 
-  // ✅ FIXED: Bypass SW for online.txt - SIMPLIFIED
-  if (url.pathname.endsWith('/online.txt')) {
-    event.respondWith(
-      fetch(request, { cache: 'no-store', credentials: 'omit' })
-    );
-    return;
-  }
+    if (request.method !== 'GET' || url.protocol === 'chrome-extension:') {
+        console.log('⏩ Skipping non-GET request');
+        return;
+    }
 
-  // ✅ FIXED: NAVIGATION REQUESTS - PROPER STRUCTURE
-  if (request.mode === 'navigate') {
-    event.respondWith((async () => {
-      try {
-        // Try network first
-        const networkResponse = await fetchWithTimeout(request, 7000);
-        // Only cache valid 200/html responses
-        if (networkResponse && networkResponse.status === 200 && networkResponse.type !== 'opaque') {
-          const cache = await caches.open(CACHE_NAME);
-          cache.put(request, networkResponse.clone());
-        }
-        return networkResponse;
-      } catch (networkError) {
-        // Network failed -> try cache
-        const cached = await caches.match(request);
-        if (cached) {
-          return cached;
-        }
-        // ✅ FIXED: Final fallback - ABSOLUTE PATH
-// ✅ FIX: Environment-aware offline page
-     const offline = await caches.match(getRuntimePath('offline.html'));
-      return offline || new Response('<h1>Offline</h1>', { headers: { 'Content-Type': 'text/html' } });
-      }
-    })());
-    return;
-  }
+    // ONLINE.TXT BYPASS
+    if (url.pathname.endsWith('/online.txt')) {
+        console.log('🔄 Bypassing SW for online.txt');
+        event.respondWith(
+            fetch(request, { cache: 'no-store', credentials: 'omit' })
+        );
+        return;
+    }
 
-  // ✅ FIXED: EXTERNAL LIBRARIES
-  if (EXTERNAL_LIBS.some(lib => request.url.startsWith(lib))) {
-    event.respondWith((async () => {
-      const cache = await caches.open(OFFLINE_CACHE);
-      const cached = await cache.match(request);
-      // Trigger background update if online
-      if (navigator.onLine) {
-        fetch(request).then(resp => {
-          if (resp && resp.status === 200) {
-            cache.put(request, resp.clone());
-          }
-        }).catch(() => { /* silent fail */ });
-      }
-      return cached || fetch(request);
-    })());
-    return;
-  }
-
-  // ✅ FIXED: STATIC ASSETS
-  event.respondWith((async () => {
-    const cachedResponse = await caches.match(request);
-    if (cachedResponse) {
-      // Background update
-      if (navigator.onLine) {
-        fetch(request).then(async (networkResp) => {
-          try {
-            if (networkResp && networkResp.status === 200) {
-              const cache = await caches.open(CACHE_NAME);
-              cache.put(request, networkResp.clone());
+    // NAVIGATION REQUESTS
+    if (request.mode === 'navigate') {
+        console.log('🧭 NAVIGATION REQUEST:', url.pathname);
+        
+        event.respondWith((async () => {
+            try {
+                console.log('🌐 Attempting network fetch for navigation');
+                const networkResponse = await fetchWithTimeout(request, 7000);
+                console.log('📡 Network response status:', networkResponse.status);
+                
+                if (networkResponse && networkResponse.status === 200 && networkResponse.type !== 'opaque') {
+                    const cache = await caches.open(CACHE_NAME);
+                    cache.put(request, networkResponse.clone());
+                    console.log('💾 Cached network response');
+                }
+                return networkResponse;
+                
+            } catch (networkError) {
+                console.log('❌ Navigation network failed:', networkError.message);
+                
+                const cached = await caches.match(request);
+                console.log('📦 Cache check result:', cached ? 'FOUND' : 'NOT FOUND');
+                
+                if (cached) {
+                    console.log('✅ Serving from cache');
+                    return cached;
+                }
+                
+                console.log('🆘 Serving offline.html fallback');
+                const offline = await caches.match(getRuntimePath('offline.html'));
+                return offline || new Response('<h1>Offline</h1>', { 
+                    headers: { 'Content-Type': 'text/html' } 
+                });
             }
-          } catch (e) {
-            // ignore errors
-          }
-        }).catch(() => {});
-      }
-      return cachedResponse;
+        })());
+        return;
     }
 
-    // No cache -> try network
-    try {
-      const networkResp = await fetch(request);
-      if (networkResp && networkResp.status === 200) {
-        const cache = await caches.open(CACHE_NAME);
-        cache.put(request, networkResp.clone());
-      }
-      return networkResp;
-    } catch (err) {
-      // ✅ FIXED: Image fallback - ABSOLUTE PATH
-      if (request.destination === 'image') {
-// ✅ FIX: Environment-aware fallback image
-   const fallback = await caches.match(getRuntimePath('icons/icon-192x192.png'));
-    if (fallback) return fallback;
-      }
-      return Response.error();
+    // EXTERNAL LIBRARIES
+    if (EXTERNAL_LIBS.some(lib => request.url.startsWith(lib))) {
+        console.log('📚 External library request:', request.url);
+        event.respondWith((async () => {
+            const cache = await caches.open(OFFLINE_CACHE);
+            const cached = await cache.match(request);
+            console.log('📦 External lib cached:', cached ? 'YES' : 'NO');
+            
+            if (navigator.onLine) {
+                fetch(request).then(resp => {
+                    if (resp && resp.status === 200) {
+                        cache.put(request, resp.clone());
+                        console.log('🔄 Updated external lib cache');
+                    }
+                }).catch(() => {});
+            }
+            return cached || fetch(request);
+        })());
+        return;
     }
-  })());
+
+    // STATIC ASSETS
+    console.log('📄 Static asset request:', request.destination, url.pathname);
+    event.respondWith((async () => {
+        const cachedResponse = await caches.match(request);
+        console.log('📦 Static asset cached:', cachedResponse ? 'YES' : 'NO');
+        
+        if (cachedResponse) {
+            if (navigator.onLine) {
+                fetch(request).then(async (networkResp) => {
+                    try {
+                        if (networkResp && networkResp.status === 200) {
+                            const cache = await caches.open(CACHE_NAME);
+                            cache.put(request, networkResp.clone());
+                            console.log('🔄 Updated static asset cache');
+                        }
+                    } catch (e) {}
+                }).catch(() => {});
+            }
+            return cachedResponse;
+        }
+
+        try {
+            console.log('🌐 Fetching static asset from network');
+            const networkResp = await fetch(request);
+            if (networkResp && networkResp.status === 200) {
+                const cache = await caches.open(CACHE_NAME);
+                cache.put(request, networkResp.clone());
+                console.log('💾 Cached new static asset');
+            }
+            return networkResp;
+        } catch (err) {
+            console.log('❌ Static asset fetch failed:', err.message);
+            return Response.error();
+        }
+    })());
 });
 
-// MESSAGE handling (skip waiting or other commands)
 self.addEventListener('message', (event) => {
-  const data = event.data;
-  if (!data) return;
-
-  if (data.type === 'SKIP_WAITING') {
-    self.skipWaiting();
-  }
-
-  if (data.type === 'TRIGGER_SYNC') {
-    // placeholder: trigger sync logic if used
-    event.waitUntil(Promise.resolve());
-  }
+    console.log('📨 Service Worker message:', event.data);
+    if (event.data.type === 'SKIP_WAITING') {
+        self.skipWaiting();
+    }
 });
 
-// Optional: notify clients on controllerchange (for updates)
-self.addEventListener('controllerchange', () => {
-  self.clients.matchAll().then(clients => {
-    clients.forEach(c => c.postMessage({ type: 'UPDATE_AVAILABLE' }));
-  });
-});
-
-console.log('✅ MemoryinQR Service Worker (network-first) loaded');
+console.log('✅ MemoryinQR Service Worker loaded with debug logging');
