@@ -289,28 +289,27 @@ async function handleLogout() {
     console.log('🚪 LOGOUT: Processing logout request...');
     
     try {
-        // Clear local session data
         localStorage.removeItem('lastActivePage');
         console.log('🧹 Local storage cleaned');
         
-        // 🎯 OFFLINE-AWARE LOGOUT
         if (navigator.onLine) {
             console.log('🌐 Online logout - signing out from Firebase...');
             await firebase.auth().signOut();
             console.log('✅ Firebase user logged out');
-            updateStatus('Logged out successfully', 'success');
         } else {
             console.log('📴 Offline logout - clearing local data only');
             console.log('✅ Local data cleared');
-            updateStatus('Logged out (offline mode)', 'success');
         }
         
-        // Firebase auth state listener will handle UI automatically
-        console.log('✅ Logout process complete');
+        // 🆕 FORCE NAVIGATION WHEN OFFLINE
+        if (!navigator.onLine) {
+            console.log('🔄 Offline logout - forcing navigation to trigger service worker');
+            window.location.reload(); // Simplest solution
+        }
+        // If online, Firebase auth listener will handle UI automatically
         
     } catch (error) {
         console.error('❌ Logout error:', error);
-        updateStatus('Logout completed', 'success');
     }
 }
 
