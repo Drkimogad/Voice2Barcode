@@ -104,7 +104,7 @@ function hideOfflineDashboardUI() {
 async function checkRealConnection() {
     try {
         const isGitHub = window.location.hostname.includes('github.io');
-        const basePath = isGitHub ? '/MemoryinQR' : '/';
+        const basePath = isGitHub ? '/MemoryinQR/' : '/';
         const url = basePath + 'online.txt?ts=' + Date.now();
         
         console.log('🌐 Checking connection at:', url);
