@@ -150,6 +150,15 @@ function setupFirebaseOfflinePersistence() {
         });
 }
 
+// 2 helpers 
+function getCurrentUser() {
+    return firebase.auth().currentUser;
+}
+
+function isAuthenticated() {
+    return !!firebase.auth().currentUser;
+}
+
 // ========================================
 // EXISTING AUTH FUNCTIONS - OFFLINE FORTIFIED
 // ========================================
@@ -162,6 +171,16 @@ function initAuth() {
     // Firebase auth state listener
     firebase.auth().onAuthStateChanged((user) => {
         console.log(`👤 Auth State: ${user ? 'User: ' + user.email : 'No user'}`);
+        
+        // RECOVERY AFTER OFFLINE LOGOUT
+    const wasOfflineLogout = localStorage.getItem('signedOutOffline');
+
+    if (wasOfflineLogout && navigator.onLine && !user) {
+        console.log('🔁 Recovering from offline logout');
+        localStorage.removeItem('signedOutOffline');
+        showAuth();
+        return;
+    }
         
         if (user) {
             console.log('✅ User authenticated, showing dashboard...');
@@ -182,115 +201,109 @@ function initAuth() {
 }
 
 /**
- * Handle user signup - OFFLINE FORTIFIED
+ * Handle user signup - updated
  */
 async function handleSignup(e) {
     e.preventDefault();
     console.log('📝 SIGNUP: Processing signup request...');
-    
-// 🆕 SIMPLIFIED OFFLINE CHECK - Just show error, don't redirect
-const isReallyOnline = await checkRealConnection();
-if (!isReallyOnline) {
-    console.log('❌ Auth blocked - no connection');
-    updateStatus('No internet connection detected', 'error');
-    return;
-}
-    
+
     const errorDisplay = document.getElementById('signupError');
     errorDisplay.textContent = '';
-    
+
+    const isReallyOnline = await checkRealConnection();
+    if (!isReallyOnline) {
+        updateStatus('Signup requires internet connection', 'error');
+        console.log('❌ Cannot signup offline');
+        return;
+    }
+
     try {
-        console.log('✅ Online confirmed - proceeding with signup...');
-        
-        // Get form values
         const username = document.getElementById('signupUsername').value.trim();
         const email = document.getElementById('signupEmail').value.trim();
         const password = document.getElementById('signupPassword').value;
-        
-        console.log(`📧 Signup attempt for: ${email}, Username: ${username}`);
-        
-        // Validation
+
         if (!username || !email || !password) {
             throw new Error('All fields are required');
         }
-        
         if (username.length < 3) {
             throw new Error('Username must be at least 3 characters');
         }
-        
         if (!isValidEmail(email)) {
-            throw new Error('Please enter a valid email address');
+            throw new Error('Invalid email');
         }
-        
         if (password.length < 6) {
             throw new Error('Password must be at least 6 characters');
         }
-        
-        // Firebase Auth
+
         console.log('🔥 Creating Firebase user...');
-        const userCredential = await firebase.auth().createUserWithEmailAndPassword(email, password);
-        console.log('✅ Firebase user registered:', email);
-        
-        // Clear form
+        await firebase.auth().createUserWithEmailAndPassword(email, password);
+
         document.getElementById('signupForm').reset();
-        
-        // Show success and switch to signin
-        updateStatus('Account created successfully! Please sign in.', 'success');
+        updateStatus('Account created! Please sign in.', 'success');
+
         setTimeout(() => toggleAuthView('signin'), 1500);
-        
-        console.log('✅ User registration complete');
-        
-    } catch (error) {
-        console.error('❌ Signup error:', error);
-        errorDisplay.textContent = error.message;
+    } catch (err) {
+        console.error('❌ Signup error:', err);
+        errorDisplay.textContent = err.message;
     }
 }
 
+
 /**
- * Handle user signin - OFFLINE FORTIFIED  
+ * Handle user signin - updated
  */
 async function handleSignin(e) {
     e.preventDefault();
     console.log('🔑 SIGNIN: Processing signin request...');
-    
-   // 🆕 SIMPLIFIED OFFLINE CHECK - Just show error, don't redirect
-const isReallyOnline = await checkRealConnection();
-if (!isReallyOnline) {
-    console.log('❌ Auth blocked - no connection');
-    updateStatus('No internet connection detected', 'error');
-    return;
-}
-    
+
     const errorDisplay = document.getElementById('signinError');
     errorDisplay.textContent = '';
-    
+
+    const isReallyOnline = await checkRealConnection();
+    console.log('🌐 Network check:', isReallyOnline ? 'ONLINE' : 'OFFLINE');
+
+    // ================================
+    // OFFLINE SIGN-IN LOGIC (Option C)
+    // ================================
+    if (!isReallyOnline) {
+        if (isAuthenticated()) {
+            console.log('🔐 Cached user available → allowing offline dashboard');
+            updateStatus('Offline mode — using saved session', 'info');
+            showDashboard();
+            return;
+        }
+
+        console.log('⛔ No cached session → cannot sign in offline');
+        updateStatus(
+            "You've logged out. Signing in requires internet. Redirecting...",
+            'error'
+        );
+
+        setTimeout(() => {
+            window.location.href = './offline.html';
+        }, 1500);
+
+        return;
+    }
+
+    // ================================
+    // NORMAL ONLINE SIGN-IN
+    // ================================
     try {
-        console.log('✅ Online confirmed - proceeding with signin...');
-        
-        // Get form values
         const email = document.getElementById('signinEmail').value.trim();
         const password = document.getElementById('signinPassword').value;
-        
-        console.log(`🔑 Signin attempt for: ${email}`);
-        
-        // Validation
+
         if (!email || !password) {
             throw new Error('All fields are required');
         }
-        
-        // Firebase Auth
-        console.log('🔥 Authenticating with Firebase...');
-        const userCredential = await firebase.auth().signInWithEmailAndPassword(email, password);
-        console.log('✅ Firebase user authenticated:', email);
-        
-        // Clear form
+
+        console.log(`🔥 Authenticating with Firebase for: ${email}`);
+        await firebase.auth().signInWithEmailAndPassword(email, password);
+
         document.getElementById('signinForm').reset();
-        
-        // Show dashboard
         updateStatus('Welcome back!', 'success');
-        
-        console.log('✅ User signin complete');
-        
+
+        console.log('✅ Online signin complete');
     } catch (error) {
         console.error('❌ Firebase signin error:', error);
         errorDisplay.textContent = error.message;
@@ -298,36 +311,41 @@ if (!isReallyOnline) {
     }
 }
 
+
 /**
- * Handle user logout - OFFLINE FORTIFIED
+ * Handle user logout - updated
  */
 async function handleLogout() {
     console.log('🚪 LOGOUT: Processing logout request...');
-    
+
     try {
         localStorage.removeItem('lastActivePage');
-        console.log('🧹 Local storage cleaned');
-        
+
         if (navigator.onLine) {
-            console.log('🌐 Online logout - signing out from Firebase...');
+            console.log('🌐 Online logout — signing out from Firebase');
             await firebase.auth().signOut();
-            console.log('✅ Firebase user logged out');
         } else {
-            console.log('📴 Offline logout - clearing local data only');
-            console.log('✅ Local data cleared');
+            console.log('📴 Offline logout — purging cached state');
+
+            // Mark offline logout for recovery
+            localStorage.setItem('signedOutOffline', 'true');
+
+            // Clear Firebase local cached session
+            try {
+                await firebase.auth().signOut(); 
+            } catch (err) {
+                // Ignore — Firebase cannot reach server offline
+            }
+
+            // Force SW to serve offline.html
+            window.location.reload();
+            return;
         }
-        
-        // 🆕 FORCE NAVIGATION WHEN OFFLINE
-        if (!navigator.onLine) {
-            console.log('🔄 Offline logout - forcing navigation to trigger service worker');
-            window.location.reload(); // Simplest solution
-        }
-        // If online, Firebase auth listener will handle UI automatically
-        
     } catch (error) {
         console.error('❌ Logout error:', error);
     }
 }
+
 
 // ========================================
 // EXISTING AUTH FUNCTIONS (UNCHANGED)
@@ -420,14 +438,6 @@ function toggleAuthView(view) {
         document.getElementById('signinError').textContent = '';
         console.log('✅ Signin view activated');
     }
-}
-
-function getCurrentUser() {
-    return firebase.auth().currentUser;
-}
-
-function isAuthenticated() {
-    return !!firebase.auth().currentUser;
 }
 
 // ========================================
