@@ -398,8 +398,10 @@ function verifyRealConnection() {
 const isGitHub = window.location.hostname.includes('github.io');
 const isFirebase = window.location.hostname.includes('web.app') || 
                   window.location.hostname.includes('firebaseapp.com');
-const basePath = isGitHub ? '/MemoryinQR' : '';
+const basePath = isGitHub ? '/MemoryinQR/' : '';
 const url = basePath + 'online.txt?ts=' + Date.now();
+//const url = (basePath + '/online.txt?ts=' + Date.now()).replace('//', '/');
+
 console.log('🌐 verifyRealConnection -> fetching', url);
 
   return fetchWithTimeout(url, { cache: 'no-store', credentials: 'omit' })
