@@ -443,10 +443,15 @@ function showOnlineNotificationAndRedirect() {
   }, 1000);
 }
 
+
 function performRedirect() {
   console.log('🔄 Redirecting to index.html (replace history)');
+    
   // Use replace to avoid back navigation to offline page
-  window.location.replace('index.html?recovered=' + Date.now());
+const isGitHub = window.location.hostname.includes('github.io');
+const basePath = isGitHub ? '/MemoryinQR/' : '/';
+
+window.location.replace(basePath + 'index.html?recovered=' + Date.now());
 }
 
 // ===== MANUAL CONNECTION CHECK =====
@@ -488,23 +493,25 @@ function startAutoConnectionChecking() {
   console.log('⏰ Starting automatic connection checks every', AUTO_CHECK_INTERVAL / 1000, 's');
 
   // Update the per-second countdown shown near retry info
-  function startNextCheckCountdown(seconds) {
-    if (!elements.retryCount && !elements.countdownDisplay) return;
+function startCountdown(seconds, displayEl, onComplete) {
     let left = seconds;
-    if (elements.countdownDisplay) elements.countdownDisplay.textContent = left;
-    // Clear old interval
+    if (displayEl) displayEl.textContent = left;
     if (countdownInterval) clearInterval(countdownInterval);
+
     countdownInterval = setInterval(() => {
-      left--;
-      if (elements.countdownDisplay) elements.countdownDisplay.textContent = left;
-      if (left <= 0) {
-        clearInterval(countdownInterval);
-      }
+        left--;
+        if (displayEl) displayEl.textContent = left;
+        if (left <= 0) {
+            clearInterval(countdownInterval);
+            countdownInterval = null;
+            if (onComplete) onComplete();
+        }
     }, 1000);
-  }
+}
+
 
   // Immediately show countdown for first run
-  startNextCheckCountdown(AUTO_CHECK_INTERVAL / 1000);
+startCountdown(AUTO_CHECK_INTERVAL / 1000, elements.countdownDisplay);
 
   // clear existing interval if present
   if (checkInterval) clearInterval(checkInterval);
@@ -578,6 +585,23 @@ function setupEventListeners() {
 // ===== INITIALIZATION =====
 function initializeOfflinePage() {
   console.log('🚀 Initializing offline page recovery system (single init)');
+
+    // ===== CONTEXTUAL OFFLINE MESSAGE =====
+function showOfflineSigninNotice() {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('reason') === 'signin') {
+        console.log('⚠️ User tried to signin offline');
+        if (elements.connectionStatus) {
+            elements.connectionStatus.textContent = '❌ You\'ve logged out. Signing in requires internet. Try later.';
+        }
+        // Optional: auto-hide after 5s
+        setTimeout(() => {
+            if (elements.connectionStatus) {
+                elements.connectionStatus.textContent = '❌ No internet connection detected';
+            }
+        }, 5000);
+    }
+}
 
   // Setup event listeners
   setupEventListeners();
