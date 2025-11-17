@@ -395,21 +395,28 @@ function fetchWithTimeout(resource, options = {}) {
 }
 
 function verifyRealConnection() {
-    const url = './online.txt?ts=' + Date.now();
-    console.log('🌐 verifyRealConnection -> fetching', url);
+    
+// ✅ FIX: Environment-aware online.txt path
+const isGitHub = window.location.hostname.includes('github.io');
+const isFirebase = window.location.hostname.includes('web.app') || 
+                  window.location.hostname.includes('firebaseapp.com');
+const basePath = isGitHub ? '/MemoryinQR/' : '/';
+const url = basePath + 'online.txt?ts=' + Date.now();
 
-    return fetchWithTimeout(url, { cache: 'no-store', credentials: 'omit' })
-        .then(resp => {
-            if (!resp || !resp.ok) throw new Error('No OK response');
-            return resp.text();
-        })
-        .then(text => {
-            if (String(text).trim() === 'OK') {
-                console.log('✅ verifyRealConnection: OK');
-                return true;
-            }
-            throw new Error('Unexpected response');
-        });
+console.log('🌐 verifyRealConnection -> fetching', url);
+
+  return fetchWithTimeout(url, { cache: 'no-store', credentials: 'omit' })
+    .then(resp => {
+      if (!resp || !resp.ok) throw new Error('No OK response');
+      return resp.text();
+    })
+    .then(text => {
+      if (String(text).trim() === 'OK') {
+        console.log('✅ verifyRealConnection: OK');
+        return true;
+      }
+      throw new Error('Unexpected response');
+    });
 }
           
 // ===== ONLINE NOTIFICATION & REDIRECT =====
