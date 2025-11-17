@@ -91,11 +91,11 @@ function switchToMode(mode) {
     
     // Initialize new mode
     switch(mode) {
-        case 'links':  // ADD THIS CASE
-            initLinksMode();
-            break;
         case 'text':
             initTextMode();
+            break;
+        case 'links':  // ADD THIS CASE
+            initLinksMode();
             break;
         case 'upload':
             initUploadMode();
