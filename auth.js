@@ -103,7 +103,10 @@ function hideOfflineDashboardUI() {
 // 🎯 REAL CONNECTION CHECK (like in offline.html)
 async function checkRealConnection() {
     try {
-      const url = './online.txt?ts=' + Date.now();    
+        const isGitHub = window.location.hostname.includes('github.io');
+        const basePath = isGitHub ? '/MemoryinQR' : '/';
+        const url = basePath + 'online.txt?ts=' + Date.now();
+        
         console.log('🌐 Checking connection at:', url);
         
         const response = await fetch(url, {
@@ -252,8 +255,6 @@ async function handleSignin(e) {
     
    // 🆕 SIMPLIFIED OFFLINE CHECK - Just show error, don't redirect
 const isReallyOnline = await checkRealConnection();
-    console.log('🔑 SIGNIN: Online check result:', await checkRealConnection());
-
 if (!isReallyOnline) {
     console.log('❌ Auth blocked - no connection');
     updateStatus('No internet connection detected', 'error');
