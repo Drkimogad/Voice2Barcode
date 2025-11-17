@@ -103,28 +103,30 @@ function hideOfflineDashboardUI() {
 // 🎯 REAL CONNECTION CHECK (like in offline.html)
 async function checkRealConnection() {
     try {
-        // Check online.txt first
-        const response = await fetch('/MemoryinQR/online.txt?ts=' + Date.now(), {
+        const isGitHub = window.location.hostname.includes('github.io');
+        const basePath = isGitHub ? '/MemoryinQR' : '/';
+        const url = basePath + 'online.txt?ts=' + Date.now();
+        
+        console.log('🌐 Checking connection at:', url);
+        
+        const response = await fetch(url, {
             method: 'GET',
             cache: 'no-store',
             credentials: 'omit'
         });
         
-        if (!response.ok) return false;
+        if (!response.ok) {
+            console.log('❌ online.txt response not OK');
+            return false;
+        }
         
         const text = await response.text();
-        if (text.trim() !== 'OK') return false;
-        
-        // 🆕 ADD SECOND CHECK: Try a HEAD request to Firebase
-        // This ensures real internet, not just service worker cache
-        const firebaseCheck = await fetch('https://www.googleapis.com/identitytoolkit/v3/relyingparty/verifyPassword?key=AIzaSyAcHV1_wbQjAojF9rBZHZ9Sg2LOYcPqde8', {
-            method: 'HEAD',
-            mode: 'no-cors' // This won't fail due to CORS
-        });
-        
-        return true;
+        const isOnline = text.trim() === 'OK';
+        console.log('📡 Online check result:', isOnline);
+        return isOnline;
         
     } catch (error) {
+        console.log('❌ Online check failed:', error.message);
         return false;
     }
 }
@@ -253,6 +255,8 @@ async function handleSignin(e) {
     
    // 🆕 SIMPLIFIED OFFLINE CHECK - Just show error, don't redirect
 const isReallyOnline = await checkRealConnection();
+    console.log('🔑 SIGNIN: Online check result:', await checkRealConnection());
+
 if (!isReallyOnline) {
     console.log('❌ Auth blocked - no connection');
     updateStatus('No internet connection detected', 'error');
