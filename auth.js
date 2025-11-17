@@ -262,29 +262,32 @@ async function handleSignin(e) {
     const isReallyOnline = await checkRealConnection();
     console.log('🌐 Network check:', isReallyOnline ? 'ONLINE' : 'OFFLINE');
 
-    // ================================
-    // OFFLINE SIGN-IN LOGIC (Option C)
-    // ================================
-    if (!isReallyOnline) {
-        if (isAuthenticated()) {
-            console.log('🔐 Cached user available → allowing offline dashboard');
-            updateStatus('Offline mode — using saved session', 'info');
-            showDashboard();
-            return;
-        }
+// ================================
+// OFFLINE SIGN-IN LOGIC (Option C)
+// ================================
+if (!isReallyOnline) {
 
-        console.log('⛔ No cached session → cannot sign in offline');
-        updateStatus(
-            "You've logged out. Signing in requires internet. Redirecting...",
-            'error'
-        );
-
-        setTimeout(() => {
-            window.location.href = './offline.html';
-        }, 1500);
-
+    if (isAuthenticated()) {
+        console.log('🔐 Cached user available → allowing offline dashboard');
+        updateStatus('Offline mode — using saved session', 'info');
+        showDashboard();
         return;
     }
+
+    console.log('⛔ No cached session → cannot sign in offline');
+    updateStatus(
+        "You've logged out. Signing in requires internet. Redirecting...",
+        'error'
+    );
+
+    // Redirect to offline.html with reason query so offline page can show contextual notice
+    setTimeout(() => {
+        window.location.href = './offline.html?reason=signin';
+    }, 1500);
+
+    return;
+}
+
 
     // ================================
     // NORMAL ONLINE SIGN-IN
