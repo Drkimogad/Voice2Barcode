@@ -19,7 +19,7 @@ Your app code (auth.js, offline.html) stays exactly the same - they use relative
 // SERVICE WORKER - MemoryinQR (Multi-Platform)
 // Version: v5.8 - With Debug Logging
 // ========================================
-const CACHE_NAME = 'memoryinqr-cache-v5.8';
+const CACHE_NAME = 'memoryinqr-cache-v5.9';
 const OFFLINE_CACHE = 'memoryinqr-offline-v4.8';
 const CURRENT_ENV = 'GITHUB';
 
@@ -145,13 +145,13 @@ self.addEventListener('fetch', (event) => {
     }
 
     // ONLINE.TXT BYPASS
-    if (url.pathname.endsWith('/online.txt')) {
-        console.log('🔄 Bypassing SW for online.txt');
-        event.respondWith(
-            fetch(request, { cache: 'no-store', credentials: 'omit' })
-        );
-        return;
-    }
+if (url.pathname.includes('online.txt')) { // include not endwith.
+    console.log('🔄 Absolute bypass for online.txt (GET or HEAD)');
+    event.respondWith(
+        fetch(request, { cache: 'no-store', credentials: 'omit' })
+    );
+    return;
+}
 
     // NAVIGATION REQUESTS
     if (request.mode === 'navigate') {
