@@ -105,7 +105,7 @@ async function checkRealConnection() {
     try {
        // const response = await fetch('/MemoryinQR/online.txt?ts=' + Date.now(), {
                  const response = await fetch('online.txt?ts=' + Date.now(), {
-            method: 'HEAD',
+            method: 'GET',   // ✅ Service worker processes this
             cache: 'no-store',
             credentials: 'omit'
         });
