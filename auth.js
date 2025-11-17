@@ -103,13 +103,27 @@ function hideOfflineDashboardUI() {
 // 🎯 REAL CONNECTION CHECK (like in offline.html)
 async function checkRealConnection() {
     try {
-       // const response = await fetch('/MemoryinQR/online.txt?ts=' + Date.now(), {
-                 const response = await fetch('online.txt?ts=' + Date.now(), {
-            method: 'GET',   // ✅ Service worker processes this
+        // Check online.txt first
+        const response = await fetch('/MemoryinQR/online.txt?ts=' + Date.now(), {
+            method: 'GET',
             cache: 'no-store',
             credentials: 'omit'
         });
-        return response.ok;
+        
+        if (!response.ok) return false;
+        
+        const text = await response.text();
+        if (text.trim() !== 'OK') return false;
+        
+        // 🆕 ADD SECOND CHECK: Try a HEAD request to Firebase
+        // This ensures real internet, not just service worker cache
+        const firebaseCheck = await fetch('https://www.googleapis.com/identitytoolkit/v3/relyingparty/verifyPassword?key=AIzaSyAcHV1_wbQjAojF9rBZHZ9Sg2LOYcPqde8', {
+            method: 'HEAD',
+            mode: 'no-cors' // This won't fail due to CORS
+        });
+        
+        return true;
+        
     } catch (error) {
         return false;
     }
