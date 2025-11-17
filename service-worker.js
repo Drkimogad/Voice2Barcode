@@ -19,8 +19,8 @@ Your app code (auth.js, offline.html) stays exactly the same - they use relative
 // SERVICE WORKER - MemoryinQR (Multi-Platform)
 // Version: v5.4 - GitHub Pages & Firebase Compatible
 // ========================================
-const CACHE_NAME = 'memoryinqr-cache-v5.6';
-const OFFLINE_CACHE = 'memoryinqr-offline-v4.6';
+const CACHE_NAME = 'memoryinqr-cache-v5.7';
+const OFFLINE_CACHE = 'memoryinqr-offline-v4.7';
 
 // ✅ ONE-LINE SWITCH - Change this for deployment!
 const CURRENT_ENV = 'GITHUB'; // Change to 'FIREBASE' for Firebase hosting
@@ -46,6 +46,14 @@ function getPath(path) {
 function getRuntimePath(path) {
     const root = ENV_CONFIG[CURRENT_ENV].root;
     return root + path.replace(/^\//, '');
+}
+// ✅ ADD THIS FUNCTION TO SERVICE WORKER
+function fetchWithTimeout(resource, timeout = 7000) {
+  const controller = new AbortController();
+  const id = setTimeout(() => controller.abort(), timeout);
+  return fetch(resource, { 
+    signal: controller.signal 
+  }).finally(() => clearTimeout(id));
 }
 
 // Core app assets - Environment-aware paths
