@@ -110,7 +110,7 @@ async function checkRealConnection() {
         console.log('🌐 Checking connection at:', url);
         
         const response = await fetch(url, {
-            method: 'HEAD',  // THE ISSUE MIGHT BE IN GET INSTEAD OF HEAD🌐🌐🌐🌐🌐🌐🌐🌐🌐🌐🌐🌐🌐🌐🌐🌐🌐🌐🌐
+            method: 'GET',  // THE ISSUE MIGHT BE IN GET INSTEAD OF HEAD🌐🌐🌐🌐🌐🌐🌐🌐🌐🌐🌐🌐🌐🌐🌐🌐🌐🌐🌐
             cache: 'no-store',
             credentials: 'omit'
         });
