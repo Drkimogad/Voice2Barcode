@@ -100,36 +100,35 @@ function hideOfflineDashboardUI() {
 }
 
 
-// 🎯 REAL CONNECTION CHECK (like in offline.html)
 async function checkRealConnection() {
     try {
-        const isGitHub = window.location.hostname.includes('github.io');
-        const basePath = isGitHub ? '/MemoryinQR/' : '/';
-        const url = basePath + 'online.txt?ts=' + Date.now();
-        
-        console.log('🌐 Checking connection at:', url);
-        
-        const response = await fetch(url, {
-            method: 'GET',  // THE ISSUE MIGHT BE IN GET INSTEAD OF HEAD🌐🌐🌐🌐🌐🌐🌐🌐🌐🌐🌐🌐🌐🌐🌐🌐🌐🌐🌐
+        const url = "https://raw.githubusercontent.com/drkimogad/MemoryinQR/main/online.txt?ts=" + Date.now();
+
+        console.log("🌐 Checking connection at:", url);
+
+        const controller = new AbortController();
+        const timeout = setTimeout(() => controller.abort(), 3000);
+
+        const res = await fetch(url, {
+            method: 'GET',
             cache: 'no-store',
-            credentials: 'omit'
+            signal: controller.signal
         });
-        
-        if (!response.ok) {
-            console.log('❌ online.txt response not OK');
-            return false;
-        }
-        
-        const text = await response.text();
-        const isOnline = text.trim() === 'OK';
-        console.log('📡 Online check result:', isOnline);
+
+        clearTimeout(timeout);
+
+        const text = (await res.text()).trim().toLowerCase();
+        const isOnline = text === 'online';
+
+        console.log("📡 Online check result:", isOnline);
         return isOnline;
-        
-    } catch (error) {
-        console.log('❌ Online check failed:', error.message);
+
+    } catch (err) {
+        console.log("❌ Connection check failed:", err);
         return false;
     }
 }
+
 
 // 🔥 FIREBASE OFFLINE PERSISTENCE
 function setupFirebaseOfflinePersistence() {
