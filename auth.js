@@ -207,43 +207,58 @@ async function handleSignup(e) {
     console.log('📝 SIGNUP: Processing signup request...');
 
     const errorDisplay = document.getElementById('signupError');
-    errorDisplay.textContent = '';
+    if (errorDisplay) errorDisplay.textContent = '';
 
-    const isReallyOnline = await checkRealConnection();
-    if (!isReallyOnline) {
-        updateStatus('Signup requires internet connection', 'error');
-        console.log('❌ Cannot signup offline');
+    const username = document.getElementById('signupUsername').value.trim();
+    const email = document.getElementById('signupEmail').value.trim();
+    const password = document.getElementById('signupPassword').value;
+
+    if (!username || !email || !password) {
+        if (errorDisplay) errorDisplay.textContent = 'All fields are required';
+        return;
+    }
+    if (username.length < 3) {
+        if (errorDisplay) errorDisplay.textContent = 'Username must be at least 3 characters';
+        return;
+    }
+    if (!isValidEmail(email)) {
+        if (errorDisplay) errorDisplay.textContent = 'Please enter a valid email address';
+        return;
+    }
+    if (password.length < 6) {
+        if (errorDisplay) errorDisplay.textContent = 'Password must be at least 6 characters';
         return;
     }
 
+    // Quick online guard: require basic navigator.onLine for signup
+    if (!navigator.onLine) {
+        updateStatus('Signup requires internet connection', 'error');
+        console.log('❌ Cannot signup offline (navigator reports offline)');
+        return;
+    }
+
+    // Try signup directly; only if network-related failure happens we can call checkRealConnection()
     try {
-        const username = document.getElementById('signupUsername').value.trim();
-        const email = document.getElementById('signupEmail').value.trim();
-        const password = document.getElementById('signupPassword').value;
-
-        if (!username || !email || !password) {
-            throw new Error('All fields are required');
-        }
-        if (username.length < 3) {
-            throw new Error('Username must be at least 3 characters');
-        }
-        if (!isValidEmail(email)) {
-            throw new Error('Invalid email');
-        }
-        if (password.length < 6) {
-            throw new Error('Password must be at least 6 characters');
-        }
-
         console.log('🔥 Creating Firebase user...');
         await firebase.auth().createUserWithEmailAndPassword(email, password);
 
         document.getElementById('signupForm').reset();
         updateStatus('Account created! Please sign in.', 'success');
-
         setTimeout(() => toggleAuthView('signin'), 1500);
+        console.log('✅ User registration complete');
     } catch (err) {
-        console.error('❌ Signup error:', err);
-        errorDisplay.textContent = err.message;
+        console.warn('⚠ Signup error:', err);
+        const networkError = err && /network/i.test(err.message || '') || err.code === 'auth/network-request-failed';
+        if (networkError) {
+            // verify real connection if signup failed due to network
+            const isReallyOnline = await checkRealConnection().catch(() => false);
+            if (!isReallyOnline) {
+                updateStatus('Signup requires internet connection', 'error');
+                return;
+            }
+            // If checkRealConnection returned true, we let the error flow to UI
+        }
+        if (errorDisplay) errorDisplay.textContent = err.message || 'Signup failed';
     }
 }
 
@@ -256,62 +271,85 @@ async function handleSignin(e) {
     console.log('🔑 SIGNIN: Processing signin request...');
 
     const errorDisplay = document.getElementById('signinError');
-    errorDisplay.textContent = '';
+    if (errorDisplay) errorDisplay.textContent = '';
 
-    const isReallyOnline = await checkRealConnection();
-    console.log('🌐 Network check:', isReallyOnline ? 'ONLINE' : 'OFFLINE');
+    const email = document.getElementById('signinEmail').value.trim();
+    const password = document.getElementById('signinPassword').value;
 
-// ================================
-// OFFLINE SIGN-IN LOGIC (Option C)
-// ================================
-if (!isReallyOnline) {
-
-    if (isAuthenticated()) {
-        console.log('🔐 Cached user available → allowing offline dashboard');
-        updateStatus('Offline mode — using saved session', 'info');
-        showDashboard();
+    if (!email || !password) {
+        if (errorDisplay) errorDisplay.textContent = 'All fields are required';
         return;
     }
 
-    console.log('⛔ No cached session → cannot sign in offline');
-    updateStatus(
-        "You've logged out. Signing in requires internet. Redirecting...",
-        'error'
-    );
+    // Fast guard: if browser thinks it's online, try normal Firebase sign-in first.
+    if (navigator.onLine) {
+        console.log('🟢 navigator.onLine=true — attempting normal Firebase sign-in');
+        try {
+            await firebase.auth().signInWithEmailAndPassword(email, password);
+            document.getElementById('signinForm').reset();
+            updateStatus('Welcome back!', 'success');
+            console.log('✅ Online signin complete');
+            return;
+        } catch (err) {
+            console.warn('⚠ Firebase signin failed:', err);
+            // If error looks like a network failure, confirm with checkRealConnection()
+            const networkError = err && (err.code === 'auth/network-request-failed' || /network/i.test(err.message || ''));
+            if (!networkError) {
+                // Non-network auth error (bad credentials, etc.) — show it and bail.
+                if (errorDisplay) errorDisplay.textContent = err.message;
+                document.getElementById('signinPassword').value = '';
+                return;
+            }
 
-    // Redirect to offline.html with reason query so offline page can show contextual notice
-    setTimeout(() => {
-        window.location.href = './offline.html?reason=signin';
-    }, 1500);
+            console.log('🔎 Firebase signin failed with network error — verifying real connection');
+            // fall through to verification below
+        }
+    } else {
+        console.log('🔴 navigator.onLine=false — treating as offline');
+    }
 
-    return;
-}
+    // At this point: either navigator reports offline OR Firebase sign-in failed with network issue.
+    // Confirm with the more robust checkRealConnection() and handle offline logic.
+    const isReallyOnline = await checkRealConnection().catch((err) => {
+        console.warn('❌ checkRealConnection() threw:', err);
+        return false;
+    });
+    console.log('🌐 Network check:', isReallyOnline ? 'ONLINE' : 'OFFLINE');
 
-
-    // ================================
-    // NORMAL ONLINE SIGN-IN
-    // ================================
-    try {
-        const email = document.getElementById('signinEmail').value.trim();
-        const password = document.getElementById('signinPassword').value;
-
-        if (!email || !password) {
-            throw new Error('All fields are required');
+    // OFFLINE SIGN-IN LOGIC (Option C)
+    if (!isReallyOnline) {
+        if (isAuthenticated()) {
+            console.log('🔐 Cached user available → allowing offline dashboard');
+            updateStatus('Offline mode — using saved session', 'info');
+            showDashboard();
+            return;
         }
 
-        console.log(`🔥 Authenticating with Firebase for: ${email}`);
-        await firebase.auth().signInWithEmailAndPassword(email, password);
+        console.log('⛔ No cached session → cannot sign in offline');
+        updateStatus("You've logged out. Signing in requires internet. Redirecting...", 'error');
 
+        setTimeout(() => {
+            window.location.href = './offline.html?reason=signin';
+        }, 1500);
+
+        return;
+    }
+
+    // If we're here, checkRealConnection said we're online but Firebase signin earlier failed due to transient network error.
+    // Try sign-in one more time in online-confirmed state.
+    try {
+        console.log('🔁 Retrying Firebase signin after confirmed online');
+        await firebase.auth().signInWithEmailAndPassword(email, password);
         document.getElementById('signinForm').reset();
         updateStatus('Welcome back!', 'success');
-
-        console.log('✅ Online signin complete');
-    } catch (error) {
-        console.error('❌ Firebase signin error:', error);
-        errorDisplay.textContent = error.message;
+        console.log('✅ Online signin complete (retry)');
+    } catch (err) {
+        console.error('❌ Firebase signin error on retry:', err);
+        if (errorDisplay) errorDisplay.textContent = err.message || 'Sign-in failed';
         document.getElementById('signinPassword').value = '';
     }
 }
+
 
 
 /**
