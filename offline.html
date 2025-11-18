@@ -523,11 +523,15 @@ function startNextCheckCountdown(seconds) {
     // Only run the network check (which will bypass SW) if navigator says online as a quick guard
     if (navigator.onLine) {
       verifyRealConnection()
-        .then(() => {
-          console.log('✅ Auto-check: connection verified!');
-          showOnlineNotificationAndRedirect();
-          stopAutoChecking();
-        })
+    .then(() => {
+        console.log('✅ Auto-check: connection verified!');
+        if (recoveryMode) {
+            showOnlineNotificationAndRedirect();
+            recoveryMode = false; // reset
+        }
+        stopAutoChecking();
+    })
+
         .catch(() => {
           console.log('❌ Auto-check: still offline or timed out');
           // restart per-second countdown until next auto-check
@@ -585,45 +589,37 @@ function setupEventListeners() {
 }
 
 // ===== INITIALIZATION =====
+// global flag
+let recoveryMode = false;
+
+// inside initializeOfflinePage()
 function initializeOfflinePage() {
-  console.log('🚀 Initializing offline page recovery system (single init)');
+    console.log('🚀 Initializing offline page recovery system');
 
-  const params = new URLSearchParams(window.location.search);
-  if (params.get('reason') === 'signin') {
-    console.log('⚠️ User tried to signin offline');
-    recoveryMode = false; // no banner
-    if (elements.connectionStatus) {
-      elements.connectionStatus.textContent = '❌ You\'ve logged out. Signing in requires internet. Try later.';
+    // detect reason
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('reason') === 'signin') {
+        console.log('⚠️ User tried to signin offline');
+        recoveryMode = true; // only enable success banner during real recovery
+        if (elements.connectionStatus)
+            elements.connectionStatus.textContent =
+                '❌ You\'ve logged out. Signing in requires internet. Try later.';
     }
-    setTimeout(() => {
-      if (elements.connectionStatus) {
-        elements.connectionStatus.textContent = '❌ No internet connection detected';
-      }
-    }, 5000);
-  } else {
-    recoveryMode = true; // actual recovery scenario
-  }
 
-  setupEventListeners();
-  startAutoConnectionChecking();
+    setupEventListeners();
+    startAutoConnectionChecking();
 
-  if (navigator.onLine) {
-    verifyRealConnection()
-      .then(() => {
-        if (recoveryMode) {
-          console.log('✅ Immediate verify passed — redirecting now');
-          showOnlineNotificationAndRedirect();
-        }
-        stopAutoChecking();
-      })
-      .catch(() => {
-        console.log('❌ Immediate verify failed — staying on offline page');
-      });
-  } else {
-    console.log('❌ navigator reports offline at init');
-  }
-
-  console.log('✅ Offline page initialization complete');
+    // Only try immediate verify if **not in recoveryMode**
+    if (!recoveryMode && navigator.onLine) {
+        verifyRealConnection()
+            .then(() => {
+                showOnlineNotificationAndRedirect();
+                stopAutoChecking();
+            })
+            .catch(() => {
+                console.log('❌ Immediate verify failed — staying on offline page');
+            });
+    }
 }
 
 // ===== START EVERYTHING (single DOM ready handler) =====
