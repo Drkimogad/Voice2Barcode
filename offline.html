@@ -360,6 +360,7 @@ console.log('🚀 OFFLINE.HTML: Starting offline recovery system... (updated)');
 // ===== GLOBAL VARIABLES =====
 let checkInterval = null;
 let countdownInterval = null;
+let recoveryMode = false;
 let retryCount = 0;
 const MAX_RETRIES = 10;
 const AUTO_CHECK_INTERVAL = 5000; // 5 seconds between auto-check attempts
@@ -422,16 +423,15 @@ console.log('🌐 verifyRealConnection -> fetching', url);
 // ===== ONLINE NOTIFICATION & REDIRECT =====
 function showOnlineNotificationAndRedirect() {
   if (!elements.onlineNotification) return;
+  if (!recoveryMode) return; // <-- prevents showing banner when not in recovery
+
   console.log('🎉 Connection restored — showing banner & redirecting in', REDIRECT_DELAY / 1000, 's');
 
-  // Show banner
   elements.onlineNotification.classList.add('show');
 
-  // set countdown in banner
   let left = REDIRECT_DELAY / 1000;
   if (elements.countdown) elements.countdown.textContent = left;
 
-  // clear any existing countdown
   if (countdownInterval) clearInterval(countdownInterval);
   countdownInterval = setInterval(() => {
     left--;
@@ -510,8 +510,10 @@ function startCountdown(seconds, displayEl, onComplete) {
 }
 
 
-  // Immediately show countdown for first run
-startCountdown(AUTO_CHECK_INTERVAL / 1000, elements.countdownDisplay);
+  // Immediately show countdown for first run with a defined function
+function startNextCheckCountdown(seconds) {
+  startCountdown(seconds, elements.countdownDisplay, null);
+}
 
   // clear existing interval if present
   if (checkInterval) clearInterval(checkInterval);
@@ -586,35 +588,32 @@ function setupEventListeners() {
 function initializeOfflinePage() {
   console.log('🚀 Initializing offline page recovery system (single init)');
 
-    // ===== CONTEXTUAL OFFLINE MESSAGE =====
-function showOfflineSigninNotice() {
-    const params = new URLSearchParams(window.location.search);
-    if (params.get('reason') === 'signin') {
-        console.log('⚠️ User tried to signin offline');
-        if (elements.connectionStatus) {
-            elements.connectionStatus.textContent = '❌ You\'ve logged out. Signing in requires internet. Try later.';
-        }
-        // Optional: auto-hide after 5s
-        setTimeout(() => {
-            if (elements.connectionStatus) {
-                elements.connectionStatus.textContent = '❌ No internet connection detected';
-            }
-        }, 5000);
+  const params = new URLSearchParams(window.location.search);
+  if (params.get('reason') === 'signin') {
+    console.log('⚠️ User tried to signin offline');
+    recoveryMode = false; // no banner
+    if (elements.connectionStatus) {
+      elements.connectionStatus.textContent = '❌ You\'ve logged out. Signing in requires internet. Try later.';
     }
-}
+    setTimeout(() => {
+      if (elements.connectionStatus) {
+        elements.connectionStatus.textContent = '❌ No internet connection detected';
+      }
+    }, 5000);
+  } else {
+    recoveryMode = true; // actual recovery scenario
+  }
 
-  // Setup event listeners
   setupEventListeners();
-
-  // Start automatic checking loop
   startAutoConnectionChecking();
 
-  // Immediate attempt to verify & redirect if possible
   if (navigator.onLine) {
     verifyRealConnection()
       .then(() => {
-        console.log('✅ Immediate verify passed — redirecting now');
-        showOnlineNotificationAndRedirect();
+        if (recoveryMode) {
+          console.log('✅ Immediate verify passed — redirecting now');
+          showOnlineNotificationAndRedirect();
+        }
         stopAutoChecking();
       })
       .catch(() => {
@@ -623,6 +622,7 @@ function showOfflineSigninNotice() {
   } else {
     console.log('❌ navigator reports offline at init');
   }
+
   console.log('✅ Offline page initialization complete');
 }
 
@@ -631,7 +631,5 @@ document.addEventListener('DOMContentLoaded', initializeOfflinePage);
 
 console.log('✅ Offline.html script loaded successfully (updated)');
 </script>
-
-
 </body>
 </html>
