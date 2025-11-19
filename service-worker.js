@@ -19,8 +19,8 @@ Your app code (auth.js, offline.html) stays exactly the same - they use relative
 // SERVICE WORKER - MemoryinQR (Multi-Platform)
 // Version: v5.8 - With Debug Logging
 // ========================================
-const CACHE_NAME = 'memoryinqr-cache-v5.9';
-const OFFLINE_CACHE = 'memoryinqr-offline-v4.8';
+const CACHE_NAME = 'memoryinqr-cache-v6.0';
+const OFFLINE_CACHE = 'memoryinqr-offline-v4.9';
 const CURRENT_ENV = 'GITHUB';
 
 console.log('🛠️ SERVICE WORKER: Script loading...');
@@ -144,11 +144,27 @@ self.addEventListener('fetch', (event) => {
         return;
     }
 
-    // ONLINE.TXT BYPASS
-if (url.pathname.includes('online.txt')) { // include not endwith.
-    console.log('🔄 Absolute bypass for online.txt (GET or HEAD)');
+// ENHANCED ONLINE.TXT BYPASS - Add to your existing fetch handler
+if (url.pathname.includes('online.txt')) {
+    console.log('🔄 ABSOLUTE BYPASS: online.txt request detected');
+    
+    // Complete bypass - no caching, no service worker interference
     event.respondWith(
-        fetch(request, { cache: 'no-store', credentials: 'omit' })
+        fetch(request, {
+            cache: 'no-store',
+            credentials: 'omit',
+            headers: {
+                'Cache-Control': 'no-cache, no-store, must-revalidate',
+                'Pragma': 'no-cache',
+                'Expires': '0'
+            }
+        }).catch(error => {
+            console.log('❌ online.txt fetch failed:', error);
+            return new Response('OFFLINE', { 
+                status: 503,
+                headers: { 'Content-Type': 'text/plain' }
+            });
+        })
     );
     return;
 }
