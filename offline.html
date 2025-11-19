@@ -354,20 +354,21 @@
             Auto-retry in <span class="countdown" id="countdownDisplay">5</span> seconds
         </div>
     </div>
-      <script>
-console.log('🚀 OFFLINE.HTML: Starting offline recovery system... (updated)');
+<script>
+console.log('🚀 OFFLINE.HTML: Starting offline recovery system...');
 
 // ===== GLOBAL VARIABLES =====
 let checkInterval = null;
 let countdownInterval = null;
 let recoveryMode = false;
 let retryCount = 0;
+let isVerifying = false; // 🔥 NEW: Prevent concurrent verifications
 const MAX_RETRIES = 10;
-const AUTO_CHECK_INTERVAL = 5000; // 5 seconds between auto-check attempts
-const CHECK_TIMEOUT = 7000; // 7s timeout for network check
-const REDIRECT_DELAY = 5000; // 5 seconds shown in banner countdown
+const AUTO_CHECK_INTERVAL = 5000;
+const CHECK_TIMEOUT = 7000;
+const REDIRECT_DELAY = 5000;
 
-// ===== DOM ELEMENTS (defensive queries) =====
+// ===== DOM ELEMENTS =====
 const elements = {
   onlineNotification: document.getElementById('onlineNotification'),
   statusIndicator: document.getElementById('statusIndicator'),
@@ -380,252 +381,384 @@ const elements = {
   btnText: document.querySelector('.btn-text')
 };
 
-// Helper: safe update text
-function setText(el, txt) {
-  if (!el) return;
-  if ('textContent' in el) el.textContent = txt;
+// ===== DEBUG LOGGING =====
+function debugLog(message, data = null) {
+    console.log(`🔍 [OFFLINE-PAGE] ${message}`, data || '');
+    // Optional: Add visual debug output in development
+    if (window.location.search.includes('debug')) {
+        const debugEl = document.getElementById('debugOutput') || (() => {
+            const el = document.createElement('div');
+            el.id = 'debugOutput';
+            el.style.cssText = 'position:fixed;top:10px;left:10px;background:rgba(0,0,0,0.8);color:white;padding:10px;z-index:10000;font-size:12px;max-width:300px;';
+            document.body.appendChild(el);
+            return el;
+        })();
+        debugEl.innerHTML += `<div>${new Date().toLocaleTimeString()}: ${message}</div>`;
+    }
 }
 
-// ===== NETWORK CHECK (uses /online.txt which should bypass SW) =====
+// ===== NETWORK VERIFICATION =====
 function fetchWithTimeout(resource, options = {}) {
-  const { timeout = CHECK_TIMEOUT } = options;
-  const controller = new AbortController();
-  const id = setTimeout(() => controller.abort(), timeout);
-  return fetch(resource, { ...options, signal: controller.signal })
-    .finally(() => clearTimeout(id));
+    const { timeout = CHECK_TIMEOUT } = options;
+    const controller = new AbortController();
+    const id = setTimeout(() => {
+        debugLog('⏰ Fetch timeout reached');
+        controller.abort();
+    }, timeout);
+    
+    return fetch(resource, { 
+        ...options, 
+        signal: controller.signal,
+        cache: 'no-store',
+        credentials: 'omit'
+    }).finally(() => {
+        clearTimeout(id);
+        debugLog('🧹 Fetch timeout cleared');
+    });
 }
 
 function verifyRealConnection() {
-    
-// ✅ FIX: Environment-aware online.txt path
-const isGitHub = window.location.hostname.includes('github.io');
-const isFirebase = window.location.hostname.includes('web.app') || 
-                  window.location.hostname.includes('firebaseapp.com');
-const basePath = isGitHub ? '/MemoryinQR/' : '/';
-const url = basePath + 'online.txt?ts=' + Date.now();
-
-console.log('🌐 verifyRealConnection -> fetching', url);
-
-  return fetchWithTimeout(url, { cache: 'no-store', credentials: 'omit' })
-    .then(resp => {
-      if (!resp || !resp.ok) throw new Error('No OK response');
-      return resp.text();
-    })
-    .then(text => {
-      if (String(text).trim() === 'OK') {
-        console.log('✅ verifyRealConnection: OK');
-        return true;
-      }
-      throw new Error('Unexpected response');
-    });
-}
-          
-// ===== ONLINE NOTIFICATION & REDIRECT =====
-function showOnlineNotificationAndRedirect() {
-  if (!elements.onlineNotification) return;
-  if (!recoveryMode) return; // <-- prevents showing banner when not in recovery
-
-  console.log('🎉 Connection restored — showing banner & redirecting in', REDIRECT_DELAY / 1000, 's');
-
-  elements.onlineNotification.classList.add('show');
-
-  let left = REDIRECT_DELAY / 1000;
-  if (elements.countdown) elements.countdown.textContent = left;
-
-  if (countdownInterval) clearInterval(countdownInterval);
-  countdownInterval = setInterval(() => {
-    left--;
-    if (elements.countdown) elements.countdown.textContent = left;
-    if (left <= 0) {
-      clearInterval(countdownInterval);
-      performRedirect();
+    if (isVerifying) {
+        debugLog('⚠️ Verification already in progress, skipping');
+        return Promise.reject(new Error('Verification in progress'));
     }
-  }, 1000);
-}
-
-
-function performRedirect() {
-  console.log('🔄 Redirecting to index.html (replace history)');
     
-  // Use replace to avoid back navigation to offline page
-const isGitHub = window.location.hostname.includes('github.io');
-const basePath = isGitHub ? '/MemoryinQR/' : '/';
+    isVerifying = true;
+    debugLog('🌐 Starting real connection verification');
+    
+    // Environment-aware path
+    const isGitHub = window.location.hostname.includes('github.io');
+    const basePath = isGitHub ? '/MemoryinQR/' : '/';
+    const url = basePath + 'online.txt?ts=' + Date.now() + '&verify=' + Math.random();
+    
+    debugLog('📡 Fetching verification URL:', url);
 
-window.location.replace(basePath + 'index.html?recovered=' + Date.now());
+    return fetchWithTimeout(url)
+        .then(resp => {
+            if (!resp || !resp.ok) {
+                debugLog('❌ Response not OK:', { status: resp?.status, ok: resp?.ok });
+                throw new Error('No OK response');
+            }
+            return resp.text();
+        })
+        .then(text => {
+            const trimmed = String(text).trim();
+            debugLog('📄 Response text:', trimmed);
+            
+            if (trimmed === 'OK') {
+                debugLog('✅ Connection verification SUCCESS');
+                return true;
+            }
+            debugLog('❌ Unexpected response content');
+            throw new Error('Unexpected response');
+        })
+        .catch(error => {
+            debugLog('❌ Connection verification FAILED:', error.message);
+            throw error;
+        })
+        .finally(() => {
+            isVerifying = false;
+            debugLog('🔚 Verification completed');
+        });
 }
 
-// ===== MANUAL CONNECTION CHECK =====
-function manualConnectionCheck() {
-  console.log('🔄 Manual connection check triggered');
-  retryCount++;
+// ===== RECOVERY FLOW =====
+function showOnlineNotificationAndRedirect() {
+    if (!recoveryMode) {
+        debugLog('🚫 Not in recovery mode - suppressing notification');
+        return;
+    }
+    
+    if (!elements.onlineNotification) {
+        debugLog('❌ Notification element not found');
+        return;
+    }
 
-  if (elements.retryBtn) elements.retryBtn.disabled = true;
-  if (elements.btnText) elements.btnText.innerHTML = 'Checking<span class="loading-dots"><span></span><span></span><span></span></span>';
+    debugLog('🎉 Showing online notification and preparing redirect');
 
-  verifyRealConnection()
-    .then(() => {
-      if (elements.retryBtn) elements.retryBtn.disabled = false;
-      if (elements.btnText) elements.btnText.textContent = '🔄 Retry Connection';
-      showOnlineNotificationAndRedirect();
-      stopAutoChecking();
-    })
-    .catch(() => {
-      console.log('❌ Manual: still offline');
-      if (elements.retryBtn) elements.retryBtn.disabled = false;
-      if (elements.btnText) elements.btnText.textContent = '🔄 Retry Connection';
+    // Show notification
+    elements.onlineNotification.classList.add('show');
+    
+    // Start countdown
+    let secondsLeft = REDIRECT_DELAY / 1000;
+    if (elements.countdown) elements.countdown.textContent = secondsLeft;
 
-      // UI update instead of heavy alert
-      if (elements.connectionStatus) {
-        elements.connectionStatus.textContent = '❌ Still offline — check network';
-      } else {
-        alert('You\'re still offline. Please check your internet connection.');
-      }
-
-      if (retryCount >= MAX_RETRIES) {
-        if (elements.retryBtn) elements.retryBtn.disabled = true;
-        if (elements.btnText) elements.btnText.textContent = '❌ Max retries reached';
-      }
-    });
-}
-
-// ===== AUTOMATIC CONNECTION CHECKING =====
-function startAutoConnectionChecking() {
-  console.log('⏰ Starting automatic connection checks every', AUTO_CHECK_INTERVAL / 1000, 's');
-
-  // Update the per-second countdown shown near retry info
-function startCountdown(seconds, displayEl, onComplete) {
-    let left = seconds;
-    if (displayEl) displayEl.textContent = left;
     if (countdownInterval) clearInterval(countdownInterval);
-
     countdownInterval = setInterval(() => {
-        left--;
-        if (displayEl) displayEl.textContent = left;
-        if (left <= 0) {
+        secondsLeft--;
+        if (elements.countdown) elements.countdown.textContent = secondsLeft;
+        
+        if (secondsLeft <= 0) {
             clearInterval(countdownInterval);
-            countdownInterval = null;
-            if (onComplete) onComplete();
+            performRedirect();
         }
     }, 1000);
 }
 
-
-  // Immediately show countdown for first run with a defined function
-function startNextCheckCountdown(seconds) {
-  startCountdown(seconds, elements.countdownDisplay, null);
+function performRedirect() {
+    debugLog('🔄 Starting redirect to main app');
+    
+    // Environment-aware redirect
+    const isGitHub = window.location.hostname.includes('github.io');
+    const basePath = isGitHub ? '/MemoryinQR/' : '/';
+    const redirectUrl = basePath + 'index.html?recovered=' + Date.now();
+    
+    debugLog('📍 Redirecting to:', redirectUrl);
+    
+    // Use replace to avoid back button issues
+    window.location.replace(redirectUrl);
 }
 
-  // clear existing interval if present
-  if (checkInterval) clearInterval(checkInterval);
-
-  checkInterval = setInterval(() => {
-    console.log('🤖 Auto-check: attempting verifyRealConnection()');
-    // Only run the network check (which will bypass SW) if navigator says online as a quick guard
-    if (navigator.onLine) {
-      verifyRealConnection()
-    .then(() => {
-        console.log('✅ Auto-check: connection verified!');
-        if (recoveryMode) {
-            showOnlineNotificationAndRedirect();
-            recoveryMode = false; // reset
-        }
-        stopAutoChecking();
-    })
-
-        .catch(() => {
-          console.log('❌ Auto-check: still offline or timed out');
-          // restart per-second countdown until next auto-check
-          startNextCheckCountdown(AUTO_CHECK_INTERVAL / 1000);
-        });
-    } else {
-      console.log('❌ Auto-check: navigator reports offline');
-      startNextCheckCountdown(AUTO_CHECK_INTERVAL / 1000);
+// ===== CONNECTION MANAGEMENT =====
+function manualConnectionCheck() {
+    if (isVerifying) {
+        debugLog('⚠️ Manual check skipped - verification in progress');
+        return;
     }
-  }, AUTO_CHECK_INTERVAL);
+    
+    debugLog('🔄 Manual connection check initiated');
+    retryCount++;
+
+    // Update UI
+    if (elements.retryBtn) elements.retryBtn.disabled = true;
+    if (elements.btnText) {
+        elements.btnText.innerHTML = 'Checking<span class="loading-dots"><span></span><span></span><span></span></span>';
+    }
+
+    verifyRealConnection()
+        .then(() => {
+            debugLog('✅ Manual check: Connection restored');
+            recoveryMode = true; // 🔥 CRITICAL: Set recovery mode for manual checks
+            showOnlineNotificationAndRedirect();
+            stopAutoChecking();
+        })
+        .catch(() => {
+            debugLog('❌ Manual check: Still offline');
+            
+            // Reset UI
+            if (elements.retryBtn) elements.retryBtn.disabled = false;
+            if (elements.btnText) elements.btnText.textContent = '🔄 Retry Connection';
+            
+            // Update status
+            if (elements.connectionStatus) {
+                elements.connectionStatus.textContent = `❌ Still offline (Attempt ${retryCount}/${MAX_RETRIES})`;
+            }
+            
+            // Check max retries
+            if (retryCount >= MAX_RETRIES) {
+                if (elements.retryBtn) elements.retryBtn.disabled = true;
+                if (elements.btnText) elements.btnText.textContent = '❌ Max retries reached';
+                debugLog('🛑 Maximum retry attempts reached');
+            }
+        });
+}
+
+function startAutoConnectionChecking() {
+    debugLog('⏰ Starting automatic connection checks');
+    
+    // Clear existing interval
+    if (checkInterval) {
+        clearInterval(checkInterval);
+        checkInterval = null;
+    }
+
+    // Start countdown display
+    function updateCountdownDisplay(seconds) {
+        if (elements.countdownDisplay) {
+            elements.countdownDisplay.textContent = seconds;
+        }
+    }
+
+    let countdownSeconds = AUTO_CHECK_INTERVAL / 1000;
+    updateCountdownDisplay(countdownSeconds);
+    
+    if (countdownInterval) clearInterval(countdownInterval);
+    countdownInterval = setInterval(() => {
+        countdownSeconds--;
+        updateCountdownDisplay(countdownSeconds);
+        
+        if (countdownSeconds <= 0) {
+            countdownSeconds = AUTO_CHECK_INTERVAL / 1000;
+            updateCountdownDisplay(countdownSeconds);
+        }
+    }, 1000);
+
+    // Start auto-check interval
+    checkInterval = setInterval(() => {
+        if (isVerifying) {
+            debugLog('⏩ Auto-check skipped - verification in progress');
+            return;
+        }
+        
+        debugLog('🤖 Auto-check: verifying connection');
+        
+        if (navigator.onLine) {
+            verifyRealConnection()
+                .then(() => {
+                    debugLog('✅ Auto-check: Connection verified');
+                    if (!recoveryMode) {
+                        debugLog('🔥 Setting recovery mode from auto-check');
+                        recoveryMode = true;
+                    }
+                    showOnlineNotificationAndRedirect();
+                    stopAutoChecking();
+                })
+                .catch(() => {
+                    debugLog('❌ Auto-check: Verification failed');
+                    // Countdown continues automatically
+                });
+        } else {
+            debugLog('📵 Auto-check: Navigator reports offline');
+            updateCountdownDisplay(AUTO_CHECK_INTERVAL / 1000);
+        }
+    }, AUTO_CHECK_INTERVAL);
 }
 
 function stopAutoChecking() {
-  if (checkInterval) {
-    clearInterval(checkInterval);
-    checkInterval = null;
-  }
-  if (countdownInterval) {
-    clearInterval(countdownInterval);
-    countdownInterval = null;
-  }
-  console.log('⏹️ Stopped auto-checking');
+    debugLog('⏹️ Stopping auto-checking');
+    
+    if (checkInterval) {
+        clearInterval(checkInterval);
+        checkInterval = null;
+    }
+    if (countdownInterval) {
+        clearInterval(countdownInterval);
+        countdownInterval = null;
+    }
+    
+    if (elements.countdownDisplay) {
+        elements.countdownDisplay.textContent = '0';
+    }
 }
 
-// ===== EVENT LISTENERS =====
+// ===== EVENT HANDLERS =====
 function setupEventListeners() {
-  console.log('🎧 Setting up event listeners (offline page)');
-
-  if (elements.retryBtn) elements.retryBtn.addEventListener('click', manualConnectionCheck);
-  if (elements.refreshBtn) elements.refreshBtn.addEventListener('click', () => {
-    console.log('🔄 Manual refresh triggered');
-    window.location.reload();
-  });
-
-  // Browser native online/offline events — we still rely on /online.txt to verify
-  window.addEventListener('online', () => {
-    console.log('📶 navigator online event');
-    // Fast path: try verify immediately
-    verifyRealConnection()
-      .then(() => {
-        showOnlineNotificationAndRedirect();
-        stopAutoChecking();
-      })
-      .catch(() => {
-        console.log('⚠ navigator online but verify failed; will keep auto-checking');
-      });
-  });
-
-  window.addEventListener('offline', () => {
-    console.log('📵 navigator offline event');
-    if (elements.connectionStatus) elements.connectionStatus.textContent = '❌ Connection lost - attempting to reconnect...';
-    // restart auto-checking if it was stopped
-    if (!checkInterval) startAutoConnectionChecking();
-  });
-}
-
-// ===== INITIALIZATION =====
-// global flag
-let recoveryMode = false;
-
-// inside initializeOfflinePage()
-function initializeOfflinePage() {
-    console.log('🚀 Initializing offline page recovery system');
-
-    // detect reason
-    const params = new URLSearchParams(window.location.search);
-    if (params.get('reason') === 'signin') {
-        console.log('⚠️ User tried to signin offline');
-        recoveryMode = true; // only enable success banner during real recovery
-        if (elements.connectionStatus)
-            elements.connectionStatus.textContent =
-                '❌ You\'ve logged out. Signing in requires internet. Try later.';
+    debugLog('🎧 Setting up event listeners');
+    
+    // Manual retry button
+    if (elements.retryBtn) {
+        elements.retryBtn.addEventListener('click', manualConnectionCheck);
+        debugLog('✅ Retry button listener added');
+    }
+    
+    // Refresh button
+    if (elements.refreshBtn) {
+        elements.refreshBtn.addEventListener('click', () => {
+            debugLog('🔄 Manual refresh triggered');
+            window.location.reload();
+        });
+        debugLog('✅ Refresh button listener added');
     }
 
-    setupEventListeners();
-    startAutoConnectionChecking();
-
-    // Only try immediate verify if **not in recoveryMode**
-    if (!recoveryMode && navigator.onLine) {
+    // Browser online/offline events
+    window.addEventListener('online', () => {
+        debugLog('📶 Browser online event fired');
+        
+        if (isVerifying) {
+            debugLog('⏩ Online event skipped - verification in progress');
+            return;
+        }
+        
         verifyRealConnection()
             .then(() => {
+                debugLog('✅ Online event: Connection verified');
+                if (!recoveryMode) {
+                    debugLog('🔥 Setting recovery mode from online event');
+                    recoveryMode = true;
+                }
                 showOnlineNotificationAndRedirect();
                 stopAutoChecking();
             })
             .catch(() => {
-                console.log('❌ Immediate verify failed — staying on offline page');
+                debugLog('❌ Online event: Verification failed');
+                if (!checkInterval) {
+                    debugLog('🔄 Online event: Starting auto-checking');
+                    startAutoConnectionChecking();
+                }
             });
+    });
+
+    window.addEventListener('offline', () => {
+        debugLog('📵 Browser offline event fired');
+        
+        if (elements.connectionStatus) {
+            elements.connectionStatus.textContent = '❌ Connection lost - attempting to reconnect...';
+        }
+        
+        // Ensure auto-checking is running
+        if (!checkInterval) {
+            debugLog('🔄 Offline event: Starting auto-checking');
+            startAutoConnectionChecking();
+        }
+    });
+}
+
+// ===== INITIALIZATION =====
+function initializeOfflinePage() {
+    debugLog('🚀 Initializing offline page', {
+        recoveryMode,
+        navigatorOnline: navigator.onLine,
+        search: window.location.search
+    });
+
+    // Determine recovery context
+    const params = new URLSearchParams(window.location.search);
+    const reason = params.get('reason');
+    
+    if (reason === 'signin') {
+        debugLog('🔐 Sign-in recovery mode detected');
+        recoveryMode = true;
+        if (elements.connectionStatus) {
+            elements.connectionStatus.textContent = '❌ Sign-in requires internet connection';
+        }
+    } else {
+        // Regular offline recovery - only set recoveryMode after successful verification
+        debugLog('📶 Regular offline recovery mode');
+        recoveryMode = false; // 🔥 CRITICAL: Start as false
+    }
+
+    // Setup UI and start monitoring
+    setupEventListeners();
+    startAutoConnectionChecking();
+
+    // Initial verification ONLY if navigator says we're online
+    if (navigator.onLine && !isVerifying) {
+        debugLog('🔍 Performing initial connection check');
+        verifyRealConnection()
+            .then(() => {
+                debugLog('✅ Initial check: Connection available');
+                // Only trigger recovery if we're actually in recovery context
+                if (reason || recoveryMode) {
+                    debugLog('🔥 Setting recovery mode from initial check');
+                    recoveryMode = true;
+                    showOnlineNotificationAndRedirect();
+                    stopAutoChecking();
+                } else {
+                    debugLog('ℹ️ Initial check: Online but not in recovery context');
+                }
+            })
+            .catch(() => {
+                debugLog('❌ Initial check: No connection confirmed');
+                // Stay in offline mode
+            });
+    } else {
+        debugLog('🔍 Initial check skipped - navigator reports offline or verification in progress');
     }
 }
 
-// ===== START EVERYTHING (single DOM ready handler) =====
+// ===== START APPLICATION =====
 document.addEventListener('DOMContentLoaded', initializeOfflinePage);
 
-console.log('✅ Offline.html script loaded successfully (updated)');
+// Export for debugging (optional)
+window.offlinePageDebug = {
+    recoveryMode: () => recoveryMode,
+    retryCount: () => retryCount,
+    isVerifying: () => isVerifying,
+    manualCheck: manualConnectionCheck,
+    stopChecking: stopAutoChecking
+};
+
+debugLog('✅ Offline page script loaded successfully');
 </script>
 </body>
 </html>
