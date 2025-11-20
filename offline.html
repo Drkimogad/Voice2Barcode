@@ -464,11 +464,6 @@ function verifyRealConnection() {
 
 // ===== RECOVERY FLOW =====
 function showOnlineNotificationAndRedirect() {
-
-    console.log('🔍 DEBUG: showOnlineNotificationAndRedirect CALLED!');
-    console.log('🔍 DEBUG: Called from:', new Error().stack);
-    console.log('🔍 DEBUG: recoveryMode =', recoveryMode);
-    console.log('🔍 DEBUG: Time since page load:', Date.now() - performance.timing.navigationStart, 'ms');
         
     if (!recoveryMode) {
         console.log('❌ DEBUG: Blocked - not in recovery mode');
@@ -713,12 +708,13 @@ function initializeOfflinePage() {
     // Determine recovery context
     const params = new URLSearchParams(window.location.search);
     const reason = params.get('reason');
+    
    /* "If the user came here because they tried to sign in while offline, immediately turn on recovery mode." */
-//if (reason === 'signin') {
-//    recoveryMode = true;
-//} else {
-//    recoveryMode = false; // ← THIS IS WRONG!
-//}
+if (reason === 'signin') {
+    recoveryMode = true;
+} else {
+    recoveryMode = false; 
+}
 
 
     // Setup UI and start monitoring
