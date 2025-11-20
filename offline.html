@@ -712,13 +712,13 @@ function initializeOfflinePage() {
     // Determine recovery context
     const params = new URLSearchParams(window.location.search);
     const reason = params.get('reason');
-    /*
-    The problem is in your initializeOfflinePage() function. 
-    It should set recoveryMode = true for ALL offline page loads, not just sign-in scenarios.
-    */
-    if (reason === 'signin' || !reason) {
-    recoveryMode = true; // Always recover unless explicitly prevented
-   }
+
+// CURRENT (problematic):
+if (reason === 'signin') {
+    recoveryMode = true;
+} else {
+    recoveryMode = false; // ← THIS IS WRONG!
+}
 
     // Setup UI and start monitoring
     setupEventListeners();
