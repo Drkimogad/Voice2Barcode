@@ -189,7 +189,7 @@
         .online-notification {
             display: none; /* hidden by default */
             position: fixed;
-            top: 120px; /* ✅ Pushed down from top was80 */
+            top: 140px; /* ✅ Pushed down from top was80 */
             left: 50%;
             transform: translateX(-50%) translateY(-100px);
             background: #059669;
@@ -198,20 +198,15 @@
             border-radius: 10px;
             box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
             z-index: 10000;
-            display: flex;
             align-items: center;
             gap: 0.5rem;
             font-weight: 600;
             transition: transform 0.5s ease;
            }
-         /* ✅ Add this to prevent body scroll when notification shows */
-            body.notification-visible {
-            padding-top: 120px; /* Makes space for notification */
-           }
 
         .online-notification.show {
             transform: translateX(-50%) translateY(0);
-            display: flex; /* Change this */
+            display: flex; /* Only show when has .show class */
         }
 
         .connection-status {
@@ -709,13 +704,12 @@ function initializeOfflinePage() {
     const params = new URLSearchParams(window.location.search);
     const reason = params.get('reason');
     
-   /* "If the user came here because they tried to sign in while offline, immediately turn on recovery mode." */
 if (reason === 'signin') {
-    recoveryMode = true;
-} else {
-    recoveryMode = false; 
-}
-
+    // User wants to sign in - mark for potential recovery
+    // But DON'T set recoveryMode true yet
+    debugLog('User needs to sign in - will recover when online');
+} 
+// recoveryMode stays false initially
 
     // Setup UI and start monitoring
     setupEventListeners();
