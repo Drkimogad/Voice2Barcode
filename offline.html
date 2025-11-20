@@ -464,17 +464,22 @@ function verifyRealConnection() {
 
 // ===== RECOVERY FLOW =====
 function showOnlineNotificationAndRedirect() {
+    console.log('🔍 DEBUG: Entering showOnlineNotificationAndRedirect');
+    console.log('🔍 DEBUG: recoveryMode =', recoveryMode);
+    console.log('🔍 DEBUG: elements.countdown =', elements.countdown);
+    console.log('🔍 DEBUG: elements.onlineNotification =', elements.onlineNotification);
+    
     if (!recoveryMode) {
-        debugLog('🚫 Not in recovery mode - suppressing notification');
+        console.log('❌ DEBUG: Blocked - not in recovery mode');
         return;
     }
     
     if (!elements.onlineNotification) {
-        debugLog('❌ Notification element not found');
+        console.log('❌ DEBUG: Blocked - notification element not found');
         return;
     }
 
-    debugLog('🎉 Showing online notification and preparing redirect');
+    console.log('✅ DEBUG: Proceeding with notification and redirect...');
 
     // Show notification
     elements.onlineNotification.classList.add('show');
@@ -574,6 +579,9 @@ function startAutoConnectionChecking() {
     
     if (countdownInterval) clearInterval(countdownInterval);
     countdownInterval = setInterval(() => {
+        // Add this check
+console.log('🔍 DEBUG: countdownInterval running?', !!countdownInterval);
+console.log('🔍 DEBUG: checkInterval running?', !!checkInterval);
         countdownSeconds--;
         updateCountdownDisplay(countdownSeconds);
         
