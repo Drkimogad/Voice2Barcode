@@ -464,11 +464,12 @@ function verifyRealConnection() {
 
 // ===== RECOVERY FLOW =====
 function showOnlineNotificationAndRedirect() {
-    console.log('🔍 DEBUG: Entering showOnlineNotificationAndRedirect');
+
+    console.log('🔍 DEBUG: showOnlineNotificationAndRedirect CALLED!');
+    console.log('🔍 DEBUG: Called from:', new Error().stack);
     console.log('🔍 DEBUG: recoveryMode =', recoveryMode);
-    console.log('🔍 DEBUG: elements.countdown =', elements.countdown);
-    console.log('🔍 DEBUG: elements.onlineNotification =', elements.onlineNotification);
-    
+    console.log('🔍 DEBUG: Time since page load:', Date.now() - performance.timing.navigationStart, 'ms');
+        
     if (!recoveryMode) {
         console.log('❌ DEBUG: Blocked - not in recovery mode');
         return;
