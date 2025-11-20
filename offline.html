@@ -712,18 +712,13 @@ function initializeOfflinePage() {
     // Determine recovery context
     const params = new URLSearchParams(window.location.search);
     const reason = params.get('reason');
-    
-    if (reason === 'signin') {
-        debugLog('🔐 Sign-in recovery mode detected');
-        recoveryMode = true;
-        if (elements.connectionStatus) {
-            elements.connectionStatus.textContent = '❌ Sign-in requires internet connection';
-        }
-    } else {
-        // Regular offline recovery - only set recoveryMode after successful verification
-        debugLog('📶 Regular offline recovery mode');
-        recoveryMode = false; // 🔥 CRITICAL: Start as false
-    }
+    /*
+    The problem is in your initializeOfflinePage() function. 
+    It should set recoveryMode = true for ALL offline page loads, not just sign-in scenarios.
+    */
+    if (reason === 'signin' || !reason) {
+    recoveryMode = true; // Always recover unless explicitly prevented
+   }
 
     // Setup UI and start monitoring
     setupEventListeners();
