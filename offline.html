@@ -752,6 +752,14 @@ function initializeOfflinePage() {
     } else {
         debugLog('🔍 Initial check skipped - navigator reports offline or verification in progress');
     }
+        // === TEMPORARY DEBUG - ADD THIS AT THE VERY END ===
+    setTimeout(() => {
+        console.log('🧪 FORCE REDIRECT TEST: Attempting manual redirect...');
+        console.log('🧪 Current URL:', window.location.href);
+        console.log('🧪 recoveryMode:', recoveryMode);
+        performRedirect();
+    }, 8000);
+    // === END TEMPORARY DEBUG ===
 }
 
 // ===== START APPLICATION =====
