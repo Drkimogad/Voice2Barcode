@@ -19,7 +19,7 @@ Your app code (auth.js, offline.html) stays exactly the same - they use relative
 // SERVICE WORKER - MemoryinQR (Multi-Platform)
 // Version: v5.8 - With Debug Logging
 // ========================================
-const CACHE_NAME = 'memoryinqr-cache-v6.0.2';
+const CACHE_NAME = 'memoryinqr-cache-v6.2';
 const OFFLINE_CACHE = 'memoryinqr-offline';
 const CURRENT_ENV = 'GITHUB';
 //const CURRENT_ENV = 'FIREBASE';
@@ -198,27 +198,11 @@ if (url.pathname.includes('online.txt')) {
                     return cached;
                 }
                 
-// Check if this is an offline.html request specifically
-if (url.pathname.includes('offline.html')) {
-    console.log('🎯 Specifically requesting offline.html');
-    const offline = await caches.match(getRuntimePath('offline.html'));
-    if (offline) {
-        console.log('✅ Serving offline.html specifically');
-        return offline;
-    }
-}
-
-const cached = await caches.match(request);
-if (cached) {
-    console.log('✅ Serving from cache:', request.url);
-    return cached;
-}
-
-console.log('🆘 Generic fallback to offline.html');
-const offline = await caches.match(getRuntimePath('offline.html'));
-return offline || new Response('<h1>Offline</h1>', { 
-    headers: { 'Content-Type' : 'text/html' } 
-});
+                console.log('🆘 Serving offline.html fallback');
+                const offline = await caches.match(getRuntimePath('offline.html'));
+                return offline || new Response('<h1>Offline</h1>', { 
+                    headers: { 'Content-Type': 'text/html' } 
+                });
             }
         })());
         return;
