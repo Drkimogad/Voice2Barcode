@@ -378,8 +378,9 @@ async function handleLogout() {
             }
 
             // Force SW to serve offline.html
-            window.location.reload();
-            return;
+           //window.location.reload();
+            //return;
+            showAuth();
         }
     } catch (error) {
         console.error('❌ Logout error:', error);
