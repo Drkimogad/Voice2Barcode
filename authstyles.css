@@ -246,6 +246,7 @@ body {
     }
 }
 
+
 /* ========================================
    FORGOT PASSWORD & DELETE ACCOUNT STYLES
    ======================================== */
@@ -513,41 +514,6 @@ body {
 }
 
 /* ========================================
-   QR BACKGROUND BANNER
-   ======================================== */
-#qrBackgroundBanner {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    z-index: -1;
-    pointer-events: none;
-    overflow: hidden;
-}
-
-.qr-pattern {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background-image: 
-        radial-gradient(circle at 25% 25%, rgba(203, 65, 84, 0.03) 2px, transparent 2px),
-        radial-gradient(circle at 75% 75%, rgba(203, 65, 84, 0.03) 2px, transparent 2px);
-    background-size: 100px 100px;
-    background-position: 0 0, 50px 50px;
-    opacity: 0.4;
-    animation: floatQR 60s linear infinite;
-}
-
-/* Subtle animation for QR pattern */
-@keyframes floatQR {
-    0% { background-position: 0 0, 50px 50px; }
-    100% { background-position: 100px 100px, 150px 150px; }
-}
-
-/* ========================================
    DELETE ACCOUNT CONTAINER
    ======================================== */
 #deleteAccountContainer {
@@ -670,6 +636,52 @@ body {
         transform: translateX(-50%);
     }
 }
+/* ========================================
+   QR BACKGROUND BANNER WITH IMAGE
+   ======================================== */
+#qrBackgroundBanner {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: -1;
+    pointer-events: none;
+    overflow: hidden;
+}
 
+.qr-pattern-image {
+    position: absolute;
+    /* Option A: Cover entire area */
+    width: 100%;
+    height: 100%;
+    object-fit: cover; /* or 'contain' depending on your image */
+    opacity: 0.05; /* Adjust opacity as needed */
+    
+    /* Option B: Repeating pattern */
+    /* width: 200px;
+    height: 200px;
+    object-fit: contain;
+    opacity: 0.03;
+    background-repeat: repeat;
+    background-size: 200px 200px; */
+}
+
+/* Optional overlay for better readability */
+.qr-pattern-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(135deg, rgba(250, 250, 250, 0.7) 0%, rgba(245, 245, 220, 0.5) 100%);
+}
+
+/* Ensure auth container stays readable */
+#authSection {
+    position: relative;
+    z-index: 1;
+    background: rgba(255, 255, 255, 0.85);
+}
 
 
