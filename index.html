@@ -57,6 +57,11 @@
         <p>Capture life's precious moments with <strong>MemoryinQR</strong>! 
            Scan to remember, share to connect - because every memory deserves a beautiful home.</p>
     </div>
+    
+      <!-- QR Background Banner -->
+<div id="qrBackgroundBanner" aria-hidden="true">
+    <div class="qr-pattern"></div>
+</div>
 
  <!-- ========================================= -->
 <!-- AUTHENTICATION SECTION -->
@@ -146,9 +151,15 @@
     </div>
 </div>
 
-<!-- ADDED: Delete Account Trigger Link (can be placed anywhere) -->
-<div id="deleteAccountTrigger" style="text-align: center; margin-top: 20px;">
-    <a href="#" id="deleteAccountLink" style="color: #990000; font-size: 0.9em;">Delete my account</a>
+<!-- Delete Account Container -->
+<div id="deleteAccountContainer">
+    <div class="delete-account-wrapper">
+        <a href="#" id="deleteAccountLink" class="delete-account-link">
+            <span class="delete-icon">🗑️</span>
+            Delete my account
+        </a>
+        <p class="delete-note">This action is permanent and cannot be undone.</p>
+    </div>
 </div>
 
     <!-- ========================================= -->
