@@ -158,6 +158,131 @@ function isAuthenticated() {
     return !!firebase.auth().currentUser;
 }
 
+
+// ========================================
+// 🔐 FORGOT PASSWORD FUNCTION
+// ========================================
+async function handleForgotPassword(email) {
+    console.log('🔐 FORGOT PASSWORD: Processing for email:', email);
+    
+    try {
+        await firebase.auth().sendPasswordResetEmail(email);
+        console.log('✅ Password reset email sent to:', email);
+        return { success: true, message: 'Password reset email sent!' };
+    } catch (error) {
+        console.error('❌ Password reset error:', error);
+        return { success: false, message: error.message };
+    }
+}
+
+// ========================================
+// 🗑️ DELETE ACCOUNT FUNCTION (ADAPTED)
+// ========================================
+async function handleDeleteAccount(email, password, confirmation) {
+    console.log('🗑️ DELETE ACCOUNT: Starting process for email:', email);
+    
+    try {
+        // 1. Validate confirmation
+        if (confirmation !== 'DELETE') {
+            throw new Error('Confirmation text must be exactly "DELETE"');
+        }
+        
+        // 2. Authenticate user temporarily
+        console.log('🔐 Authenticating user for deletion...');
+        const userCredential = await firebase.auth().signInWithEmailAndPassword(email, password);
+        const user = userCredential.user;
+        const userId = user.uid;
+        
+        console.log('✅ User authenticated, UID:', userId);
+        
+        // 3. Show loading (use your existing updateStatus or loading overlay)
+        updateStatus('Deleting account and all data...', 'info');
+        
+        // 4. Delete Firestore data (messages collection only)
+        const db = firebase.firestore();
+        console.log('🗑️ Deleting user messages from Firestore...');
+        
+        const messagesQuery = await db.collection('messages')
+            .where('createdBy', '==', userId)
+            .get();
+        
+        const batch = db.batch();
+        messagesQuery.docs.forEach(doc => {
+            batch.delete(doc.ref);
+        });
+        
+        if (messagesQuery.size > 0) {
+            await batch.commit();
+            console.log(`✅ Deleted ${messagesQuery.size} messages from Firestore`);
+        } else {
+            console.log('ℹ️ No messages found to delete');
+        }
+        
+        // 5. Delete user from Firebase Auth
+        console.log('🔥 Deleting user from Firebase Auth...');
+        await user.delete();
+        
+        // 6. Clean up temporary session
+        await firebase.auth().signOut();
+        
+        // 7. Clear local data
+        localStorage.removeItem('signedOutOffline');
+        localStorage.removeItem('lastActivePage');
+        
+        console.log('✅ Account deletion complete');
+        return { 
+            success: true, 
+            message: 'Account and all data permanently deleted.' 
+        };
+        
+    } catch (error) {
+        console.error('❌ Account deletion failed:', error);
+        
+        // Clean up temporary session on error
+        try {
+            await firebase.auth().signOut();
+        } catch (signOutError) {
+            console.log('⚠️ Sign out cleanup failed:', signOutError);
+        }
+        
+        // Error message handling
+        let errorMessage = 'Account deletion failed: ' + error.message;
+        
+        if (error.code === 'auth/invalid-credential' || error.code === 'auth/wrong-password') {
+            errorMessage = 'Invalid email or password.';
+        } else if (error.code === 'auth/user-not-found') {
+            errorMessage = 'No account found with this email.';
+        } else if (error.code === 'auth/network-request-failed') {
+            errorMessage = 'Network error. Please check your connection.';
+        } else if (error.code === 'auth/requires-recent-login') {
+            errorMessage = 'For security, please sign in again before deleting account.';
+        }
+        
+        return { success: false, message: errorMessage };
+    }
+}
+
+// ========================================
+// 🪟 MODAL MANAGEMENT FUNCTIONS
+// ========================================
+function showModal(modalId) {
+    console.log('🪟 Opening modal:', modalId);
+    const modal = document.getElementById(modalId);
+    if (modal) {
+        modal.style.display = 'block';
+        document.body.style.overflow = 'hidden';
+    }
+}
+
+function hideModal(modalId) {
+    console.log('🪟 Closing modal:', modalId);
+    const modal = document.getElementById(modalId);
+    if (modal) {
+        modal.style.display = 'none';
+        document.body.style.overflow = 'auto';
+    }
+}
+
 // ========================================
 // EXISTING AUTH FUNCTIONS - OFFLINE FORTIFIED
 // ========================================
@@ -434,9 +559,139 @@ function setupAuthListeners() {
         logoutBtn.addEventListener('click', handleLogout);
         console.log('✅ Logout listener added');
     }
+
+    // step 2 goes here
+    
+    // 🔐 NEW: Forgot Password Link
+    const forgotPasswordLink = document.getElementById('forgotPasswordLink');
+    if (forgotPasswordLink) {
+        forgotPasswordLink.addEventListener('click', (e) => {
+            e.preventDefault();
+            console.log('🔐 Forgot password link clicked');
+            showModal('forgotPasswordModal');
+        });
+        console.log('✅ Forgot password listener added');
+    }
+    
+    // 🗑️ NEW: Delete Account Link
+    const deleteAccountLink = document.getElementById('deleteAccountLink');
+    if (deleteAccountLink) {
+        deleteAccountLink.addEventListener('click', (e) => {
+            e.preventDefault();
+            console.log('🗑️ Delete account link clicked');
+            showModal('deleteAccountModal');
+        });
+        console.log('✅ Delete account listener added');
+    }
+    
+    // 🔐 NEW: Forgot Password Form Submit
+    const forgotPasswordForm = document.getElementById('forgotPasswordForm');
+    if (forgotPasswordForm) {
+        forgotPasswordForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            console.log('🔐 Forgot password form submitted');
+            
+            const email = document.getElementById('resetEmail').value.trim();
+            const errorEl = document.getElementById('forgotPasswordError');
+            const successEl = document.getElementById('forgotPasswordSuccess');
+            
+            // Clear previous messages
+            if (errorEl) errorEl.textContent = '';
+            if (successEl) successEl.textContent = '';
+            
+            if (!email || !isValidEmail(email)) {
+                if (errorEl) errorEl.textContent = 'Please enter a valid email';
+                return;
+            }
+            
+            // Call forgot password function
+            const result = await handleForgotPassword(email);
+            
+            if (result.success) {
+                if (successEl) successEl.textContent = result.message;
+                // Clear form
+                document.getElementById('resetEmail').value = '';
+                // Auto-close modal after 3 seconds
+                setTimeout(() => hideModal('forgotPasswordModal'), 3000);
+            } else {
+                if (errorEl) errorEl.textContent = result.message;
+            }
+        });
+        console.log('✅ Forgot password form listener added');
+    }
+    
+    // 🗑️ NEW: Delete Account Form Submit
+    const deleteAccountForm = document.getElementById('deleteAccountForm');
+    if (deleteAccountForm) {
+        deleteAccountForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            console.log('🗑️ Delete account form submitted');
+            
+            const email = document.getElementById('deleteEmail').value.trim();
+            const confirmation = document.getElementById('deleteConfirm').value.trim();
+            const errorEl = document.getElementById('deleteAccountError');
+            const successEl = document.getElementById('deleteAccountSuccess');
+            
+            // Clear previous messages
+            if (errorEl) errorEl.textContent = '';
+            if (successEl) successEl.textContent = '';
+            
+            // Validation
+            if (!email || !isValidEmail(email)) {
+                if (errorEl) errorEl.textContent = 'Please enter a valid email';
+                return;
+            }
+            
+            if (confirmation !== 'DELETE') {
+                if (errorEl) errorEl.textContent = 'You must type "DELETE" to confirm';
+                return;
+            }
+            
+            // Get password (you might want to add a password field)
+            const password = prompt('Enter your password to confirm deletion:');
+            if (!password) {
+                if (errorEl) errorEl.textContent = 'Password required for deletion';
+                return;
+            }
+            
+            // Call delete account function
+            const result = await handleDeleteAccount(email, password, confirmation);
+            
+            if (result.success) {
+                if (successEl) successEl.textContent = result.message;
+                // Clear form
+                document.getElementById('deleteEmail').value = '';
+                document.getElementById('deleteConfirm').value = '';
+                // Show auth UI and close modal
+                showAuth();
+                setTimeout(() => hideModal('deleteAccountModal'), 3000);
+            } else {
+                if (errorEl) errorEl.textContent = result.message;
+            }
+        });
+        console.log('✅ Delete account form listener added');
+    }
+    
+    // NEW: Modal close buttons
+    document.querySelectorAll('.close-modal, #cancelDelete').forEach(button => {
+        button.addEventListener('click', () => {
+            const modal = button.closest('.modal');
+            if (modal) {
+                hideModal(modal.id);
+            }
+        });
+    });
+    
+    // Close modal when clicking outside
+    window.addEventListener('click', (e) => {
+        if (e.target.classList.contains('modal')) {
+            hideModal(e.target.id);
+        }
+    });
     
     console.log('✅ All auth listeners setup complete');
 }
+
 
 function showAuth() {
     console.log('👤 Showing authentication UI...');
