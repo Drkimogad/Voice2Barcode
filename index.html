@@ -58,44 +58,98 @@
            Scan to remember, share to connect - because every memory deserves a beautiful home.</p>
     </div>
 
-    <!-- ========================================= -->
-    <!-- AUTHENTICATION SECTION -->
-    <!-- ========================================= -->
-    <div id="authSection" class="container">
-        <!-- Sign Up Form -->
-        <div id="signupContainer" class="auth-view">
-            <h1>Sign Up</h1>
-            <div class="section auth-container">
-                <form id="signupForm" class="auth-form">
-                    <div id="signupError" class="error-message" role="alert" aria-live="assertive"></div>
-                    <label for="signupUsername">Username:</label>
-                    <input type="text" id="signupUsername" required autocomplete="username">
-                    <label for="signupEmail">Email:</label>
-                    <input type="email" id="signupEmail" required autocomplete="email">
-                    <label for="signupPassword">Password:</label>
-                    <input type="password" id="signupPassword" required autocomplete="new-password">
-                    <button type="submit" class="btn">Sign Up</button>
-                </form>
-                <p>Already have an account? <a href="#" id="showSignin">Sign In</a></p>
-            </div>
-        </div>
-
-        <!-- Sign In Form -->
-        <div id="signinContainer" class="auth-view" style="display: none;">
-            <h1>Sign In</h1>
-            <div class="section auth-container">
-                <form id="signinForm" class="auth-form">
-    <div id="signinError" class="error-message" role="alert" aria-live="assertive"></div>
-    <label for="signinEmail">Email:</label>
-    <input type="email" id="signinEmail" required autocomplete="email">
-    <label for="signinPassword">Password:</label>
-    <input type="password" id="signinPassword" required autocomplete="current-password">
-    <button type="submit" class="btn">Sign In</button>
-</form>
-                <p>Don't have an account? <a href="#" id="showSignup">Sign Up</a></p>
-            </div>
+ <!-- ========================================= -->
+<!-- AUTHENTICATION SECTION -->
+<!-- ========================================= -->
+<div id="authSection" class="container">
+    <!-- Sign Up Form -->
+    <div id="signupContainer" class="auth-view">
+        <h1>Sign Up</h1>
+        <div class="section auth-container">
+            <form id="signupForm" class="auth-form">
+                <div id="signupError" class="error-message" role="alert" aria-live="assertive"></div>
+                <label for="signupUsername">Username:</label>
+                <input type="text" id="signupUsername" required autocomplete="username">
+                <label for="signupEmail">Email:</label>
+                <input type="email" id="signupEmail" required autocomplete="email">
+                <label for="signupPassword">Password:</label>
+                <input type="password" id="signupPassword" required autocomplete="new-password">
+                <button type="submit" class="btn">Sign Up</button>
+            </form>
+            <p>Already have an account? <a href="#" id="showSignin">Sign In</a></p>
         </div>
     </div>
+
+    <!-- Sign In Form -->
+    <div id="signinContainer" class="auth-view" style="display: none;">
+        <h1>Sign In</h1>
+        <div class="section auth-container">
+            <form id="signinForm" class="auth-form">
+                <div id="signinError" class="error-message" role="alert" aria-live="assertive"></div>
+                <label for="signinEmail">Email:</label>
+                <input type="email" id="signinEmail" required autocomplete="email">
+                <label for="signinPassword">Password:</label>
+                <input type="password" id="signinPassword" required autocomplete="current-password">
+                <button type="submit" class="btn">Sign In</button>
+                
+                <!-- ADDED: Forgot password link -->
+                <div class="auth-links">
+                    <a href="#" id="forgotPasswordLink">Forgot password?</a>
+                </div>
+            </form>
+            <p>Don't have an account? <a href="#" id="showSignup">Sign Up</a></p>
+        </div>
+    </div>
+</div>
+
+<!-- ADDED: Forgot Password Modal -->
+<div id="forgotPasswordModal" class="modal" style="display: none;">
+    <div class="modal-content">
+        <span class="close-modal">&times;</span>
+        <h2>Reset Password</h2>
+        <div id="forgotPasswordError" class="error-message" role="alert"></div>
+        <div id="forgotPasswordSuccess" class="success-message" role="alert"></div>
+        <p>Enter your email address and we'll send you a link to reset your password.</p>
+        <form id="forgotPasswordForm">
+            <label for="resetEmail">Email:</label>
+            <input type="email" id="resetEmail" required autocomplete="email">
+            <button type="submit" class="btn">Send Reset Link</button>
+        </form>
+        <p class="modal-note">Check your inbox (and spam folder) for the reset email.</p>
+    </div>
+</div>
+
+<!-- ADDED: Delete Account Modal -->
+<div id="deleteAccountModal" class="modal" style="display: none;">
+    <div class="modal-content delete-modal">
+        <span class="close-modal">&times;</span>
+        <h2>⚠️ Delete Account</h2>
+        <div id="deleteAccountError" class="error-message" role="alert"></div>
+        <div id="deleteAccountSuccess" class="success-message" role="alert"></div>
+        
+        <p class="warning-text">This action is <strong>permanent and cannot be undone</strong>.</p>
+        <p>All your data, memories, and QR codes will be permanently deleted.</p>
+        
+        <form id="deleteAccountForm">
+            <label for="deleteEmail">Your email:</label>
+            <input type="email" id="deleteEmail" required placeholder="Enter your account email">
+            
+            <label for="deleteConfirm">Type "DELETE" to confirm:</label>
+            <input type="text" id="deleteConfirm" required placeholder="DELETE">
+            
+            <div class="delete-actions">
+                <button type="submit" class="btn btn-danger">Permanently Delete Account</button>
+                <button type="button" class="btn btn-secondary" id="cancelDelete">Cancel</button>
+            </div>
+        </form>
+        <p class="modal-note">This process is immediate. No sign-in required.</p>
+    </div>
+</div>
+
+<!-- ADDED: Delete Account Trigger Link (can be placed anywhere) -->
+<div id="deleteAccountTrigger" style="text-align: center; margin-top: 20px;">
+    <a href="#" id="deleteAccountLink" style="color: #990000; font-size: 0.9em;">Delete my account</a>
+</div>
 
     <!-- ========================================= -->
     <!-- DASHBOARD SECTION -->
