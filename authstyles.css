@@ -636,8 +636,35 @@ body {
         transform: translateX(-50%);
     }
 }
+
 /* ========================================
-   QR BACKGROUND BANNER WITH IMAGE
+   MEDIA QUERIES - UPDATED
+   ======================================== */
+@media (max-width: 768px) {
+    .qr-pattern-image {
+        opacity: 0.1; /* Slightly less on tablet */
+        object-fit: contain; /* Show full image on smaller screens */
+    }
+    
+    #deleteAccountContainer {
+        padding: 0 15px;
+        margin-bottom: 30px;
+    }
+}
+
+@media (max-width: 480px) {
+    .qr-pattern-image {
+        opacity: 0.08; /* Even less on mobile */
+        object-position: center top; /* Position image nicely */
+    }
+    
+    #deleteAccountContainer {
+        margin-bottom: 20px;
+    }
+}
+
+/* ========================================
+   QR BACKGROUND BANNER WITH IMAGE - CORRECTED
    ======================================== */
 #qrBackgroundBanner {
     position: fixed;
@@ -648,40 +675,34 @@ body {
     z-index: -1;
     pointer-events: none;
     overflow: hidden;
+    display: block !important; /* Force display */
 }
 
 .qr-pattern-image {
     position: absolute;
-    /* Option A: Cover entire area */
     width: 100%;
     height: 100%;
-    object-fit: cover; /* or 'contain' depending on your image */
-    opacity: 0.05; /* Adjust opacity as needed */
+    object-fit: cover;
+    opacity: 0.15; /* INCREASED from 0.05 */
+    filter: brightness(1.2) contrast(0.8); /* Makes image blend better */
     
-    /* Option B: Repeating pattern */
-    /* width: 200px;
-    height: 200px;
-    object-fit: contain;
-    opacity: 0.03;
-    background-repeat: repeat;
-    background-size: 200px 200px; */
+    /* Debug border - remove after confirming it works */
+    /* border: 2px solid red; */
 }
 
-/* Optional overlay for better readability */
-.qr-pattern-overlay {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: linear-gradient(135deg, rgba(250, 250, 250, 0.7) 0%, rgba(245, 245, 220, 0.5) 100%);
-}
-
-/* Ensure auth container stays readable */
-#authSection {
+/* Override body background behind banner */
+body {
     position: relative;
-    z-index: 1;
-    background: rgba(255, 255, 255, 0.85);
 }
 
+/* Make sure content is above banner */
+.container, #authSection, #deleteAccountContainer {
+    position: relative;
+    z-index: 2;
+}
+
+/* Remove conflicting old styles */
+.qr-pattern {
+    display: none !important;
+}
 
