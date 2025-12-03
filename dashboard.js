@@ -1,22 +1,6 @@
 // ========================================
 // DASHBOARD MODULE
 // ========================================
-// ✅ PROFESSIONAL SOLUTION FOR DOMAINS SWITCHING
-const APP_CONFIG = {
-    getBaseUrl: function() {
-        if (window.location.hostname.includes('github.io')) {
-            return 'https://drkimogad.github.io/MemoryinQR';
-        } else if (window.location.hostname.includes('web.app') || 
-                   window.location.hostname.includes('firebaseapp.com')) {
-            return 'https://pet-exercise-log.web.app';
-        } else if (window.location.hostname.includes('localhost')) {
-            return 'http://localhost:3000';
-        } else {
-            return window.location.origin;
-        }
-    }
-};
-
 const DASHBOARD_CONFIG = {
     MAX_TEXT_LENGTH: 200,
     QR_SIZE: 300,
@@ -41,7 +25,7 @@ function initDashboard() {
     setupModeSwitching();
     
     // Initialize text mode by default
-    switchToMode('text');
+    switchToMode('links');
     
     // Setup global handlers
     setupGlobalHandlers();
@@ -518,7 +502,8 @@ async function generateQRFromDocumentId(documentId) {
         toggleLoading(true, 'Generating QR code...');
         
         // �URL for your domain
-        const qrContent = `${APP_CONFIG.baseUrl}/view.html?id=${documentId}`;
+// Remove the entire APP_CONFIG and in generateQRFromDocumentId use:
+const qrContent = `https://drkimogad.github.io/MemoryinQR/view.html?id=${documentId}`;  
         
         // 🆕 Store document ID for download reference
         lastQRData = {
