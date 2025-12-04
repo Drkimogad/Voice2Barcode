@@ -709,6 +709,11 @@ function showDashboard() {
     document.getElementById('authSection').style.display = 'none';
     document.getElementById('dashboardSection').style.display = 'block';
     document.getElementById('infoBanner').style.display = 'none';
+      // 🆕 HIDE delete account container
+    const deleteContainer = document.getElementById('deleteAccountContainer');
+    if (deleteContainer) {
+        deleteContainer.style.display = 'none';
+    }
     
     // Initialize dashboard if function exists
     if (typeof initDashboard === 'function') {
