@@ -698,6 +698,12 @@ function showAuth() {
     document.getElementById('authSection').style.display = 'block';
     document.getElementById('dashboardSection').style.display = 'none';
     document.getElementById('infoBanner').style.display = 'block';
+        // 🆕 SHOW delete account container
+    const deleteContainer = document.getElementById('deleteAccountContainer');
+    if (deleteContainer) {
+        deleteContainer.style.display = 'block';
+    }
+
     
     // Show signup by default
     toggleAuthView('signup');
